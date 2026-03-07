@@ -3,10 +3,12 @@ export default function ResultsView({ result, onBack }) {
 
     const legs = result.legs || []
     const totalDistance = result.total_distance_km || 0
-    const totalDuration = result.total_duration_min || 0
-    const startSoc = result.start_soc_percent || 0
-    const endSoc = result.end_soc_percent || 0
-    const chargeCount = legs.filter(l => l.type === 'charge').length
+    const totalDuration = result.total_duration_minutes || 0
+    const chargeCount = result.charge_stops || 0
+
+    // SOC değerlerini bacaklardan çekelim (API root seviyesinde her zaman vermeyebilir)
+    const startSoc = legs[0]?.start_soc_percent || result.start_soc_percent || 0
+    const endSoc = legs[legs.length - 1]?.end_soc_percent || result.end_soc_percent || 0
 
     const formatDuration = (min) => {
         const h = Math.floor(min / 60)
@@ -51,8 +53,8 @@ export default function ResultsView({ result, onBack }) {
                             <div key={i} className="result-leg">
                                 <div className="leg-icon drive">🚗</div>
                                 <div className="leg-details">
-                                    <div className="leg-title">Sürüş {Math.ceil((i + 1) / 2)}</div>
-                                    <div className="leg-subtitle">{leg.distance_km?.toFixed(1)} km — {formatDuration(leg.duration_min || 0)}</div>
+                                    <div className="leg-title">Sürüş</div>
+                                    <div className="leg-subtitle">{leg.distance_km?.toFixed(1)} km — {formatDuration(leg.duration_minutes || 0)}</div>
                                     <div className="leg-meta">
                                         <span>SOC: {leg.start_soc_percent}% → {leg.end_soc_percent}%</span>
                                     </div>
@@ -62,17 +64,19 @@ export default function ResultsView({ result, onBack }) {
                     }
 
                     if (leg.type === 'charge') {
+                        const station = leg.station || {}
+                        const connector = station.connectors?.[0] || {}
                         return (
                             <div key={i} className="result-leg">
                                 <div className="leg-icon charge">⚡</div>
                                 <div className="leg-details">
-                                    <div className="leg-title">{leg.station_name || 'Şarj Durağı'}</div>
+                                    <div className="leg-title">{station.name || 'Şarj Durağı'}</div>
                                     <div className="leg-subtitle">
-                                        {leg.charger_power_kw}kW — {formatDuration(leg.charge_duration_min || 0)}
+                                        {connector.power_kw}kW — {formatDuration(leg.duration_minutes || 0)}
                                     </div>
                                     <div className="leg-meta">
-                                        <span>SOC: {leg.charge_start_soc}% → {leg.charge_end_soc}%</span>
-                                        {leg.station_rating && <span>⭐ {leg.station_rating}</span>}
+                                        <span>SOC: {leg.arrival_soc_percent}% → {leg.target_soc_percent}%</span>
+                                        {station.rating && <span>⭐ {station.rating}</span>}
                                     </div>
                                 </div>
                             </div>
