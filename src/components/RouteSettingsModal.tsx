@@ -27,6 +27,7 @@ const CustomSwitch = ({ checked, onChange }: { checked: boolean, onChange: (val:
 };
 
 // %100 Native çalışan, tamamen hatasız kaydırma (drag) sağlayan özel Slider.
+// Sınır dışına taşma hatasını (clipping) düzeltmek için kalkülasyon eklendi.
 const NativeSlider = ({ value, min, max, onChange }: { value: number, min: number, max: number, onChange: (v: number) => void }) => {
   const percentage = ((value - min) / (max - min)) * 100;
   return (
@@ -44,8 +45,8 @@ const NativeSlider = ({ value, min, max, onChange }: { value: number, min: numbe
         className="absolute w-full h-full opacity-0 cursor-ew-resize z-10 m-0 p-0"
       />
       <div 
-        className="absolute w-6 h-6 bg-white border-4 border-blue-500 rounded-full shadow-md transform -translate-x-1/2 pointer-events-none transition-all duration-75" 
-        style={{ left: `${percentage}%` }}
+        className="absolute w-6 h-6 bg-white border-4 border-blue-500 rounded-full shadow-md pointer-events-none transition-all duration-75" 
+        style={{ left: `calc(${percentage}% - (${percentage * 24 / 100}px))` }}
       />
     </div>
   );
@@ -171,16 +172,14 @@ export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolea
               <div className="grid grid-cols-2 gap-3">
                 {/* Takvim Popover */}
                 <Popover>
-                  <PopoverTrigger asChild>
-                    <button className={cn(
+                  <PopoverTrigger className={cn(
                       "w-full bg-white/5 backdrop-blur-sm rounded-xl px-4 py-3.5 flex items-center justify-between text-white/70 text-sm border border-white/10 hover:border-white/20 transition-colors cursor-pointer text-left",
                       !date && "text-white/40"
                     )}>
                       {date ? format(date, "PPP", { locale: tr }) : <span>Tarih Seç</span>}
                       <CalendarIcon size={14} className="text-white/40 group-hover:text-blue-400 transition-colors shrink-0 ml-2" />
-                    </button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-transparent border-none z-[200]">
+                  <PopoverContent className="w-auto p-0 bg-transparent border-none z-[200]" side="bottom">
                     <div className="bg-[#1c1c1e] text-white border border-white/10 shadow-xl rounded-2xl overflow-hidden p-1">
                       <Calendar
                         mode="single"
@@ -189,10 +188,10 @@ export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolea
                         initialFocus
                         className="bg-transparent text-white"
                         classNames={{
-                          cell: "text-white data-[selected=true]:bg-blue-500 data-[selected=true]:text-white rounded-md",
+                          cell: "text-white flex-1 data-[selected=true]:bg-blue-500 data-[selected=true]:text-white rounded-md",
                           day_selected: "bg-blue-500 text-white hover:bg-blue-600 hover:text-white focus:bg-blue-500 focus:text-white",
                           nav_button: "hover:bg-white/10 text-white",
-                          captionDate: "text-white font-medium"
+                          caption_label: "text-white font-medium"
                         }}
                       />
                     </div>
@@ -260,20 +259,20 @@ export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolea
                       <input 
                         type="number"
                         min={0}
-                        max={50}
+                        max={100}
                         value={istasyonVarisSarj}
                         onChange={(e) => {
                           const val = Number(e.target.value);
-                          if(val >= 0 && val <= 50) setIstasyonVarisSarj(val);
+                          if(val >= 0 && val <= 100) setIstasyonVarisSarj(val);
                         }}
-                        className="w-6 bg-transparent text-white font-bold text-sm focus:outline-none focus:border-b focus:border-white/50 text-center"
+                        className="w-8 bg-transparent text-white font-bold text-sm focus:outline-none focus:border-b focus:border-white/50 text-center"
                       />
                     </div>
                   </div>
                   <NativeSlider 
                     value={istasyonVarisSarj} 
                     min={0} 
-                    max={50} 
+                    max={100} 
                     onChange={setIstasyonVarisSarj} 
                   />
                 </div>
@@ -285,20 +284,20 @@ export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolea
                       <span className="text-white font-bold text-sm">%</span>
                       <input 
                         type="number"
-                        min={50}
+                        min={0}
                         max={100}
                         value={istasyonAyrisSarj}
                         onChange={(e) => {
                           const val = Number(e.target.value);
-                          if(val >= 50 && val <= 100) setIstasyonAyrisSarj(val);
+                          if(val >= 0 && val <= 100) setIstasyonAyrisSarj(val);
                         }}
-                        className="w-7 bg-transparent text-white font-bold text-sm focus:outline-none focus:border-b focus:border-white/50 text-center"
+                        className="w-8 bg-transparent text-white font-bold text-sm focus:outline-none focus:border-b focus:border-white/50 text-center"
                       />
                     </div>
                   </div>
                   <NativeSlider 
                     value={istasyonAyrisSarj} 
-                    min={50} 
+                    min={0} 
                     max={100} 
                     onChange={setIstasyonAyrisSarj} 
                   />
@@ -316,20 +315,10 @@ export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolea
               <div className="mt-1 w-full pl-0.5">
                 <span className="text-white/40 text-[12px] font-medium mb-3 block">Sık tercih edilenler</span>
                 
-                {/* Yana Kaydırılabilir Özel Alan (Horizontal Scroll) */}
-                <div 
-                  className="flex gap-2.5 overflow-x-auto pb-4 pr-6 -mr-6 snap-x pt-0.5 
-                             [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:bg-white/10 hover:[&::-webkit-scrollbar-thumb]:bg-white/20 [&::-webkit-scrollbar-thumb]:rounded-full cursor-grab active:cursor-grabbing"
-                  onWheel={(e) => {
-                    const container = e.currentTarget;
-                    if (e.deltaY !== 0) {
-                      container.scrollLeft += e.deltaY;
-                      e.preventDefault();
-                    }
-                  }}
-                >
-                  {['ZES', 'Eşarj', 'Sharz', 'Trugo', 'Voltrun', 'Tesla', 'Wat', 'DB'].map(brand => (
-                    <button key={brand} className="shrink-0 snap-start bg-white/5 hover:bg-white/15 text-white/80 transition-all py-2 px-5 rounded-xl text-sm border border-white/10 hover:border-white/30 hover:shadow-md">
+                {/* 4 4 Alt alta dizilecek Flex Wrap yapısı */}
+                <div className="flex flex-wrap gap-2.5 w-full">
+                  {['ZES', 'Eşarj', 'Sharz', 'Trugo', 'Voltrun', 'Tesla', 'Wat', 'DB'].map((brand, i) => (
+                    <button key={brand} className="bg-white/5 hover:bg-white/15 text-white/80 transition-all py-1.5 px-4 rounded-xl text-sm border border-white/10 hover:border-white/30 hover:shadow-md">
                       {brand}
                     </button>
                   ))}
@@ -394,7 +383,7 @@ export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolea
         </div>
 
         {/* Footer (Sticky) */}
-        <div className="p-5 shrink-0 bg-black/40 border-t border-white/10 backdrop-blur-xl z-10">
+        <div className="p-5 shrink-0 bg-black/40 border-t border-white/10 backdrop-blur-xl z-[50]">
            <button onClick={onClose} className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-2xl transition-all duration-200 active:scale-[0.98] shadow-[0_0_20px_rgba(59,130,246,0.4)]">
              Ayarları Uygula
            </button>
