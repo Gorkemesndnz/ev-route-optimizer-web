@@ -174,8 +174,11 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
                             >
                               <button
                                 type="button"
-                                onClick={handleSwap}
-                                onPointerDown={(e) => e.stopPropagation()}
+                                onPointerDown={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  handleSwap();
+                                }}
                                 className="w-10 h-10 flex items-center justify-center text-white/70 hover:text-white transition-colors"
                               >
                                 <ArrowDownUp size={14} />
@@ -208,8 +211,11 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
                     >
                       <button
                         type="button"
-                        onClick={handleSwap}
-                        onPointerDown={(e) => e.stopPropagation()}
+                        onPointerDown={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          handleSwap();
+                        }}
                         className="w-10 h-10 flex items-center justify-center text-white/70 hover:text-white transition-all duration-200 active:scale-90 pointer-events-auto"
                       >
                         <ArrowDownUp size={14} />
