@@ -57,7 +57,7 @@ export function LocationItemUI({
             onClickInput?.(item);
           }}
           placeholder={placeholder}
-          className="w-full bg-white/5 border border-white/10 rounded-2xl py-2.5 pl-9 pr-4 text-[15px] text-white placeholder-white/70 focus:outline-none focus:bg-white/10 focus:border-white/30 transition-all font-medium cursor-pointer hover:bg-white/[0.08] hover:border-white/20"
+          className="w-full bg-white/5 border border-white/10 rounded-2xl py-2 pl-9 pr-4 text-[15px] text-white placeholder-white/70 focus:outline-none focus:bg-white/10 focus:border-white/30 transition-all font-medium cursor-pointer hover:bg-white/[0.08] hover:border-white/20"
         />
       </div>
 

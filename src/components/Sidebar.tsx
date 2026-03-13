@@ -130,7 +130,7 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
   };
 
   return (
-    <div className="glass-panel w-full sm:w-[400px] px-4 py-6 pointer-events-auto flex flex-col gap-6 relative">
+    <div className="glass-panel w-full sm:w-[400px] px-4 py-5 pointer-events-auto flex flex-col gap-4 relative">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold tracking-tight text-white/90">Rota Planlama</h2>
       </div>
@@ -232,7 +232,7 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
       </div>
 
       {/* Quick Actions Row */}
-      <div className="flex justify-between items-center px-2 mt-1">
+      <div className="flex justify-between items-center px-2">
         <button
           onClick={addWaypoint}
           className="text-sm font-medium text-white/70 hover:text-white transition-colors flex items-center gap-1"
@@ -247,7 +247,7 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
       </div>
 
       {/* Primary Action Row */}
-      <div className="flex gap-3 mt-2">
+      <div className="flex gap-3">
         <button
           onClick={onOpenRouteSettings}
           className="p-3 bg-white/10 hover:bg-white/20 rounded-2xl text-white transition-all"
