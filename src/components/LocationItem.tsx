@@ -96,7 +96,11 @@ export function LocationItem({
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="w-full">
+    <div 
+      ref={setNodeRef} 
+      style={style} 
+      className="w-full transition-opacity duration-200"
+    >
       <LocationItemUI
         item={item}
         placeholder={placeholder}

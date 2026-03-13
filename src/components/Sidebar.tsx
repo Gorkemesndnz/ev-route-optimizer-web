@@ -221,21 +221,6 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
             </LayoutGroup>
           </SortableContext>
           
-          <DragOverlay dropAnimation={dropAnimation}>
-            {activeId ? (
-              <div className="opacity-80">
-                <LocationItemUI 
-                  item={locations.find(l => l.id === activeId)}
-                  placeholder=""
-                  isFirst={locations.findIndex(l => l.id === activeId) === 0}
-                  isLast={locations.findIndex(l => l.id === activeId) === locations.length - 1}
-                  isDragging={true}
-                  onClickInput={() => {}}
-                  rightAction={<div className="w-8" />}
-                />
-              </div>
-            ) : null}
-          </DragOverlay>
         </DndContext>
 
       </div>
