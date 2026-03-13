@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ArrowDownUp } from "lucide-react";
+import { ArrowDownUp, Plus, Trash2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "./ui/button";
 import {
   DndContext,
@@ -8,6 +9,8 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  DragOverlay,
+  defaultDropAnimationSideEffects,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -15,22 +18,25 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import { cn } from "@/lib/utils";
 
 import { LocationItem } from "./LocationItem";
 import { LocationSearchModal } from "./LocationSearchModal";
 
 export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: () => void }) {
   const [locations, setLocations] = useState([
-    { id: "start", type: "start", label: "Başlangıç Noktası", value: "" },
-    { id: "end", type: "end", label: "Varış Noktası", value: "" },
+    { id: "start", type: "start", value: "" },
+    { id: "dest", type: "destination", value: "" },
   ]);
 
   const [activeSearchItem, setActiveSearchItem] = useState(null);
+  const [activeId, setActiveId] = useState(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 5,
+        distance: 8,
       },
     }),
     useSensor(KeyboardSensor, {
@@ -38,19 +44,26 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
     })
   );
 
+  const handleDragStart = (event) => {
+    setActiveId(event.active.id);
+  };
+
   const handleDragEnd = (event) => {
     const { active, over } = event;
+    setActiveId(null);
 
-    if (active.id !== over.id) {
+    if (over && active.id !== over.id) {
       setLocations((items) => {
         const oldIndex = items.findIndex((i) => i.id === active.id);
         const newIndex = items.findIndex((i) => i.id === over.id);
         
         const newItems = arrayMove(items, oldIndex, newIndex);
         
-        // Ensure start is always correctly typed or handle types dynamically based on index if strictly enforced,
-        // For now, we just let them drag visually.
-        return newItems;
+        return newItems.map((item, index) => {
+          if (index === 0) return { ...item, type: "start" };
+          if (index === newItems.length - 1) return { ...item, type: "destination" };
+          return { ...item, type: "waypoint" };
+        });
       });
     }
   };
@@ -58,26 +71,48 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
   const handleSwap = () => {
     setLocations((prev) => {
       if (prev.length < 2) return prev;
-      const newArr = [...prev];
-      const temp = newArr[0];
-      newArr[0] = newArr[newArr.length - 1];
-      newArr[newArr.length - 1] = temp;
-      return newArr;
+      const newItems = [...prev];
+      const start = { ...newItems[0] };
+      const end = { ...newItems[newItems.length - 1] };
+      
+      newItems[0] = end;
+      newItems[newItems.length - 1] = start;
+      
+      return newItems.map((item, index) => {
+        if (index === 0) return { ...item, type: "start" };
+        if (index === newItems.length - 1) return { ...item, type: "destination" };
+        return { ...item, type: "waypoint" };
+      });
     });
   };
 
   const addWaypoint = () => {
     setLocations((prev) => {
-      const newArr = [...prev];
-      // Insert before the last item (destination)
-      const waypoint = { 
-        id: `waypoint-${Date.now()}`, 
-        type: "waypoint", 
-        label: `Durak ${prev.length - 1}`, 
-        value: "" 
+      const newItems = [...prev];
+      const newWaypoint = {
+        id: `waypoint-${Date.now()}`,
+        type: "waypoint",
+        value: "",
       };
-      newArr.splice(newArr.length - 1, 0, waypoint);
-      return newArr;
+      
+      newItems.splice(newItems.length - 1, 0, newWaypoint);
+      
+      return newItems.map((item, index) => {
+        if (index === 0) return { ...item, type: "start" };
+        if (index === newItems.length - 1) return { ...item, type: "destination" };
+        return { ...item, type: "waypoint" };
+      });
+    });
+  };
+
+  const removeWaypoint = (id) => {
+    setLocations(prev => {
+      const filtered = prev.filter(loc => loc.id !== id);
+      return filtered.map((item, index) => {
+        if (index === 0) return { ...item, type: "start" };
+        if (index === filtered.length - 1) return { ...item, type: "destination" };
+        return { ...item, type: "waypoint" };
+      });
     });
   };
 
@@ -85,66 +120,135 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
     setLocations(prev => prev.map(loc => 
       loc.id === id ? { ...loc, value: address, coords } : loc
     ));
-    setActiveSearchItem(null); // Close modal
+    setActiveSearchItem(null);
+  };
+
+  const dropAnimation = {
+    sideEffects: defaultDropAnimationSideEffects({
+      styles: { active: { opacity: '0.5' } },
+    }),
   };
 
   return (
-    <div className="glass-panel w-full sm:w-[380px] p-5 pointer-events-auto flex flex-col gap-5 relative">
-      <div className="flex items-center justify-between mb-1">
-        <h2 className="text-xl font-semibold tracking-tight text-white">Rota Planlama</h2>
+    <div className="glass-panel w-full sm:w-[400px] p-6 pointer-events-auto flex flex-col gap-6 relative">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold tracking-tight text-white/90">Rota Planlama</h2>
       </div>
 
-      <div className="relative flex flex-col gap-4">
+      <div className="relative flex flex-col gap-3">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
+          modifiers={[restrictToVerticalAxis]}
         >
           <SortableContext
-            items={locations}
+            items={locations.map(l => l.id)}
             strategy={verticalListSortingStrategy}
           >
-            {locations.map((loc, index) => {
-              const dynPlaceholder = index === 0 
-                ? "Başlangıç Noktası" 
-                : index === locations.length - 1 
-                  ? "Varış Noktası" 
-                  : `Durak ${index}`;
+            <div className="flex flex-col gap-3">
+              <AnimatePresence initial={false}>
+                {locations.map((loc, index) => {
+                  const isFirst = index === 0;
+                  const isLast = index === locations.length - 1;
+                  const label = isFirst ? "Başlangıç Noktası" : isLast ? "Varış Noktası" : `Durak ${index}`;
 
-              return (
-                <LocationItem 
-                  key={loc.id} 
-                  id={loc.id} 
-                  item={loc}
-                  placeholder={dynPlaceholder}
-                  isFirst={index === 0}
-                  isLast={index === locations.length - 1}
-                  onClickInput={() => setActiveSearchItem(loc)}
-                />
-              );
-            })}
+                  return (
+                    <LocationItem 
+                      key={loc.id} 
+                      id={loc.id} 
+                      item={loc}
+                      placeholder={label}
+                      isFirst={isFirst}
+                      isLast={isLast}
+                      onClickInput={() => setActiveSearchItem(loc)}
+                      onRemove={removeWaypoint}
+                      isOverlay={false}
+                      rightAction={
+                        index === 0 && locations.length > 2 ? (
+                          <button
+                            type="button"
+                            onClick={handleSwap}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            className="w-8 h-8 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
+                          >
+                            <ArrowDownUp size={14} />
+                          </button>
+                        ) : !isFirst && !isLast ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeWaypoint(loc.id);
+                            }}
+                            className="w-8 h-8 flex items-center justify-center text-white/10 hover:text-red-400 p-1.5 transition-colors"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        ) : (
+                          <div className="w-8" />
+                        )
+                      }
+                    />
+                  );
+                })}
+              </AnimatePresence>
+            </div>
           </SortableContext>
+          
+          <DragOverlay dropAnimation={dropAnimation}>
+            {activeId ? (
+              <div className="opacity-80">
+                <LocationItem 
+                  id={activeId}
+                  item={locations.find(l => l.id === activeId)}
+                  placeholder=""
+                  isFirst={locations.findIndex(l => l.id === activeId) === 0}
+                  isLast={locations.findIndex(l => l.id === activeId) === locations.length - 1}
+                  onClickInput={() => {}}
+                  onRemove={() => {}}
+                  isOverlay
+                  rightAction={<div className="w-8" />}
+                />
+              </div>
+            ) : null}
+          </DragOverlay>
         </DndContext>
 
-        <button 
-          onClick={handleSwap}
-          className="absolute right-6 top-[28px] bg-zinc-800 text-white hover:text-white border border-white/20 p-2 rounded-full transition-all duration-200 active:scale-90 hover:bg-zinc-700 shadow-xl z-10"
-        >
-          <ArrowDownUp size={14} />
-        </button>
+        {locations.length === 2 && (
+          <motion.div
+            layout
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-20"
+          >
+            <button 
+              type="button"
+              onClick={handleSwap}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="w-8 h-8 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-full transition-all duration-200 active:scale-90"
+            >
+              <ArrowDownUp size={14} />
+            </button>
+          </motion.div>
+        )}
       </div>
 
-      <div className="flex flex-row gap-3 mt-2">
+      <div className="flex flex-col gap-3">
         <Button 
           variant="outline" 
           onClick={addWaypoint}
-          className="flex-1 bg-white/5 border-white/10 hover:bg-white/10 hover:text-white transition-all duration-200 active:scale-95 rounded-xl h-11"
+          className="w-full bg-white/5 border-white/10 hover:bg-white/10 hover:text-white transition-all duration-200 active:scale-[0.98] rounded-2xl h-12 text-white/80 group"
         >
-          + Durak Ekle
+          <Plus size={18} className="mr-2 group-hover:rotate-90 transition-transform duration-300" />
+          Durak Ekle
         </Button>
+        
         <Button 
           onClick={onOpenRouteSettings}
-          className="flex-[1.2] bg-white text-black hover:bg-zinc-200 transition-all duration-200 active:scale-95 border-0 shadow-lg rounded-xl h-11 font-semibold"
+          className="w-full bg-white text-black hover:bg-zinc-200 transition-all duration-200 active:scale-[0.98] border-0 shadow-lg rounded-2xl h-12 font-bold text-base"
         >
           Rota Ayarları
         </Button>
