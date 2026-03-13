@@ -26,11 +26,19 @@ export function LocationItemUI({
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, height: 0, overflow: 'hidden', marginBottom: 0 }}
+      transition={{ 
+        layout: { type: "spring", stiffness: 300, damping: 30 },
+        opacity: { duration: 0.2 }
+      }}
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ 
+        opacity: 0, 
+        scale: 0.95,
+        transition: { duration: 0.2 }
+      }}
       className={cn(
-        "group flex flex-row items-center gap-0 transition-all duration-200 p-1 border rounded-3xl",
+        "group flex flex-row items-center gap-0 transition-all duration-200 p-0.5 border rounded-3xl",
         isDragging 
           ? "scale-105 shadow-2xl border-white/40 cursor-grabbing" 
           : "border-transparent opacity-100"
@@ -39,7 +47,7 @@ export function LocationItemUI({
       <button
         {...dragHandleProps}
         type="button"
-        className="text-white/70 hover:text-white cursor-grab active:cursor-grabbing p-0 pl-1 rounded-xl transition-all hover:bg-white/10 shrink-0"
+        className="text-white/70 hover:text-white cursor-grab active:cursor-grabbing p-0 pl-1 rounded-xl transition-all shrink-0"
       >
         <GripVertical size={18} />
       </button>
