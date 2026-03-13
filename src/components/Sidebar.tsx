@@ -153,7 +153,7 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
                   {locations.map((loc, index) => {
                     const isFirst = index === 0;
                     const isLast = index === locations.length - 1;
-                    const label = isFirst ? "Başlangıç Noktası" : isLast ? "Varış Noktası" : `Durak ${index}`;
+                    const label = isFirst ? "Başlangıç Noktası" : isLast ? "Varış Noktası" : locations.length === 3 ? "Durak" : `${index}. Durak`;
 
                     return (
                       <LocationItem
@@ -163,7 +163,7 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
                         placeholder={label}
                         isFirst={isFirst}
                         isLast={isLast}
-                        onClickInput={() => setActiveSearchItem(loc)}
+                        onClickInput={() => setActiveSearchItem({ ...loc, currentIndex: index, totalCount: locations.length })}
                         rightAction={
                           index === 0 && locations.length > 2 ? (
                             <motion.div

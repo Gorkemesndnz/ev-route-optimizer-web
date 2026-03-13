@@ -1,3 +1,4 @@
+import { APIProvider } from "@vis.gl/react-google-maps";
 import BackgroundMap from "./components/BackgroundMap";
 import Sidebar from "./components/Sidebar";
 import VehicleCard from "./components/VehicleCard";
@@ -16,9 +17,10 @@ function App() {
   const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "AIzaSy_demo";
 
   return (
-    <div className="relative w-screen h-[100svh] overflow-hidden bg-zinc-950">
-      {/* 1. Background Map */}
-      <BackgroundMap apiKey={API_KEY} />
+    <APIProvider apiKey={API_KEY}>
+      <div className="relative w-screen h-[100svh] overflow-hidden bg-zinc-950">
+        {/* 1. Background Map */}
+        <BackgroundMap />
 
       {/* Floating UI Elements */}
       <div className="absolute inset-0 pointer-events-none p-4 md:p-6 lg:p-8 flex flex-col gap-6 z-10 items-start justify-start">
@@ -57,7 +59,8 @@ function App() {
         onClose={() => setVehicleSettingsOpen(false)} 
       />
 
-    </div>
+      </div>
+    </APIProvider>
   );
 }
 
