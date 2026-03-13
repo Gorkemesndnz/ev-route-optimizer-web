@@ -232,7 +232,7 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
       </div>
 
       {/* Quick Actions Row */}
-      <div className="flex justify-between items-center px-2 mt-3">
+      <div className="flex justify-between items-center px-2 mt-2">
         <button 
           onClick={addWaypoint}
           className="text-sm font-medium text-white/70 hover:text-white transition-colors flex items-center gap-1"
@@ -247,7 +247,7 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
       </div>
 
       {/* Primary Action Row */}
-      <div className="flex gap-3 mt-4">
+      <div className="flex gap-3 mt-3">
         <button 
           onClick={onOpenRouteSettings}
           className="p-3 bg-white/10 hover:bg-white/20 rounded-2xl text-white transition-all"
