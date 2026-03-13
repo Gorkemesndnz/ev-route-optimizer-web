@@ -148,7 +148,7 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
             strategy={verticalListSortingStrategy}
           >
             <LayoutGroup id="route-planning">
-              <div className="relative flex flex-col gap-3">
+              <div className="relative flex flex-col gap-2">
                 <AnimatePresence initial={false}>
                   {locations.map((loc, index) => {
                     const isFirst = index === 0;
@@ -232,29 +232,29 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
       </div>
 
       {/* Quick Actions Row */}
-      <div className="flex justify-between items-center px-2 mt-2">
-        <button 
+      <div className="flex justify-between items-center px-2 mt-1">
+        <button
           onClick={addWaypoint}
           className="text-sm font-medium text-white/70 hover:text-white transition-colors flex items-center gap-1"
         >
-          <Plus size={16}/> Durak Ekle
+          <Plus size={16} /> Durak Ekle
         </button>
-        <button 
+        <button
           className="text-sm font-medium text-white/70 hover:text-white transition-colors flex items-center gap-1"
         >
-          <Bookmark size={16}/> Kayıtlı Rotalar
+          <Bookmark size={16} /> Kayıtlı Rotalar
         </button>
       </div>
 
       {/* Primary Action Row */}
-      <div className="flex gap-3 mt-3">
-        <button 
+      <div className="flex gap-3 mt-2">
+        <button
           onClick={onOpenRouteSettings}
           className="p-3 bg-white/10 hover:bg-white/20 rounded-2xl text-white transition-all"
         >
-          <Settings size={20}/>
+          <Settings size={20} />
         </button>
-        <button 
+        <button
           className="flex-1 py-3 bg-white text-black font-semibold rounded-2xl hover:bg-gray-200 transition-all flex justify-center items-center gap-2"
         >
           Rotayı Planla
