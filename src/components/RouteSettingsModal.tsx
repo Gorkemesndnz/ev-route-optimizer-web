@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent } from "./ui/dialog";
-import { X, Zap, BatteryMedium, Calendar, MapPin } from "lucide-react";
+import { Slider } from "./ui/slider";
+import { X, Zap, BatteryMedium, Calendar, MapPin, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const CustomSwitch = ({ checked, onChange }: { checked: boolean, onChange: (val: boolean) => void }) => {
@@ -24,6 +25,13 @@ const CustomSwitch = ({ checked, onChange }: { checked: boolean, onChange: (val:
 
 export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const [sarjSikligi, setSarjSikligi] = useState<"optimal" | "az" | "sik">("optimal");
+  const [varisSarj, setVarisSarj] = useState(20);
+  const [yolaCikisTarihi, setYolaCikisTarihi] = useState(new Date().toISOString().split('T')[0]);
+  const [yolaCikisSaati, setYolaCikisSaati] = useState("10:00");
+  
+  const [istasyonVarisSarj, setIstasyonVarisSarj] = useState(10);
+  const [istasyonAyrisSarj, setIstasyonAyrisSarj] = useState(80);
+
   const [toggles, setToggles] = useState({
     devletOtoyollari: true,
     feribot: false,
@@ -94,18 +102,22 @@ export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolea
             </div>
 
             {/* Varış Şarj Durumu */}
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <BatteryMedium size={18} className="text-blue-400" />
                   <span className="text-white font-semibold text-[15px]">Varış Şarj Durumu</span>
                 </div>
-                <span className="font-bold text-[15px] text-blue-400">20%</span>
+                <span className="font-bold text-[15px] text-blue-400">%{varisSarj}</span>
               </div>
-              <div className="relative w-full h-2.5 bg-black/40 rounded-full mt-2 border border-white/5 shadow-inner">
-                <div className="absolute left-0 top-0 h-full rounded-full w-[20%] bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
-                <div className="absolute top-1/2 -translate-y-1/2 left-[20%] w-6 h-6 rounded-full bg-white border-4 border-blue-500 shadow-md transform -translate-x-1/2 cursor-pointer transition-transform hover:scale-110"></div>
-              </div>
+              <Slider 
+                value={[varisSarj]} 
+                onValueChange={(vals) => setVarisSarj(vals[0])}
+                min={0}
+                max={100}
+                step={1}
+                className="[&_[data-slot=slider-range]]:bg-blue-500 [&_[data-slot=slider-track]]:bg-white/10 [&_[data-slot=slider-thumb]]:size-6 [&_[data-slot=slider-thumb]]:border-4 [&_[data-slot=slider-thumb]]:border-blue-500 [&_[data-slot=slider-thumb]]:bg-white"
+              />
             </div>
 
             {/* Yola Çıkış Zamanı */}
@@ -115,11 +127,23 @@ export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolea
                 <span className="text-white font-semibold text-[15px]">Yola Çıkış Zamanı</span>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-white/5 backdrop-blur-sm rounded-xl px-4 py-3.5 flex items-center justify-between text-white/50 text-sm border border-white/10 hover:border-white/20 transition-colors cursor-pointer">
-                  gg.aa.yyyy <Calendar size={14} className="text-white/40" />
+                <div className="relative group">
+                  <input 
+                    type="date" 
+                    value={yolaCikisTarihi}
+                    onChange={(e) => setYolaCikisTarihi(e.target.value)}
+                    className="w-full bg-white/5 backdrop-blur-sm rounded-xl px-4 py-3.5 text-white/70 text-sm border border-white/10 focus:outline-none focus:border-blue-500/50 transition-all cursor-pointer [appearance:none] [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                  />
+                  <Calendar size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none group-hover:text-blue-400 transition-colors" />
                 </div>
-                <div className="bg-white/5 backdrop-blur-sm rounded-xl px-4 py-3.5 flex items-center justify-between text-white/50 text-sm border border-white/10 hover:border-white/20 transition-colors cursor-pointer">
-                  --:-- <span className="text-[14px]">🕒</span>
+                <div className="relative group">
+                  <input 
+                    type="time" 
+                    value={yolaCikisSaati}
+                    onChange={(e) => setYolaCikisSaati(e.target.value)}
+                    className="w-full bg-white/5 backdrop-blur-sm rounded-xl px-4 py-3.5 text-white/70 text-sm border border-white/10 focus:outline-none focus:border-blue-500/50 transition-all cursor-pointer [appearance:none] [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                  />
+                  <Clock size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none group-hover:text-blue-400 transition-colors" />
                 </div>
               </div>
             </div>
@@ -164,26 +188,34 @@ export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolea
             <div className="flex flex-col gap-5">
               <span className="text-white font-semibold text-[15px]">İstasyon Şarj Limitleri</span>
               
-              <div className="flex items-center justify-between gap-6 bg-white/5 border border-white/10 p-4 rounded-2xl shadow-inner">
-                <div className="flex-1 flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-6 bg-white/5 border border-white/10 p-5 rounded-2xl shadow-inner">
+                <div className="flex-1 flex flex-col gap-4">
                   <span className="text-white/50 text-xs font-semibold uppercase tracking-wider">Varış %</span>
                   <div className="flex items-center gap-3">
-                    <div className="relative w-full h-2.5 bg-black/40 rounded-full border border-white/5">
-                      <div className="absolute left-0 top-0 h-full rounded-full w-[10%] bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
-                      <div className="absolute top-1/2 -translate-y-1/2 left-[10%] w-5 h-5 rounded-full bg-white border-4 border-blue-500 transform -translate-x-1/2"></div>
-                    </div>
-                    <span className="text-white font-bold text-sm">10%</span>
+                    <Slider 
+                      value={[istasyonVarisSarj]} 
+                      onValueChange={(vals) => setIstasyonVarisSarj(vals[0])}
+                      min={0}
+                      max={50}
+                      step={1}
+                      className="[&_[data-slot=slider-range]]:bg-blue-500 [&_[data-slot=slider-track]]:bg-white/10 [&_[data-slot=slider-thumb]]:size-5 [&_[data-slot=slider-thumb]]:border-[3px] [&_[data-slot=slider-thumb]]:border-blue-500 [&_[data-slot=slider-thumb]]:bg-white"
+                    />
+                    <span className="text-white font-bold text-sm w-8">%{istasyonVarisSarj}</span>
                   </div>
                 </div>
                 
-                <div className="flex-1 flex flex-col gap-3">
+                <div className="flex-1 flex flex-col gap-4 border-l border-white/5 pl-6">
                   <span className="text-white/50 text-xs font-semibold uppercase tracking-wider">Ayrılış %</span>
                   <div className="flex items-center gap-3">
-                    <div className="relative w-full h-2.5 bg-black/40 rounded-full border border-white/5">
-                      <div className="absolute left-0 top-0 h-full rounded-full w-[80%] bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
-                      <div className="absolute top-1/2 -translate-y-1/2 left-[80%] w-5 h-5 rounded-full bg-white border-4 border-blue-500 transform -translate-x-1/2"></div>
-                    </div>
-                    <span className="text-white font-bold text-sm w-8">80%</span>
+                    <Slider 
+                      value={[istasyonAyrisSarj]} 
+                      onValueChange={(vals) => setIstasyonAyrisSarj(vals[0])}
+                      min={50}
+                      max={100}
+                      step={1}
+                      className="[&_[data-slot=slider-range]]:bg-blue-500 [&_[data-slot=slider-track]]:bg-white/10 [&_[data-slot=slider-thumb]]:size-5 [&_[data-slot=slider-thumb]]:border-[3px] [&_[data-slot=slider-thumb]]:border-blue-500 [&_[data-slot=slider-thumb]]:bg-white"
+                    />
+                    <span className="text-white font-bold text-sm w-8">%{istasyonAyrisSarj}</span>
                   </div>
                 </div>
               </div>
