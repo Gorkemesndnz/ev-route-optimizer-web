@@ -21,7 +21,7 @@ import {
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { cn } from "@/lib/utils";
 
-import { LocationItem } from "./LocationItem";
+import { LocationItem, LocationItemUI } from "./LocationItem";
 import { LocationSearchModal } from "./LocationSearchModal";
 
 export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: () => void }) {
@@ -148,8 +148,8 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
             strategy={verticalListSortingStrategy}
           >
             <LayoutGroup id="route-planning">
-              <motion.div layout className="relative flex flex-col gap-3">
-              <AnimatePresence initial={false}>
+              <div className="relative flex flex-col gap-3">
+                <AnimatePresence initial={false}>
                 {locations.map((loc, index) => {
                   const isFirst = index === 0;
                   const isLast = index === locations.length - 1;
@@ -164,8 +164,6 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
                       isFirst={isFirst}
                       isLast={isLast}
                       onClickInput={() => setActiveSearchItem(loc)}
-                      onRemove={removeWaypoint}
-                      isOverlay={false}
                       rightAction={
                         index === 0 && locations.length > 2 ? (
                           <motion.div
@@ -219,22 +217,20 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
                   </motion.div>
                 )}
               </AnimatePresence>
-              </motion.div>
+              </div>
             </LayoutGroup>
           </SortableContext>
           
           <DragOverlay dropAnimation={dropAnimation}>
             {activeId ? (
               <div className="opacity-80">
-                <LocationItem 
-                  id={activeId}
+                <LocationItemUI 
                   item={locations.find(l => l.id === activeId)}
                   placeholder=""
                   isFirst={locations.findIndex(l => l.id === activeId) === 0}
                   isLast={locations.findIndex(l => l.id === activeId) === locations.length - 1}
+                  isDragging={true}
                   onClickInput={() => {}}
-                  onRemove={() => {}}
-                  isOverlay
                   rightAction={<div className="w-8" />}
                 />
               </div>
