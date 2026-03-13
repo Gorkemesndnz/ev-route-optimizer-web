@@ -2,10 +2,7 @@ import { useState } from "react";
 import { Dialog, DialogContent } from "./ui/dialog";
 import { X, Zap, BatteryMedium, Calendar as CalendarIcon, MapPin, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
-import { tr } from "date-fns/locale";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { Calendar } from "./ui/calendar";
+
 
 const CustomSwitch = ({ checked, onChange }: { checked: boolean, onChange: (val: boolean) => void }) => {
   return (
@@ -57,7 +54,7 @@ export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolea
   const [varisSarj, setVarisSarj] = useState(20);
   
   // Takvim ve Saat state'leri
-  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [yolaCikisSaati, setYolaCikisSaati] = useState("10:00");
   
   const [istasyonVarisSarj, setIstasyonVarisSarj] = useState(10);
@@ -142,17 +139,7 @@ export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolea
                 {/* Elle yazılabilen % Input */}
                 <div className="flex items-center">
                   <span className="text-blue-400 font-bold mr-0.5">%</span>
-                  <input 
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={varisSarj}
-                    onChange={(e) => {
-                      const val = Number(e.target.value);
-                      if(val >= 0 && val <= 100) setVarisSarj(val);
-                    }}
-                    className="w-8 bg-transparent text-blue-400 font-bold text-[15px] focus:outline-none focus:border-b focus:border-blue-400/50 text-center"
-                  />
+                  <span className="w-8 text-blue-400 font-bold text-[15px] text-center">{varisSarj}</span>
                 </div>
               </div>
               <NativeSlider 
@@ -170,43 +157,18 @@ export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolea
                 <span className="text-white font-semibold text-[15px]">Yola Çıkış Zamanı</span>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                {/* Takvim Popover */}
-                <Popover>
-                  <PopoverTrigger className={cn(
-                      "w-full bg-white/5 backdrop-blur-sm rounded-xl px-4 py-3.5 flex items-center justify-between text-white/70 text-sm border border-white/10 hover:border-white/20 transition-colors cursor-pointer text-left",
-                      !date && "text-white/40"
-                    )}>
-                      {date ? format(date, "PPP", { locale: tr }) : <span>Tarih Seç</span>}
-                      <CalendarIcon size={14} className="text-white/40 group-hover:text-blue-400 transition-colors shrink-0 ml-2" />
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-transparent border-none z-[200]" side="bottom">
-                    <div className="bg-[#1c1c1e] text-white border border-white/10 shadow-xl rounded-2xl overflow-hidden p-1">
-                      <Calendar
-                        mode="single"
-                        selected={date}
-                        onSelect={setDate}
-                        initialFocus
-                        className="bg-transparent text-white"
-                        classNames={{
-                          cell: "text-white flex-1 data-[selected=true]:bg-blue-500 data-[selected=true]:text-white rounded-md",
-                          day_selected: "bg-blue-500 text-white hover:bg-blue-600 hover:text-white focus:bg-blue-500 focus:text-white",
-                          nav_button: "hover:bg-white/10 text-white",
-                          caption_label: "text-white font-medium"
-                        }}
-                      />
-                    </div>
-                  </PopoverContent>
-                </Popover>
-
-                <div className="relative group">
-                  <input 
-                    type="time" 
-                    value={yolaCikisSaati}
-                    onChange={(e) => setYolaCikisSaati(e.target.value)}
-                    className="w-full bg-white/5 backdrop-blur-sm rounded-xl px-4 py-3.5 text-white/70 text-sm border border-white/10 focus:outline-none focus:border-blue-500/50 transition-all cursor-pointer [appearance:none] [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                  />
-                  <Clock size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none group-hover:text-blue-400 transition-colors" />
-                </div>
+                <input 
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="w-full bg-white/5 backdrop-blur-sm rounded-xl px-4 py-3.5 text-white/70 text-sm border border-white/10 focus:outline-none focus:border-blue-500/50 transition-all [color-scheme:dark]"
+                />
+                <input 
+                  type="time" 
+                  value={yolaCikisSaati}
+                  onChange={(e) => setYolaCikisSaati(e.target.value)}
+                  className="w-full bg-white/5 backdrop-blur-sm rounded-xl px-4 py-3.5 text-white/70 text-sm border border-white/10 focus:outline-none focus:border-blue-500/50 transition-all [color-scheme:dark]"
+                />
               </div>
             </div>
 
@@ -256,17 +218,7 @@ export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolea
                     <span className="text-white/50 text-xs font-semibold uppercase tracking-wider">Varış</span>
                     <div className="flex items-center">
                       <span className="text-white font-bold text-sm">%</span>
-                      <input 
-                        type="number"
-                        min={0}
-                        max={100}
-                        value={istasyonVarisSarj}
-                        onChange={(e) => {
-                          const val = Number(e.target.value);
-                          if(val >= 0 && val <= 100) setIstasyonVarisSarj(val);
-                        }}
-                        className="w-8 bg-transparent text-white font-bold text-sm focus:outline-none focus:border-b focus:border-white/50 text-center"
-                      />
+                      <span className="w-8 text-white font-bold text-sm text-center">{istasyonVarisSarj}</span>
                     </div>
                   </div>
                   <NativeSlider 
@@ -282,17 +234,7 @@ export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolea
                     <span className="text-white/50 text-xs font-semibold uppercase tracking-wider">Ayrılış</span>
                     <div className="flex items-center">
                       <span className="text-white font-bold text-sm">%</span>
-                      <input 
-                        type="number"
-                        min={0}
-                        max={100}
-                        value={istasyonAyrisSarj}
-                        onChange={(e) => {
-                          const val = Number(e.target.value);
-                          if(val >= 0 && val <= 100) setIstasyonAyrisSarj(val);
-                        }}
-                        className="w-8 bg-transparent text-white font-bold text-sm focus:outline-none focus:border-b focus:border-white/50 text-center"
-                      />
+                      <span className="w-8 text-white font-bold text-sm text-center">{istasyonAyrisSarj}</span>
                     </div>
                   </div>
                   <NativeSlider 
@@ -315,10 +257,10 @@ export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolea
               <div className="mt-1 w-full pl-0.5">
                 <span className="text-white/40 text-[12px] font-medium mb-3 block">Sık tercih edilenler</span>
                 
-                {/* 4 4 Alt alta dizilecek Flex Wrap yapısı */}
-                <div className="flex flex-wrap gap-2.5 w-full">
-                  {['ZES', 'Eşarj', 'Sharz', 'Trugo', 'Voltrun', 'Tesla', 'Wat', 'DB'].map((brand, i) => (
-                    <button key={brand} className="bg-white/5 hover:bg-white/15 text-white/80 transition-all py-1.5 px-4 rounded-xl text-sm border border-white/10 hover:border-white/30 hover:shadow-md">
+                {/* 4 4 Alt alta dizilecek Grid yapısı */}
+                <div className="grid grid-cols-4 gap-2.5 w-full">
+                  {['ZES', 'Eşarj', 'Sharz', 'Trugo', 'Voltrun', 'Tesla', 'Wat', 'DB'].map((brand) => (
+                    <button key={brand} className="bg-white/5 hover:bg-white/15 text-white/80 transition-all py-1.5 rounded-xl text-sm border border-white/10 hover:border-white/30 hover:shadow-md text-center">
                       {brand}
                     </button>
                   ))}
