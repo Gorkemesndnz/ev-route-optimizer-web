@@ -4,17 +4,31 @@ import { GripVertical, MapPin, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-// 1. Saf UI Bileşeni (Hiçbir DND hook'u içermez)
-export function LocationItemUI({
+export function LocationItem({
+  id,
   item,
   placeholder,
   isFirst,
   isLast,
   onClickInput,
-  rightAction,
-  isDragging = false,
-  dragHandleProps = {}
+  rightAction
 }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition: transition || undefined,
+    zIndex: isDragging ? 9999 : 1,
+    position: 'relative' as const,
+  };
+
   const Icon = isFirst ? (
     <MapPin size={18} className="text-blue-400 group-hover:scale-110 transition-transform" />
   ) : isLast ? (
@@ -25,27 +39,34 @@ export function LocationItemUI({
 
   return (
     <motion.div
+      ref={setNodeRef}
+      style={style}
       layout
       transition={{ 
         layout: { type: "spring", stiffness: 300, damping: 30 },
-        opacity: { duration: 0.2 }
+        opacity: { duration: 0.2 },
+        height: { duration: 0.2 }
       }}
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
+      initial={{ opacity: 0, height: 0, scale: 0.95 }}
+      animate={{ opacity: isDragging ? 0.9 : 1, height: "auto", scale: 1 }}
       exit={{ 
         opacity: 0, 
+        height: 0, 
         scale: 0.95,
-        transition: { duration: 0.2 }
+        marginTop: 0,
+        marginBottom: 0,
+        overflow: "hidden"
       }}
       className={cn(
-        "group flex flex-row items-center gap-0 transition-all duration-200 p-0.5 border rounded-3xl",
+        "w-full group flex flex-row items-center gap-0 transition-colors duration-200 p-0.5 border rounded-3xl",
         isDragging 
-          ? "scale-105 shadow-2xl border-white/40 cursor-grabbing" 
-          : "border-transparent opacity-100"
+          ? "shadow-2xl border-white/40 cursor-grabbing bg-black/20" 
+          : "border-transparent bg-transparent"
       )}
     >
       <button
-        {...dragHandleProps}
+        {...attributes}
+        {...listeners}
         type="button"
         className="text-white/70 hover:text-white cursor-grab active:cursor-grabbing p-0 pl-1 rounded-xl transition-all shrink-0"
       >
@@ -73,52 +94,5 @@ export function LocationItemUI({
         {rightAction}
       </div>
     </motion.div>
-  );
-}
-
-// 2. Sortable Sarmalayıcı Bileşen
-export function LocationItem({
-  id,
-  item,
-  placeholder,
-  isFirst,
-  isLast,
-  onClickInput,
-  rightAction
-}) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition: transition || undefined,
-    zIndex: isDragging ? 9999 : 1,
-    position: 'relative' as const,
-    opacity: isDragging ? 0.9 : 1,
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className="w-full transition-opacity duration-200"
-    >
-      <LocationItemUI
-        item={item}
-        placeholder={placeholder}
-        isFirst={isFirst}
-        isLast={isLast}
-        onClickInput={onClickInput}
-        rightAction={rightAction}
-        isDragging={isDragging}
-        dragHandleProps={{ ...attributes, ...listeners }}
-      />
-    </div>
   );
 }

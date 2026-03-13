@@ -21,7 +21,7 @@ import {
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { cn } from "@/lib/utils";
 
-import { LocationItem, LocationItemUI } from "./LocationItem";
+import { LocationItem } from "./LocationItem";
 import { LocationSearchModal } from "./LocationSearchModal";
 
 export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: () => void }) {
