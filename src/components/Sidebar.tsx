@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowDownUp, Plus, Trash2 } from "lucide-react";
+import { ArrowDownUp, Plus, Trash2, Bookmark, Settings, Play } from "lucide-react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { Button } from "./ui/button";
 import {
@@ -231,22 +231,34 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
 
       </div>
 
-      <div className="flex flex-row gap-3">
-        <Button
-          variant="outline"
+      {/* Quick Actions Row */}
+      <div className="flex justify-between items-center px-2 mt-3">
+        <button 
           onClick={addWaypoint}
-          className="flex-1 bg-white/5 border-white/10 hover:bg-white/10 hover:text-white transition-all duration-200 active:scale-[0.98] rounded-2xl h-12 text-white/80 group"
+          className="text-sm font-medium text-white/70 hover:text-white transition-colors flex items-center gap-1"
         >
-          <Plus size={18} className="mr-2 group-hover:rotate-90 transition-transform duration-300" />
-          Durak Ekle
-        </Button>
+          <Plus size={16}/> Durak Ekle
+        </button>
+        <button 
+          className="text-sm font-medium text-white/70 hover:text-white transition-colors flex items-center gap-1"
+        >
+          <Bookmark size={16}/> Kayıtlı Rotalar
+        </button>
+      </div>
 
-        <Button
+      {/* Primary Action Row */}
+      <div className="flex gap-3 mt-4">
+        <button 
           onClick={onOpenRouteSettings}
-          className="flex-1 bg-white text-black hover:bg-zinc-200 transition-all duration-200 active:scale-[0.98] border-0 shadow-lg rounded-2xl h-12 font-bold text-base"
+          className="p-3 bg-white/10 hover:bg-white/20 rounded-2xl text-white transition-all"
         >
-          Rota Ayarları
-        </Button>
+          <Settings size={20}/>
+        </button>
+        <button 
+          className="flex-1 py-3 bg-white text-black font-semibold rounded-2xl hover:bg-gray-200 transition-all flex justify-center items-center gap-2"
+        >
+          Rotayı Planla
+        </button>
       </div>
 
       {activeSearchItem && (
