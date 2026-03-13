@@ -5,12 +5,12 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 // 1. Saf UI Bileşeni (Hiçbir DND hook'u içermez)
-export function LocationItemUI({ 
-  item, 
-  placeholder, 
-  isFirst, 
-  isLast, 
-  onClickInput, 
+export function LocationItemUI({
+  item,
+  placeholder,
+  isFirst,
+  isLast,
+  onClickInput,
   rightAction,
   isDragging = false,
   dragHandleProps = {}
@@ -30,7 +30,7 @@ export function LocationItemUI({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, height: 0, overflow: 'hidden', marginBottom: 0 }}
       className={cn(
-        "group flex flex-row items-center gap-2 transition-all duration-200 p-1 border rounded-3xl",
+        "group flex flex-row items-center gap-0 transition-all duration-200 p-1 border rounded-3xl",
         isDragging 
           ? "scale-105 shadow-2xl border-white/40 cursor-grabbing" 
           : "border-transparent opacity-100"
@@ -39,13 +39,13 @@ export function LocationItemUI({
       <button
         {...dragHandleProps}
         type="button"
-        className="text-white/70 hover:text-white cursor-grab active:cursor-grabbing p-2.5 rounded-xl transition-all hover:bg-white/10 shrink-0"
+        className="text-white/70 hover:text-white cursor-grab active:cursor-grabbing p-0 pl-1 rounded-xl transition-all hover:bg-white/10 shrink-0"
       >
-        <GripVertical size={20} />
+        <GripVertical size={18} />
       </button>
 
       <div className="relative flex-1">
-        <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none transition-all duration-300">
+        <div className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none transition-all duration-300">
           {Icon}
         </div>
         <input
@@ -57,11 +57,11 @@ export function LocationItemUI({
             onClickInput?.(item);
           }}
           placeholder={placeholder}
-          className="w-full bg-white/5 border border-white/10 rounded-2xl py-2.5 pl-12 pr-4 text-[15px] text-white placeholder-white/70 focus:outline-none focus:bg-white/10 focus:border-white/30 transition-all font-medium cursor-pointer hover:bg-white/[0.08] hover:border-white/20"
+          className="w-full bg-white/5 border border-white/10 rounded-2xl py-2.5 pl-9 pr-4 text-[15px] text-white placeholder-white/70 focus:outline-none focus:bg-white/10 focus:border-white/30 transition-all font-medium cursor-pointer hover:bg-white/[0.08] hover:border-white/20"
         />
       </div>
 
-      <div className="w-8 shrink-0 flex items-center justify-center">
+      <div className="w-10 shrink-0 flex items-center justify-center">
         {rightAction}
       </div>
     </motion.div>
@@ -69,22 +69,22 @@ export function LocationItemUI({
 }
 
 // 2. Sortable Sarmalayıcı Bileşen
-export function LocationItem({ 
-  id, 
-  item, 
-  placeholder, 
-  isFirst, 
-  isLast, 
-  onClickInput, 
-  rightAction 
+export function LocationItem({
+  id,
+  item,
+  placeholder,
+  isFirst,
+  isLast,
+  onClickInput,
+  rightAction
 }) {
-  const { 
-    attributes, 
-    listeners, 
-    setNodeRef, 
-    transform, 
-    transition, 
-    isDragging 
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
   } = useSortable({ id });
 
   const style = {
@@ -96,9 +96,9 @@ export function LocationItem({
   };
 
   return (
-    <div 
-      ref={setNodeRef} 
-      style={style} 
+    <div
+      ref={setNodeRef}
+      style={style}
       className="w-full transition-opacity duration-200"
     >
       <LocationItemUI

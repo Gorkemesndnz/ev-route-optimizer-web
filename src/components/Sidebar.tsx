@@ -130,7 +130,7 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
   };
 
   return (
-    <div className="glass-panel w-full sm:w-[400px] p-6 pointer-events-auto flex flex-col gap-6 relative">
+    <div className="glass-panel w-full sm:w-[400px] px-4 py-6 pointer-events-auto flex flex-col gap-6 relative">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold tracking-tight text-white/90">Rota Planlama</h2>
       </div>
@@ -176,7 +176,7 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
                                 type="button"
                                 onClick={handleSwap}
                                 onPointerDown={(e) => e.stopPropagation()}
-                                className="w-8 h-8 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
+                                className="w-10 h-10 flex items-center justify-center text-white/70 hover:text-white transition-colors"
                               >
                                 <ArrowDownUp size={14} />
                               </button>
@@ -188,12 +188,12 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
                                 e.stopPropagation();
                                 removeWaypoint(loc.id);
                               }}
-                              className="w-8 h-8 flex items-center justify-center text-white/70 hover:text-red-400 p-1.5 transition-colors"
+                              className="w-10 h-10 flex items-center justify-center text-white/50 hover:text-red-400 transition-colors"
                             >
                               <Trash2 size={16} />
                             </button>
                           ) : (
-                            <div className="w-8" />
+                            <div className="w-10" />
                           )
                         }
                       />
@@ -204,13 +204,13 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
                       layoutId="global-swap-btn"
                       layout
                       transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                      className="absolute right-0 inset-y-0 flex items-center z-10"
+                      className="absolute right-0 inset-y-0 flex items-center z-50 pointer-events-none"
                     >
                       <button
                         type="button"
                         onClick={handleSwap}
                         onPointerDown={(e) => e.stopPropagation()}
-                        className="w-8 h-8 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-full transition-all duration-200 active:scale-90"
+                        className="w-10 h-10 flex items-center justify-center text-white/70 hover:text-white transition-all duration-200 active:scale-90 pointer-events-auto"
                       >
                         <ArrowDownUp size={14} />
                       </button>
