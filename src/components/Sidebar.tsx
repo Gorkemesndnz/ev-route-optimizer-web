@@ -182,14 +182,14 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
                             </button>
                           </motion.div>
                         ) : !isFirst && !isLast ? (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeWaypoint(loc.id);
-                            }}
-                            className="w-8 h-8 flex items-center justify-center text-white/10 hover:text-red-400 p-1.5 transition-colors"
-                          >
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeWaypoint(loc.id);
+                              }}
+                              className="w-8 h-8 flex items-center justify-center text-white/70 hover:text-red-400 p-1.5 transition-colors"
+                            >
                             <Trash2 size={16} />
                           </button>
                         ) : (

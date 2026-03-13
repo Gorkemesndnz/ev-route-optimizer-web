@@ -20,7 +20,7 @@ export function LocationItemUI({
   ) : isLast ? (
     <MapPin size={18} className="text-red-400 group-hover:scale-110 transition-transform" />
   ) : (
-    <div className="w-2.5 h-2.5 rounded-full bg-white/30 group-hover:bg-white/60 transition-all border border-white/10" />
+    <div className="w-2.5 h-2.5 rounded-full bg-white/70 group-hover:bg-white/90 transition-all border border-white/20 shadow-sm" />
   );
 
   return (
@@ -39,7 +39,7 @@ export function LocationItemUI({
       <button
         {...dragHandleProps}
         type="button"
-        className="text-white/10 hover:text-white/40 cursor-grab active:cursor-grabbing p-2.5 rounded-xl transition-all hover:bg-white/5 shrink-0"
+        className="text-white/70 hover:text-white cursor-grab active:cursor-grabbing p-2.5 rounded-xl transition-all hover:bg-white/10 shrink-0"
       >
         <GripVertical size={20} />
       </button>
@@ -57,7 +57,7 @@ export function LocationItemUI({
             onClickInput?.(item);
           }}
           placeholder={placeholder}
-          className="w-full bg-white/5 border border-white/10 rounded-2xl py-2.5 pl-12 pr-4 text-[15px] text-white placeholder-white/20 focus:outline-none focus:bg-white/10 focus:border-white/30 transition-all font-medium cursor-pointer hover:bg-white/[0.08] hover:border-white/20"
+          className="w-full bg-white/5 border border-white/10 rounded-2xl py-2.5 pl-12 pr-4 text-[15px] text-white placeholder-white/70 focus:outline-none focus:bg-white/10 focus:border-white/30 transition-all font-medium cursor-pointer hover:bg-white/[0.08] hover:border-white/20"
         />
       </div>
 
