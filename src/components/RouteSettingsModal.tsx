@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { Dialog, DialogContent } from "./ui/dialog";
-import { Slider } from "./ui/slider";
-import { X, Zap, BatteryMedium, Calendar, MapPin, Clock } from "lucide-react";
+import { X, Zap, BatteryMedium, Calendar as CalendarIcon, MapPin, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { tr } from "date-fns/locale";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { Calendar } from "./ui/calendar";
 
 const CustomSwitch = ({ checked, onChange }: { checked: boolean, onChange: (val: boolean) => void }) => {
   return (
@@ -23,10 +26,37 @@ const CustomSwitch = ({ checked, onChange }: { checked: boolean, onChange: (val:
   );
 };
 
+// %100 Native çalışan, tamamen hatasız kaydırma (drag) sağlayan özel Slider.
+const NativeSlider = ({ value, min, max, onChange }: { value: number, min: number, max: number, onChange: (v: number) => void }) => {
+  const percentage = ((value - min) / (max - min)) * 100;
+  return (
+    <div className="relative w-full h-3 bg-black/40 rounded-full border border-white/5 shadow-inner flex items-center">
+      <div 
+        className="absolute left-0 h-full bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)] pointer-events-none transition-all duration-75" 
+        style={{ width: `${percentage}%` }} 
+      />
+      <input 
+        type="range" 
+        min={min} 
+        max={max} 
+        value={value} 
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="absolute w-full h-full opacity-0 cursor-ew-resize z-10 m-0 p-0"
+      />
+      <div 
+        className="absolute w-6 h-6 bg-white border-4 border-blue-500 rounded-full shadow-md transform -translate-x-1/2 pointer-events-none transition-all duration-75" 
+        style={{ left: `${percentage}%` }}
+      />
+    </div>
+  );
+};
+
 export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const [sarjSikligi, setSarjSikligi] = useState<"optimal" | "az" | "sik">("optimal");
   const [varisSarj, setVarisSarj] = useState(20);
-  const [yolaCikisTarihi, setYolaCikisTarihi] = useState(new Date().toISOString().split('T')[0]);
+  
+  // Takvim ve Saat state'leri
+  const [date, setDate] = useState<Date | undefined>(new Date());
   const [yolaCikisSaati, setYolaCikisSaati] = useState("10:00");
   
   const [istasyonVarisSarj, setIstasyonVarisSarj] = useState(10);
@@ -108,34 +138,67 @@ export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolea
                   <BatteryMedium size={18} className="text-blue-400" />
                   <span className="text-white font-semibold text-[15px]">Varış Şarj Durumu</span>
                 </div>
-                <span className="font-bold text-[15px] text-blue-400">%{varisSarj}</span>
+                {/* Elle yazılabilen % Input */}
+                <div className="flex items-center">
+                  <span className="text-blue-400 font-bold mr-0.5">%</span>
+                  <input 
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={varisSarj}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      if(val >= 0 && val <= 100) setVarisSarj(val);
+                    }}
+                    className="w-8 bg-transparent text-blue-400 font-bold text-[15px] focus:outline-none focus:border-b focus:border-blue-400/50 text-center"
+                  />
+                </div>
               </div>
-              <Slider 
-                value={[varisSarj]} 
-                onValueChange={(vals) => setVarisSarj(vals[0])}
-                min={0}
-                max={100}
-                step={1}
-                className="[&_[data-slot=slider-range]]:bg-blue-500 [&_[data-slot=slider-track]]:bg-white/10 [&_[data-slot=slider-thumb]]:size-6 [&_[data-slot=slider-thumb]]:border-4 [&_[data-slot=slider-thumb]]:border-blue-500 [&_[data-slot=slider-thumb]]:bg-white"
+              <NativeSlider 
+                value={varisSarj} 
+                min={0} 
+                max={100} 
+                onChange={setVarisSarj} 
               />
             </div>
 
             {/* Yola Çıkış Zamanı */}
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2">
-                <Calendar size={18} className="text-blue-400" />
+                <CalendarIcon size={18} className="text-blue-400" />
                 <span className="text-white font-semibold text-[15px]">Yola Çıkış Zamanı</span>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="relative group">
-                  <input 
-                    type="date" 
-                    value={yolaCikisTarihi}
-                    onChange={(e) => setYolaCikisTarihi(e.target.value)}
-                    className="w-full bg-white/5 backdrop-blur-sm rounded-xl px-4 py-3.5 text-white/70 text-sm border border-white/10 focus:outline-none focus:border-blue-500/50 transition-all cursor-pointer [appearance:none] [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                  />
-                  <Calendar size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none group-hover:text-blue-400 transition-colors" />
-                </div>
+                {/* Takvim Popover */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className={cn(
+                      "w-full bg-white/5 backdrop-blur-sm rounded-xl px-4 py-3.5 flex items-center justify-between text-white/70 text-sm border border-white/10 hover:border-white/20 transition-colors cursor-pointer text-left",
+                      !date && "text-white/40"
+                    )}>
+                      {date ? format(date, "PPP", { locale: tr }) : <span>Tarih Seç</span>}
+                      <CalendarIcon size={14} className="text-white/40 group-hover:text-blue-400 transition-colors shrink-0 ml-2" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-transparent border-none z-[200]">
+                    <div className="bg-[#1c1c1e] text-white border border-white/10 shadow-xl rounded-2xl overflow-hidden p-1">
+                      <Calendar
+                        mode="single"
+                        selected={date}
+                        onSelect={setDate}
+                        initialFocus
+                        className="bg-transparent text-white"
+                        classNames={{
+                          cell: "text-white data-[selected=true]:bg-blue-500 data-[selected=true]:text-white rounded-md",
+                          day_selected: "bg-blue-500 text-white hover:bg-blue-600 hover:text-white focus:bg-blue-500 focus:text-white",
+                          nav_button: "hover:bg-white/10 text-white",
+                          captionDate: "text-white font-medium"
+                        }}
+                      />
+                    </div>
+                  </PopoverContent>
+                </Popover>
+
                 <div className="relative group">
                   <input 
                     type="time" 
@@ -190,49 +253,83 @@ export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolea
               
               <div className="flex items-center justify-between gap-6 bg-white/5 border border-white/10 p-5 rounded-2xl shadow-inner">
                 <div className="flex-1 flex flex-col gap-4">
-                  <span className="text-white/50 text-xs font-semibold uppercase tracking-wider">Varış %</span>
-                  <div className="flex items-center gap-3">
-                    <Slider 
-                      value={[istasyonVarisSarj]} 
-                      onValueChange={(vals) => setIstasyonVarisSarj(vals[0])}
-                      min={0}
-                      max={50}
-                      step={1}
-                      className="[&_[data-slot=slider-range]]:bg-blue-500 [&_[data-slot=slider-track]]:bg-white/10 [&_[data-slot=slider-thumb]]:size-5 [&_[data-slot=slider-thumb]]:border-[3px] [&_[data-slot=slider-thumb]]:border-blue-500 [&_[data-slot=slider-thumb]]:bg-white"
-                    />
-                    <span className="text-white font-bold text-sm w-8">%{istasyonVarisSarj}</span>
+                  <div className="flex items-center justify-between pr-2">
+                    <span className="text-white/50 text-xs font-semibold uppercase tracking-wider">Varış</span>
+                    <div className="flex items-center">
+                      <span className="text-white font-bold text-sm">%</span>
+                      <input 
+                        type="number"
+                        min={0}
+                        max={50}
+                        value={istasyonVarisSarj}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          if(val >= 0 && val <= 50) setIstasyonVarisSarj(val);
+                        }}
+                        className="w-6 bg-transparent text-white font-bold text-sm focus:outline-none focus:border-b focus:border-white/50 text-center"
+                      />
+                    </div>
                   </div>
+                  <NativeSlider 
+                    value={istasyonVarisSarj} 
+                    min={0} 
+                    max={50} 
+                    onChange={setIstasyonVarisSarj} 
+                  />
                 </div>
                 
                 <div className="flex-1 flex flex-col gap-4 border-l border-white/5 pl-6">
-                  <span className="text-white/50 text-xs font-semibold uppercase tracking-wider">Ayrılış %</span>
-                  <div className="flex items-center gap-3">
-                    <Slider 
-                      value={[istasyonAyrisSarj]} 
-                      onValueChange={(vals) => setIstasyonAyrisSarj(vals[0])}
-                      min={50}
-                      max={100}
-                      step={1}
-                      className="[&_[data-slot=slider-range]]:bg-blue-500 [&_[data-slot=slider-track]]:bg-white/10 [&_[data-slot=slider-thumb]]:size-5 [&_[data-slot=slider-thumb]]:border-[3px] [&_[data-slot=slider-thumb]]:border-blue-500 [&_[data-slot=slider-thumb]]:bg-white"
-                    />
-                    <span className="text-white font-bold text-sm w-8">%{istasyonAyrisSarj}</span>
+                  <div className="flex items-center justify-between pr-2">
+                    <span className="text-white/50 text-xs font-semibold uppercase tracking-wider">Ayrılış</span>
+                    <div className="flex items-center">
+                      <span className="text-white font-bold text-sm">%</span>
+                      <input 
+                        type="number"
+                        min={50}
+                        max={100}
+                        value={istasyonAyrisSarj}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          if(val >= 50 && val <= 100) setIstasyonAyrisSarj(val);
+                        }}
+                        className="w-7 bg-transparent text-white font-bold text-sm focus:outline-none focus:border-b focus:border-white/50 text-center"
+                      />
+                    </div>
                   </div>
+                  <NativeSlider 
+                    value={istasyonAyrisSarj} 
+                    min={50} 
+                    max={100} 
+                    onChange={setIstasyonAyrisSarj} 
+                  />
                 </div>
               </div>
             </div>
 
             {/* İstasyon Markaları */}
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4 overflow-hidden relative">
               <span className="text-white font-semibold text-[15px]">İstasyon Markaları</span>
               <div className="relative">
                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 text-sm">🔍</span>
                  <input type="text" placeholder="Marka Seç" className="w-full bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl py-3.5 pl-11 pr-4 text-sm text-white focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all shadow-inner" />
               </div>
-              <div className="mt-1">
+              <div className="mt-1 w-full pl-0.5">
                 <span className="text-white/40 text-[12px] font-medium mb-3 block">Sık tercih edilenler</span>
-                <div className="flex flex-wrap gap-2.5">
-                  {['ZES', 'Eşarj', 'Sharz', 'Trugo', 'Voltrun'].map(brand => (
-                    <button key={brand} className="bg-white/5 hover:bg-white/15 text-white/80 transition-all py-1.5 px-4 rounded-xl text-sm border border-white/10 hover:border-white/30 hover:shadow-md">
+                
+                {/* Yana Kaydırılabilir Özel Alan (Horizontal Scroll) */}
+                <div 
+                  className="flex gap-2.5 overflow-x-auto pb-4 pr-6 -mr-6 snap-x pt-0.5 
+                             [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:bg-white/10 hover:[&::-webkit-scrollbar-thumb]:bg-white/20 [&::-webkit-scrollbar-thumb]:rounded-full cursor-grab active:cursor-grabbing"
+                  onWheel={(e) => {
+                    const container = e.currentTarget;
+                    if (e.deltaY !== 0) {
+                      container.scrollLeft += e.deltaY;
+                      e.preventDefault();
+                    }
+                  }}
+                >
+                  {['ZES', 'Eşarj', 'Sharz', 'Trugo', 'Voltrun', 'Tesla', 'Wat', 'DB'].map(brand => (
+                    <button key={brand} className="shrink-0 snap-start bg-white/5 hover:bg-white/15 text-white/80 transition-all py-2 px-5 rounded-xl text-sm border border-white/10 hover:border-white/30 hover:shadow-md">
                       {brand}
                     </button>
                   ))}
@@ -297,7 +394,7 @@ export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolea
         </div>
 
         {/* Footer (Sticky) */}
-        <div className="p-5 shrink-0 bg-black/40 border-t border-white/10 backdrop-blur-xl">
+        <div className="p-5 shrink-0 bg-black/40 border-t border-white/10 backdrop-blur-xl z-10">
            <button onClick={onClose} className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-2xl transition-all duration-200 active:scale-[0.98] shadow-[0_0_20px_rgba(59,130,246,0.4)]">
              Ayarları Uygula
            </button>
