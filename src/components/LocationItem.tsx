@@ -47,7 +47,7 @@ export function LocationItem({
         <div className="text-white/40 p-2.5">
           <GripVertical size={20} />
         </div>
-        <div className="relative flex-1 py-3.5 flex items-center gap-3">
+        <div className="relative flex-1 py-2.5 flex items-center gap-3">
           {Icon}
           <span className="text-sm font-semibold text-white/90 truncate max-w-[200px]">
             {item.value || placeholder}
@@ -67,7 +67,7 @@ export function LocationItem({
       ref={setNodeRef} 
       style={style} 
       className={cn(
-        "group flex flex-row items-center gap-2 transition-all duration-300",
+        "group flex flex-row items-center gap-2",
         isDragging ? "opacity-20 translate-x-2" : "opacity-100"
       )}
     >
@@ -93,7 +93,7 @@ export function LocationItem({
             onClickInput(item);
           }}
           placeholder={placeholder}
-          className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-[15px] text-white placeholder-white/20 focus:outline-none focus:bg-white/10 focus:border-white/30 transition-all font-medium cursor-pointer hover:bg-white/[0.08] hover:border-white/20"
+          className="w-full bg-white/5 border border-white/10 rounded-2xl py-2.5 pl-12 pr-4 text-[15px] text-white placeholder-white/20 focus:outline-none focus:bg-white/10 focus:border-white/30 transition-all font-medium cursor-pointer hover:bg-white/[0.08] hover:border-white/20"
         />
       </div>
 

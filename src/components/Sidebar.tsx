@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ArrowDownUp, Plus, Trash2 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { Button } from "./ui/button";
 import {
   DndContext,
@@ -147,7 +147,8 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
             items={locations.map(l => l.id)}
             strategy={verticalListSortingStrategy}
           >
-            <div className="flex flex-col gap-3">
+            <LayoutGroup id="route-planning">
+              <motion.div layout className="relative flex flex-col gap-3">
               <AnimatePresence initial={false}>
                 {locations.map((loc, index) => {
                   const isFirst = index === 0;
@@ -167,14 +168,21 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
                       isOverlay={false}
                       rightAction={
                         index === 0 && locations.length > 2 ? (
-                          <button
-                            type="button"
-                            onClick={handleSwap}
-                            onPointerDown={(e) => e.stopPropagation()}
-                            className="w-8 h-8 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
+                          <motion.div
+                            layoutId="global-swap-btn"
+                            layout
+                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                            className="flex items-center justify-center"
                           >
-                            <ArrowDownUp size={14} />
-                          </button>
+                            <button
+                              type="button"
+                              onClick={handleSwap}
+                              onPointerDown={(e) => e.stopPropagation()}
+                              className="w-8 h-8 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
+                            >
+                              <ArrowDownUp size={14} />
+                            </button>
+                          </motion.div>
                         ) : !isFirst && !isLast ? (
                           <button
                             type="button"
@@ -193,8 +201,26 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
                     />
                   );
                 })}
+                {locations.length === 2 && (
+                  <motion.div
+                    layoutId="global-swap-btn"
+                    layout
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    className="absolute right-0 inset-y-0 flex items-center z-10"
+                  >
+                    <button 
+                      type="button"
+                      onClick={handleSwap}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      className="w-8 h-8 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-full transition-all duration-200 active:scale-90"
+                    >
+                      <ArrowDownUp size={14} />
+                    </button>
+                  </motion.div>
+                )}
               </AnimatePresence>
-            </div>
+              </motion.div>
+            </LayoutGroup>
           </SortableContext>
           
           <DragOverlay dropAnimation={dropAnimation}>
@@ -216,24 +242,6 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
           </DragOverlay>
         </DndContext>
 
-        {locations.length === 2 && (
-          <motion.div
-            layout
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-20"
-          >
-            <button 
-              type="button"
-              onClick={handleSwap}
-              onPointerDown={(e) => e.stopPropagation()}
-              className="w-8 h-8 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-full transition-all duration-200 active:scale-90"
-            >
-              <ArrowDownUp size={14} />
-            </button>
-          </motion.div>
-        )}
       </div>
 
       <div className="flex flex-col gap-3">
