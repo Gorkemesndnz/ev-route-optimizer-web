@@ -187,7 +187,11 @@ export function LocationSearchModal({
                   <>
                     <button
                       type="button"
-                      onClick={() => setSearchValue("")}
+                      onClick={() => {
+                        setSearchValue("");
+                        setPredictions([]);
+                        setTimeout(() => inputRef.current?.focus(), 0);
+                      }}
                       className="p-1.5 text-white/50 hover:text-white transition-colors"
                       title="Temizle"
                     >
@@ -214,7 +218,7 @@ export function LocationSearchModal({
 
           <div className="flex flex-col min-h-[240px]">
             {predictions.length > 0 ? (
-              <div className="flex flex-col gap-1 max-h-[280px] overflow-y-auto pr-2 overflow-x-hidden [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-white/20 hover:[&::-webkit-scrollbar-thumb]:bg-white/30 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent">
+              <div className="flex flex-col gap-1">
                  <h4 className="text-white/20 text-xs font-bold uppercase tracking-widest mb-3 px-2">Arama Sonuçları</h4>
                  {predictions.map(pred => (
                    <button 
