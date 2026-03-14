@@ -48,7 +48,7 @@ export function LocationItem({
         height: { duration: 0.2 }
       }}
       initial={{ opacity: 0, height: 0, scale: 0.95 }}
-      animate={{ opacity: isDragging ? 0.9 : 1, height: "auto", scale: 1 }}
+      animate={{ opacity: isDragging ? 0 : 1, height: "auto", scale: 1 }}
       exit={{ 
         opacity: 0, 
         height: 0, 

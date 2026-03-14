@@ -129,6 +129,10 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
     }),
   };
 
+  const activeItem = activeId ? locations.find(l => l.id === activeId) : null;
+  const activeIndex = activeItem ? locations.findIndex(l => l.id === activeId) : -1;
+
+
   return (
     <div className="glass-panel w-full sm:w-[400px] px-4 py-5 pointer-events-auto flex flex-col gap-4 relative">
       <div className="flex items-center justify-between">
@@ -226,7 +230,19 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
               </div>
             </LayoutGroup>
           </SortableContext>
-
+          <DragOverlay dropAnimation={dropAnimation}>
+            {activeId && activeItem ? (
+              <LocationItem
+                id={activeId}
+                item={activeItem}
+                placeholder={activeIndex === 0 ? "Başlangıç Noktası" : activeIndex === locations.length - 1 ? "Varış Noktası" : "Durak"}
+                isFirst={activeIndex === 0}
+                isLast={activeIndex === locations.length - 1}
+                onClickInput={() => {}}
+                rightAction={null}
+              />
+            ) : null}
+          </DragOverlay>
         </DndContext>
 
       </div>

@@ -32,7 +32,8 @@ function App() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-30 pointer-events-auto"
+              onClick={() => setActiveView('main')}
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-30 pointer-events-auto cursor-pointer"
             />
           )}
         </AnimatePresence>

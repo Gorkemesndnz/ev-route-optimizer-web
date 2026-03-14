@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronLeft, Zap, BatteryMedium, Calendar as CalendarIcon, MapPin, Clock } from "lucide-react";
+import { ChevronLeft, Zap, BatteryMedium, Calendar as CalendarIcon, MapPin, Clock, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const CustomSwitch = ({ checked, onChange }: { checked: boolean, onChange: (val: boolean) => void }) => {
@@ -230,7 +230,7 @@ export default function RouteSettingsView({ onBack }: { onBack: () => void }) {
           <div className="flex flex-col gap-4 overflow-hidden relative">
             <span className="text-white font-semibold text-[15px]">İstasyon Markaları</span>
             <div className="relative">
-               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 text-sm">🔍</span>
+               <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
                <input type="text" placeholder="Marka Seç" className="w-full bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl py-3.5 pl-11 pr-4 text-sm text-white focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all shadow-inner" />
             </div>
             <div className="mt-1 w-full pl-0.5">
