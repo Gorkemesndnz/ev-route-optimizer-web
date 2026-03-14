@@ -1,4 +1,4 @@
-import { CarFront, Zap, ArrowLeftRight, Settings, Plus } from "lucide-react";
+import { CarFront, Battery, ArrowLeftRight, Settings, Plus } from "lucide-react";
 import { Button } from "./ui/button";
 import { Slider } from "./ui/slider";
 
@@ -17,7 +17,7 @@ export default function VehicleCard({
 }) {
   if (!selectedVehicle) {
     return (
-      <div className="glass-panel w-full sm:w-[380px] p-6 pointer-events-auto flex flex-col items-center justify-center min-h-[160px] gap-4 mt-auto md:mt-2">
+      <div className="glass-panel w-full sm:w-[420px] p-6 pointer-events-auto flex flex-col items-center justify-center min-h-[160px] gap-4 mt-auto md:mt-2">
         <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-white/60 mb-1">
           <CarFront size={24} />
         </div>
@@ -33,7 +33,7 @@ export default function VehicleCard({
   }
 
   return (
-    <div className="glass-panel w-full sm:w-[380px] p-5 pointer-events-auto flex flex-col gap-5 mt-auto md:mt-2">
+    <div className="glass-panel w-full sm:w-[420px] p-5 pointer-events-auto flex flex-col gap-5 mt-auto md:mt-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center ring-1 ring-white/20">
@@ -55,7 +55,7 @@ export default function VehicleCard({
 
       <div className="bg-white/5 p-4 rounded-2xl border border-white/10 flex flex-col gap-4 shadow-inner">
         <div className="flex justify-between items-center font-medium">
-          <span className="text-sm text-white/80 flex items-center gap-2"><Zap size={16} className="text-cyan-400 fill-cyan-400/20" /> Mevcut Şarj</span>
+          <span className="text-sm text-white/80 flex items-center gap-2"><Battery size={16} className="text-cyan-400" /> Mevcut Şarj</span>
           <span className="text-base text-cyan-400 font-bold tracking-tight">%{selectedVehicle.soc}</span>
         </div>
         <Slider 
@@ -63,7 +63,7 @@ export default function VehicleCard({
           onValueChange={(val) => onUpdateSoC(val[0])}
           max={100} 
           step={1} 
-          className="w-full cursor-grab active:cursor-grabbing [&_[role=slider]]:bg-cyan-400 [&_[role=slider]]:border-cyan-400 [&_.bg-primary]:bg-cyan-500" 
+          className="w-full cursor-grab active:cursor-grabbing [&_[data-slot=slider-track]]:bg-white/10 [&_[data-slot=slider-range]]:bg-cyan-400 [&_[data-slot=slider-thumb]]:bg-cyan-400 [&_[data-slot=slider-thumb]]:border-cyan-300 [&_[data-slot=slider-thumb]]:shadow-[0_0_10px_rgba(34,211,238,0.5)]" 
         />
       </div>
 

@@ -1,4 +1,4 @@
-import { ArrowLeft, Plus, CheckCircle2, Circle, Trash2, CarFront } from "lucide-react";
+import { ArrowLeft, Plus, CheckCircle2, Circle, Trash2, CarFront, Edit2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function GarageView({
@@ -32,8 +32,9 @@ export default function GarageView({
           return (
             <div
               key={vehicle.id}
+              data-vehicle-row
               className={cn(
-                "relative flex flex-col gap-3 p-4 rounded-3xl border transition-all duration-300",
+                "relative flex flex-col gap-3 p-4 rounded-3xl border transition-all duration-300 group/row",
                 isSelected
                   ? "bg-cyan-500/10 border-cyan-500/30"
                   : "bg-white/5 border-white/10 hover:bg-white/[0.08] hover:border-white/20"
@@ -65,16 +66,31 @@ export default function GarageView({
                   </div>
                 </div>
 
-                {/* Delete Button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDeleteVehicle(vehicle.id);
-                  }}
-                  className="p-2 -mt-1 -mr-1 text-white/30 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all active:scale-90"
-                >
-                  <Trash2 size={18} />
-                </button>
+                {/* Actions */}
+                <div className="flex items-center gap-1 -mt-1 -mr-1">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const row = e.currentTarget.closest('[data-vehicle-row]');
+                      row?.querySelector('input')?.focus();
+                    }}
+                    className="p-2 text-white/30 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-xl transition-all active:scale-90"
+                    title="İsmi Düzenle"
+                  >
+                    <Edit2 size={16} />
+                  </button>
+                  
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteVehicle(vehicle.id);
+                    }}
+                    className="p-2 text-white/30 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all active:scale-90"
+                    title="Aracı Sil"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
               </div>
             </div>
           );
