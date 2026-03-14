@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { 
-  Search, 
-  Settings, 
-  Navigation, 
-  Trash2, 
-  GripVertical, 
-  MapPin, 
+import {
+  Search,
+  Settings,
+  Navigation,
+  Trash2,
+  GripVertical,
+  MapPin,
   ChevronRight,
   Leaf,
   ArrowDownUp,
@@ -38,11 +38,11 @@ import { cn } from "@/lib/utils";
 import { LocationItem } from "./LocationItem";
 import { LocationSearchModal } from "./LocationSearchModal";
 
-export default function Sidebar({ 
+export default function Sidebar({
   onOpenRouteSettings,
   currentUser,
   onRequireAuth
-}: { 
+}: {
   onOpenRouteSettings: () => void;
   currentUser: any;
   onRequireAuth: (msg: string) => void;
@@ -182,78 +182,78 @@ export default function Sidebar({
             strategy={verticalListSortingStrategy}
           >
             <div className="relative flex flex-col gap-2">
-                {locations.map((loc, index) => {
-                  const isFirst = index === 0;
-                  const isLast = index === locations.length - 1;
-                  const label = isFirst ? "Başlangıç Noktası" : isLast ? "Varış Noktası" : locations.length === 3 ? "Durak" : `${index}. Durak`;
+              {locations.map((loc, index) => {
+                const isFirst = index === 0;
+                const isLast = index === locations.length - 1;
+                const label = isFirst ? "Başlangıç Noktası" : isLast ? "Varış Noktası" : locations.length === 3 ? "Durak" : `${index}. Durak`;
 
-                  return (
-                    <LocationItem
-                      key={loc.id}
-                      id={loc.id}
-                      item={loc}
-                      placeholder={label}
-                      isFirst={isFirst}
-                      isLast={isLast}
-                      onClickInput={() => setActiveSearchItem({ ...loc, currentIndex: index, totalCount: locations.length })}
-                      rightAction={
-                        index === 0 && locations.length > 2 ? (
-                          <motion.div
-                            layoutId="global-swap-btn"
-                            layout
-                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                            className="flex items-center justify-center"
-                          >
-                            <button
-                              type="button"
-                              onPointerDown={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                handleSwap();
-                              }}
-                              className="w-10 h-10 flex items-center justify-center text-white/70 hover:text-white transition-colors"
-                            >
-                              <ArrowDownUp size={14} />
-                            </button>
-                          </motion.div>
-                        ) : !isFirst && !isLast ? (
+                return (
+                  <LocationItem
+                    key={loc.id}
+                    id={loc.id}
+                    item={loc}
+                    placeholder={label}
+                    isFirst={isFirst}
+                    isLast={isLast}
+                    onClickInput={() => setActiveSearchItem({ ...loc, currentIndex: index, totalCount: locations.length })}
+                    rightAction={
+                      index === 0 && locations.length > 2 ? (
+                        <motion.div
+                          layoutId="global-swap-btn"
+                          layout
+                          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                          className="flex items-center justify-center"
+                        >
                           <button
                             type="button"
-                            onClick={(e) => {
+                            onPointerDown={(e) => {
                               e.stopPropagation();
-                              removeWaypoint(loc.id);
+                              e.preventDefault();
+                              handleSwap();
                             }}
-                            className="w-10 h-10 flex items-center justify-center text-white/50 hover:text-red-400 transition-colors"
+                            className="w-10 h-10 flex items-center justify-center text-white/70 hover:text-white transition-colors"
                           >
-                            <Trash2 size={16} />
+                            <ArrowDownUp size={14} />
                           </button>
-                        ) : (
-                          <div className="w-10" />
-                        )
-                      }
-                    />
-                  );
-                })}
-                {locations.length === 2 && (
-                  <motion.div
-                    layoutId="global-swap-btn"
-                    layout
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    className="absolute right-0 inset-y-0 flex items-center z-50 pointer-events-none"
+                        </motion.div>
+                      ) : !isFirst && !isLast ? (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeWaypoint(loc.id);
+                          }}
+                          className="w-10 h-10 flex items-center justify-center text-white/50 hover:text-red-400 transition-colors"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      ) : (
+                        <div className="w-10" />
+                      )
+                    }
+                  />
+                );
+              })}
+              {locations.length === 2 && (
+                <motion.div
+                  layoutId="global-swap-btn"
+                  layout
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  className="absolute right-0 inset-y-0 flex items-center z-50 pointer-events-none"
+                >
+                  <button
+                    type="button"
+                    onPointerDown={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      handleSwap();
+                    }}
+                    className="w-10 h-10 flex items-center justify-center text-white/70 hover:text-white transition-all duration-200 active:scale-90 pointer-events-auto"
                   >
-                    <button
-                      type="button"
-                      onPointerDown={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        handleSwap();
-                      }}
-                      className="w-10 h-10 flex items-center justify-center text-white/70 hover:text-white transition-all duration-200 active:scale-90 pointer-events-auto"
-                    >
-                      <ArrowDownUp size={14} />
-                    </button>
-                  </motion.div>
-                )}
+                    <ArrowDownUp size={14} />
+                  </button>
+                </motion.div>
+              )}
             </div>
           </SortableContext>
         </DndContext>
@@ -271,7 +271,7 @@ export default function Sidebar({
         <button
           onClick={() => {
             if (!currentUser) {
-              onRequireAuth("Kayıtlı Rotalar İçin Giriş Yap veya Kayıt Ol");
+              onRequireAuth("Kayıtlı Rotalar İçin\nGiriş Yap veya Kayıt Ol");
             } else {
               // Gelecekte eklenecek "Kayıtlı Rotalar" ekranı
               alert("Kayıtlı Rotalar: Modül Yapım Aşamasında");
