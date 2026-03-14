@@ -7,6 +7,7 @@ import GarageView from "./components/GarageView";
 import AddVehicleView from "./components/AddVehicleView";
 import VehicleSettingsView from "./components/VehicleSettingsView";
 import MapControls from "./components/MapControls";
+import AuthModal from "./components/AuthModal";
 import { lightMapStyle, darkMapStyle } from "./lib/mapStyles";
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -18,6 +19,7 @@ function App() {
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [mapStyleKey, setMapStyleKey] = useState<'default' | 'light' | 'dark' | 'satellite'>('dark');
   const [showTraffic, setShowTraffic] = useState(true);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   // Sync with system theme on mount
   useEffect(() => {
@@ -172,6 +174,28 @@ function App() {
           </AnimatePresence>
         </div>
 
+        {/* Top Right Actions (Menu & Auth) */}
+        <div className="absolute top-6 right-6 z-40 flex items-center gap-3 pointer-events-auto">
+          <button 
+            onClick={() => setIsAuthModalOpen(true)}
+            className="glass-panel px-4 py-2 font-semibold text-sm hover:bg-white/10 transition-all border-white/20 active:scale-95"
+          >
+            Giriş Yap
+          </button>
+          <button 
+            className="glass-panel p-2 flex flex-col items-center justify-center gap-[4px] w-10 h-10 hover:bg-white/10 transition-all border-white/20 active:scale-95"
+          >
+            <div className="w-4 h-px bg-white rounded-full" />
+            <div className="w-4 h-px bg-white rounded-full" />
+            <div className="w-4 h-px bg-white rounded-full" />
+          </button>
+        </div>
+
+        {/* Modals */}
+        <AuthModal 
+          isOpen={isAuthModalOpen} 
+          onClose={() => setIsAuthModalOpen(false)} 
+        />
       </div>
     </APIProvider>
   );
