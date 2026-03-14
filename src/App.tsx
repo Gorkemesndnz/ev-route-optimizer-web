@@ -198,25 +198,25 @@ function App() {
         {/* Top Right Actions (Menu & Auth) */}
         <div className="absolute top-6 right-6 z-40 flex items-center gap-3 pointer-events-auto">
           {currentUser ? (
-            <div className="flex items-center group overflow-hidden py-1">
-              {/* 1. Hidden Logout Menu (Solda açılır) */}
-              <div className="flex items-center overflow-hidden transition-all duration-300 ease-out max-w-0 opacity-0 group-hover:max-w-[60px] group-hover:opacity-100 group-hover:mr-2">
+            <div className="flex flex-row-reverse items-center group overflow-hidden py-1">
+              {/* 1. Avatar (Sağda sabit kalacak) */}
+              <button 
+                onClick={() => setActiveView('account')}
+                className="w-10 h-10 rounded-full glass-panel flex items-center justify-center font-bold text-sm text-white border border-white/20 shadow-lg shrink-0 z-10 hover:border-white/40 transition-all outline-none"
+              >
+                {currentUser.firstName?.charAt(0).toUpperCase() || ''}{currentUser.lastName?.charAt(0).toUpperCase() || ''}
+              </button>
+              
+              {/* 2. Hidden Logout Menu (Sola doğru pürüzsüzce açılacak) */}
+              <div className="flex items-center overflow-hidden transition-all duration-300 ease-in-out max-w-0 opacity-0 group-hover:max-w-[70px] group-hover:opacity-100 group-hover:mr-2">
                 <button 
                   onClick={() => setCurrentUser(null)}
                   title="Çıkış Yap"
-                  className="w-10 h-10 shrink-0 rounded-full glass-panel flex items-center justify-center text-red-500 hover:text-red-400 border border-white/20 shadow-lg transition-all hover:bg-white/10"
+                  className="w-10 h-10 shrink-0 rounded-full glass-panel flex items-center justify-center text-red-500 hover:text-red-400 border border-white/20 shadow-lg transition-all hover:bg-white/10 outline-none"
                 >
                   <LogOut size={18} />
                 </button>
               </div>
-
-              {/* 2. Avatar (Sağda sabit, baş harfleri beyaz) */}
-              <button 
-                onClick={() => setActiveView('account')}
-                className="w-10 h-10 rounded-full glass-panel flex items-center justify-center font-bold text-sm text-white border border-white/20 shadow-lg shrink-0 z-10 hover:border-white/40 transition-all"
-              >
-                {currentUser.firstName?.charAt(0).toUpperCase() || ''}{currentUser.lastName?.charAt(0).toUpperCase() || ''}
-              </button>
             </div>
           ) : (
             <button 

@@ -82,7 +82,7 @@ export default function AccountDashboard({
         </div>
 
         {/* Action Bar */}
-        <div className="flex gap-4 p-6 md:px-8 border-b border-white/5 bg-white/5 overflow-x-auto hide-scrollbar">
+        <div className="flex items-center gap-2 p-6 md:px-8 border-b border-white/5 bg-white/5 overflow-x-auto hide-scrollbar">
           {[
             { id: 'overview', label: 'Genel Bakış' },
             { id: 'profile', label: 'Kişisel Bilgileri Güncelle' },
@@ -92,10 +92,10 @@ export default function AccountDashboard({
               key={tab.id}
               onClick={() => setActiveTab(tab.id as 'overview' | 'profile' | 'prices')}
               className={cn(
-                "whitespace-nowrap px-4 py-2 font-semibold rounded-lg transition-all",
+                "whitespace-nowrap px-5 py-2.5 font-semibold text-sm rounded-lg outline-none transition-all duration-200",
                 activeTab === tab.id 
-                  ? "bg-cyan-400 text-black shadow-[0_0_15px_rgba(34,211,238,0.3)]" 
-                  : "text-white/70 hover:text-white hover:bg-white/10"
+                  ? "bg-cyan-400 text-zinc-950 shadow-[0_0_15px_rgba(34,211,238,0.4)]" 
+                  : "text-white/70 hover:text-white hover:bg-white/5"
               )}
             >
               {tab.label}
@@ -104,15 +104,21 @@ export default function AccountDashboard({
         </div>
 
         {/* Content Area */}
-        <div className="p-6 md:p-8 overflow-y-auto hide-scrollbar flex-1 min-h-[450px]">
-          <AnimatePresence mode="wait">
+        <div 
+          className={cn(
+            "p-6 md:p-8 overflow-y-auto flex-1 min-h-[500px] grid grid-cols-1 pr-4 md:pr-6",
+            activeTab === 'overview' ? "hide-scrollbar" : "custom-scrollbar"
+          )}
+        >
+          <AnimatePresence mode="popLayout">
 
             {/* Overview Tab */}
             {activeTab === 'overview' && (
               <motion.div
                 key="overview"
-                initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
-                className="grid grid-cols-1 md:grid-cols-2 gap-8"
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="col-start-1 row-start-1 w-full grid grid-cols-1 md:grid-cols-2 gap-8"
               >
                 {/* Left Column: Active Vehicle */}
                 <div className="flex flex-col gap-4">
@@ -227,8 +233,9 @@ export default function AccountDashboard({
             {activeTab === 'profile' && (
               <motion.div
                 key="profile"
-                initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
-                className="max-w-2xl mx-auto flex flex-col gap-6"
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="col-start-1 row-start-1 max-w-2xl mx-auto flex flex-col gap-6 w-full"
               >
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-2">
@@ -271,8 +278,9 @@ export default function AccountDashboard({
             {activeTab === 'prices' && (
               <motion.div
                 key="prices"
-                initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
-                className="flex flex-col gap-6"
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="col-start-1 row-start-1 w-full flex flex-col gap-6"
               >
                 <div className="flex gap-4 mb-2">
                   <input
