@@ -38,7 +38,15 @@ import { cn } from "@/lib/utils";
 import { LocationItem } from "./LocationItem";
 import { LocationSearchModal } from "./LocationSearchModal";
 
-export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: () => void }) {
+export default function Sidebar({ 
+  onOpenRouteSettings,
+  currentUser,
+  onRequireAuth
+}: { 
+  onOpenRouteSettings: () => void;
+  currentUser: any;
+  onRequireAuth: (msg: string) => void;
+}) {
   const [locations, setLocations] = useState([
     { id: "start", type: "start", value: "" },
     { id: "dest", type: "destination", value: "" },
@@ -261,6 +269,14 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
           <Plus size={16} /> Durak Ekle
         </button>
         <button
+          onClick={() => {
+            if (!currentUser) {
+              onRequireAuth("Kayıtlı Rotalar İçin Giriş Yap veya Kayıt Ol");
+            } else {
+              // Gelecekte eklenecek "Kayıtlı Rotalar" ekranı
+              alert("Kayıtlı Rotalar: Modül Yapım Aşamasında");
+            }
+          }}
           className="text-sm font-medium text-white/70 hover:text-white transition-colors flex items-center gap-1"
         >
           <Bookmark size={16} /> Kayıtlı Rotalar

@@ -11,7 +11,17 @@ const MOCK_USER = {
   phone: '(111) 111-11-11'
 };
 
-export default function AuthModal({ isOpen, onClose, onLogin }: { isOpen: boolean, onClose: () => void, onLogin?: (user: any) => void }) {
+export default function AuthModal({ 
+  isOpen, 
+  onClose, 
+  onLogin,
+  customMessage
+}: { 
+  isOpen: boolean;
+  onClose: () => void;
+  onLogin?: (user: any) => void; 
+  customMessage?: string;
+}) {
   const [authStep, setAuthStep] = useState<'email' | 'password' | 'register' | 'verify_email' | 'reset_password'>('email');
   
   // Registration / Login Info
@@ -211,7 +221,9 @@ export default function AuthModal({ isOpen, onClose, onLogin }: { isOpen: boolea
               >
                 <div className="flex flex-col items-center gap-2 mt-6 mb-4">
                   <span className="text-2xl font-black tracking-widest text-emerald-500 uppercase">IYONTREE</span>
-                  <h2 className="text-xl font-bold text-white tracking-wide">Giriş Yap veya Kayıt Ol</h2>
+                  <h2 className="text-xl font-bold text-white tracking-wide text-center whitespace-pre-line">
+                    {customMessage || "Giriş Yap veya Kayıt Ol"}
+                  </h2>
                 </div>
 
                 <div className="flex flex-col gap-4">

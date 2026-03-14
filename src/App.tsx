@@ -24,6 +24,7 @@ function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [previousView, setPreviousView] = useState<'main' | 'account'>('main');
+  const [authMessage, setAuthMessage] = useState<string>('');
 
   // Sync with system theme on mount
   useEffect(() => {
@@ -88,7 +89,11 @@ function App() {
                 transition={{ type: "tween", ease: "easeInOut", duration: 0.3 }}
                 className="flex flex-col gap-6 relative z-40 pointer-events-none"
               >
-                <Sidebar onOpenRouteSettings={() => setActiveView('settings')} />
+                <Sidebar 
+                  onOpenRouteSettings={() => setActiveView('settings')} 
+                  currentUser={currentUser}
+                  onRequireAuth={(msg) => { setAuthMessage(msg); setIsAuthModalOpen(true); }}
+                />
 
                 <VehicleCard
                   selectedVehicle={selectedVehicle}
@@ -202,7 +207,7 @@ function App() {
               {/* 1. Avatar (Sağda sabit kalacak) */}
               <button 
                 onClick={() => setActiveView('account')}
-                className="w-10 h-10 rounded-full glass-panel flex items-center justify-center font-bold text-sm text-white border border-white/20 shadow-lg shrink-0 z-10 hover:border-white/40 transition-all outline-none"
+                className="w-10 h-10 rounded-full glass-panel flex items-center justify-center font-bold text-sm text-white border border-white/20 shadow-none shrink-0 z-10 hover:border-white/40 transition-all outline-none"
               >
                 {currentUser.firstName?.charAt(0).toUpperCase() || ''}{currentUser.lastName?.charAt(0).toUpperCase() || ''}
               </button>
@@ -212,7 +217,7 @@ function App() {
                 <button 
                   onClick={() => setCurrentUser(null)}
                   title="Çıkış Yap"
-                  className="w-10 h-10 shrink-0 rounded-full glass-panel flex items-center justify-center text-red-500 hover:text-red-400 border border-white/20 shadow-lg transition-all hover:bg-white/10 outline-none"
+                  className="w-10 h-10 shrink-0 rounded-full glass-panel flex items-center justify-center text-red-500 hover:text-red-400 border border-white/20 shadow-none transition-all hover:bg-white/10 outline-none"
                 >
                   <LogOut size={18} />
                 </button>
@@ -221,14 +226,14 @@ function App() {
           ) : (
             <button 
               onClick={() => setIsAuthModalOpen(true)}
-              className="glass-panel px-4 py-2 font-semibold text-sm hover:bg-white/10 transition-all border-white/20 active:scale-95 text-white"
+              className="glass-panel shadow-none px-4 py-2 font-semibold text-sm hover:bg-white/10 transition-all border-white/20 active:scale-95 text-white"
             >
               Giriş Yap
             </button>
           )}
 
           <button 
-            className="glass-panel p-2 flex flex-col items-center justify-center gap-[4px] w-10 h-10 hover:bg-white/10 transition-all border-white/20 active:scale-95"
+            className="glass-panel shadow-none p-2 flex flex-col items-center justify-center gap-[4px] w-10 h-10 hover:bg-white/10 transition-all border-white/20 active:scale-95"
           >
             <div className="w-4 h-px bg-white rounded-full" />
             <div className="w-4 h-px bg-white rounded-full" />
@@ -239,8 +244,9 @@ function App() {
         {/* Modals */}
         <AuthModal 
           isOpen={isAuthModalOpen} 
-          onClose={() => setIsAuthModalOpen(false)} 
+          onClose={() => { setIsAuthModalOpen(false); setAuthMessage(''); }} 
           onLogin={(user) => { setCurrentUser(user); setActiveView('account'); }}
+          customMessage={authMessage}
         />
       </div>
     </APIProvider>
