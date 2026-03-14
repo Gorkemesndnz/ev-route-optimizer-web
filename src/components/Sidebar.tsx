@@ -12,8 +12,6 @@ import {
   TouchSensor,
   useSensor,
   useSensors,
-  DragOverlay,
-  defaultDropAnimationSideEffects,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -140,15 +138,6 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
     setActiveSearchItem(null);
   };
 
-  const dropAnimation = {
-    sideEffects: defaultDropAnimationSideEffects({
-      styles: { active: { opacity: '0.5' } },
-    }),
-  };
-
-  const activeItem = activeId ? locations.find(l => l.id === activeId) : null;
-  const activeIndex = activeItem ? locations.findIndex(l => l.id === activeId) : -1;
-
 
   return (
     <div className="glass-panel w-full sm:w-[400px] px-4 py-5 pointer-events-auto flex flex-col gap-4 relative">
@@ -162,7 +151,6 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
           collisionDetection={closestCenter}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
-          modifiers={[restrictToVerticalAxis]}
         >
           <SortableContext
             items={locations.map(l => l.id)}
@@ -243,20 +231,6 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
                 )}
             </div>
           </SortableContext>
-          <DragOverlay dropAnimation={dropAnimation}>
-            {activeId && activeItem ? (
-              <LocationItem
-                id={`overlay-${activeId}`}
-                item={activeItem}
-                placeholder={activeIndex === 0 ? "Başlangıç Noktası" : activeIndex === locations.length - 1 ? "Varış Noktası" : "Durak"}
-                isFirst={activeIndex === 0}
-                isLast={activeIndex === locations.length - 1}
-                onClickInput={() => { }}
-                rightAction={null}
-                isOverlay={true}
-              />
-            ) : null}
-          </DragOverlay>
         </DndContext>
 
       </div>

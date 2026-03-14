@@ -11,8 +11,7 @@ export function LocationItem({
   isFirst,
   isLast,
   onClickInput,
-  rightAction,
-  isOverlay = false
+  rightAction
 }) {
   const {
     attributes,
@@ -21,15 +20,12 @@ export function LocationItem({
     transform,
     transition,
     isDragging
-  } = useSortable({ id, disabled: isOverlay });
+  } = useSortable({ id });
 
-  const style = !isOverlay ? {
-    transform: CSS.Translate.toString(transform),
+  const style = {
+    transform: transform ? CSS.Translate.toString(transform) : undefined,
     transition: transition || undefined,
-    zIndex: isDragging ? 9999 : 1,
-    position: 'relative' as const,
-  } : {
-    zIndex: 99999,
+    zIndex: isDragging ? 999999 : 1,
     position: 'relative' as const,
   };
 
@@ -41,57 +37,25 @@ export function LocationItem({
     <div className="w-2.5 h-2.5 rounded-full bg-white/70 group-hover:bg-white/90 transition-all border border-white/20 shadow-sm" />
   );
 
-  const containerClasses = cn(
-    "w-full group flex flex-row items-center gap-0 transition-colors duration-200 p-0.5 border rounded-3xl",
-    isOverlay
-      ? "shadow-2xl border-white/40 cursor-grabbing bg-black/40 backdrop-blur-xl"
-      : isDragging 
-        ? "opacity-0 invisible pointer-events-none" 
-        : "border-transparent bg-transparent"
-  );
-
-  if (isOverlay) {
-    return (
-      <div
-        className={cn(
-          "w-full flex flex-row items-center gap-0 p-0.5 border border-white/40 rounded-3xl bg-black/60 backdrop-blur-xl shadow-2xl cursor-grabbing scale-[1.02] transition-transform",
-        )}
-        style={{ zIndex: 999999 }}
-      >
-        <div className="text-white/70 p-0 pl-1 shrink-0">
-          <GripVertical size={18} />
-        </div>
-        <div className="relative flex-1">
-          <div className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none transition-all duration-300">
-            {Icon}
-          </div>
-          <input
-            type="text"
-            readOnly
-            value={item.value}
-            placeholder={placeholder}
-            className="w-full bg-white/10 border border-white/20 rounded-2xl py-2 pl-9 pr-4 text-[15px] text-white transition-all font-medium cursor-grabbing"
-          />
-        </div>
-        <div className="w-10 shrink-0" />
-      </div>
-    );
-  }
-
   return (
     <div 
       ref={setNodeRef} 
       style={style} 
       className={cn(
-        "w-full group flex flex-row items-center gap-0 p-0.5 border rounded-3xl transition-colors duration-200",
-        isDragging ? "opacity-0 pointer-events-none" : "border-transparent bg-transparent"
+        "w-full group flex flex-row items-center gap-0 p-0.5 border rounded-3xl transition-all duration-200",
+        isDragging 
+          ? "border-white/40 bg-black/60 backdrop-blur-xl shadow-2xl scale-[1.02] cursor-grabbing"
+          : "border-transparent bg-transparent"
       )}
     >
       <button
         {...attributes}
         {...listeners}
         type="button"
-        className="text-white/70 hover:text-white px-2 py-3 -ml-1 rounded-xl transition-all shrink-0 cursor-grab active:cursor-grabbing touch-none select-none flex items-center justify-center"
+        className={cn(
+          "text-white/70 hover:text-white px-2 py-3 -ml-1 rounded-xl transition-all shrink-0 flex items-center justify-center select-none",
+          isDragging ? "cursor-grabbing" : "cursor-grab active:cursor-grabbing touch-none"
+        )}
       >
         <GripVertical size={18} />
       </button>
@@ -105,16 +69,22 @@ export function LocationItem({
           readOnly
           value={item.value}
           onClick={(e) => {
+            if (isDragging) return;
             e.stopPropagation();
             onClickInput?.(item);
           }}
           placeholder={placeholder}
-          className="w-full bg-white/5 border border-white/10 rounded-2xl py-2 pl-9 pr-4 text-[15px] text-white placeholder-white/70 focus:outline-none focus:bg-white/10 focus:border-white/30 transition-all font-medium cursor-pointer hover:bg-white/[0.08] hover:border-white/20"
+          className={cn(
+            "w-full rounded-2xl py-2 pl-9 pr-4 text-[15px] text-white transition-all font-medium",
+            isDragging 
+              ? "bg-white/10 border border-white/20 cursor-grabbing" 
+              : "bg-white/5 border border-white/10 placeholder-white/70 focus:outline-none focus:bg-white/10 focus:border-white/30 cursor-pointer hover:bg-white/[0.08] hover:border-white/20"
+          )}
         />
       </div>
 
       <div className="w-10 shrink-0 flex items-center justify-center">
-        {rightAction}
+        {!isDragging && rightAction}
       </div>
     </div>
   );
