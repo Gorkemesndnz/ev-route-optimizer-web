@@ -60,7 +60,7 @@
 
 @layer components {
   .glass-panel {
-    @apply bg-black/40 backdrop-blur-xl border border-white/20 shadow-2xl rounded-3xl text-white;
+    @apply bg-black/60 backdrop-blur-2xl border border-white/20 shadow-2xl rounded-[28px] text-white;
   }
 
   .interactive-btn {

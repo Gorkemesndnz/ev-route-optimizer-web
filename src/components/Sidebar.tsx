@@ -5,8 +5,12 @@ import { Button } from "./ui/button";
 import {
   DndContext,
   closestCenter,
+  closestCorners,
+  rectIntersection,
   KeyboardSensor,
   PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   DragOverlay,
@@ -34,9 +38,15 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
   const [activeId, setActiveId] = useState(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    useSensor(MouseSensor, {
       activationConstraint: {
         distance: 8,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 200,
+        tolerance: 5,
       },
     }),
     useSensor(KeyboardSensor, {
@@ -134,7 +144,7 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
 
 
   return (
-    <div className="glass-panel w-full sm:w-[400px] px-4 py-5 pointer-events-auto flex flex-col gap-4 relative">
+    <div className="glass-panel w-full sm:w-[400px] pointer-events-auto flex flex-col gap-4 relative">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold tracking-tight text-white/90">Rota Planlama</h2>
       </div>
@@ -142,7 +152,7 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
       <div className="relative flex flex-col gap-3">
         <DndContext
           sensors={sensors}
-          collisionDetection={closestCenter}
+          collisionDetection={rectIntersection}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
           modifiers={[restrictToVerticalAxis]}
@@ -151,7 +161,6 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
             items={locations.map(l => l.id)}
             strategy={verticalListSortingStrategy}
           >
-            <LayoutGroup id="route-planning">
               <div className="relative flex flex-col gap-2">
                 <AnimatePresence initial={false}>
                   {locations.map((loc, index) => {
@@ -228,7 +237,6 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
                   )}
                 </AnimatePresence>
               </div>
-            </LayoutGroup>
           </SortableContext>
           <DragOverlay dropAnimation={dropAnimation}>
             {activeId && activeItem ? (
@@ -240,6 +248,7 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
                 isLast={activeIndex === locations.length - 1}
                 onClickInput={() => {}}
                 rightAction={null}
+                isOverlay={true}
               />
             ) : null}
           </DragOverlay>

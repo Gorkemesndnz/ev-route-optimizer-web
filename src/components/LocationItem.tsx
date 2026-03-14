@@ -11,7 +11,8 @@ export function LocationItem({
   isFirst,
   isLast,
   onClickInput,
-  rightAction
+  rightAction,
+  isOverlay = false
 }) {
   const {
     attributes,
@@ -20,12 +21,15 @@ export function LocationItem({
     transform,
     transition,
     isDragging
-  } = useSortable({ id });
+  } = useSortable({ id, disabled: isOverlay });
 
-  const style = {
+  const style = !isOverlay ? {
     transform: CSS.Transform.toString(transform),
     transition: transition || undefined,
     zIndex: isDragging ? 9999 : 1,
+    position: 'relative' as const,
+  } : {
+    zIndex: 99999,
     position: 'relative' as const,
   };
 
@@ -36,6 +40,43 @@ export function LocationItem({
   ) : (
     <div className="w-2.5 h-2.5 rounded-full bg-white/70 group-hover:bg-white/90 transition-all border border-white/20 shadow-sm" />
   );
+
+  const containerClasses = cn(
+    "w-full group flex flex-row items-center gap-0 transition-colors duration-200 p-0.5 border rounded-3xl",
+    isOverlay
+      ? "shadow-2xl border-white/40 cursor-grabbing bg-black/40 backdrop-blur-xl"
+      : isDragging 
+        ? "opacity-0 invisible pointer-events-none" 
+        : "border-transparent bg-transparent"
+  );
+
+  if (isOverlay) {
+    return (
+      <div
+        className={cn(
+          "w-full flex flex-row items-center gap-0 p-0.5 border border-white/40 rounded-3xl bg-black/60 backdrop-blur-xl shadow-2xl cursor-grabbing scale-[1.02] transition-transform",
+        )}
+        style={{ zIndex: 999999 }}
+      >
+        <div className="text-white/70 p-0 pl-1 shrink-0">
+          <GripVertical size={18} />
+        </div>
+        <div className="relative flex-1">
+          <div className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none transition-all duration-300">
+            {Icon}
+          </div>
+          <input
+            type="text"
+            readOnly
+            value={item.value}
+            placeholder={placeholder}
+            className="w-full bg-white/10 border border-white/20 rounded-2xl py-2 pl-9 pr-4 text-[15px] text-white transition-all font-medium cursor-grabbing"
+          />
+        </div>
+        <div className="w-10 shrink-0" />
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -48,7 +89,7 @@ export function LocationItem({
         height: { duration: 0.2 }
       }}
       initial={{ opacity: 0, height: 0, scale: 0.95 }}
-      animate={{ opacity: isDragging ? 0 : 1, height: "auto", scale: 1 }}
+      animate={{ opacity: 1, height: "auto", scale: 1 }}
       exit={{ 
         opacity: 0, 
         height: 0, 
@@ -57,18 +98,16 @@ export function LocationItem({
         marginBottom: 0,
         overflow: "hidden"
       }}
-      className={cn(
-        "w-full group flex flex-row items-center gap-0 transition-colors duration-200 p-0.5 border rounded-3xl",
-        isDragging 
-          ? "shadow-2xl border-white/40 cursor-grabbing bg-black/20" 
-          : "border-transparent bg-transparent"
-      )}
+      className={containerClasses}
     >
       <button
-        {...attributes}
-        {...listeners}
+        {...(isOverlay ? {} : attributes)}
+        {...(isOverlay ? {} : listeners)}
         type="button"
-        className="text-white/70 hover:text-white cursor-grab active:cursor-grabbing p-0 pl-1 rounded-xl transition-all shrink-0"
+        className={cn(
+          "text-white/70 hover:text-white p-0 pl-1 rounded-xl transition-all shrink-0",
+          isOverlay ? "cursor-grabbing" : "cursor-grab active:cursor-grabbing"
+        )}
       >
         <GripVertical size={18} />
       </button>
@@ -82,6 +121,7 @@ export function LocationItem({
           readOnly
           value={item.value}
           onClick={(e) => {
+            if (isOverlay) return;
             e.stopPropagation();
             onClickInput?.(item);
           }}
@@ -91,7 +131,7 @@ export function LocationItem({
       </div>
 
       <div className="w-10 shrink-0 flex items-center justify-center">
-        {rightAction}
+        {!isOverlay && rightAction}
       </div>
     </motion.div>
   );
