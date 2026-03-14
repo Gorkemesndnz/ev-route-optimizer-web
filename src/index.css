@@ -25,6 +25,7 @@
     --ring: 240 10% 3.9%;
     --radius: 0.5rem;
   }
+
   .dark {
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
@@ -52,6 +53,7 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
     font-family: 'Plus Jakarta Sans', sans-serif;
@@ -60,7 +62,7 @@
 
 @layer components {
   .glass-panel {
-    @apply bg-black/60 backdrop-blur-2xl border border-white/20 shadow-2xl rounded-[28px] text-white;
+    @apply bg-black/40 backdrop-blur-xl border border-white/20 shadow-2xl rounded-3xl text-white;
   }
 
   .interactive-btn {

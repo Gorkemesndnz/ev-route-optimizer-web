@@ -39,44 +39,46 @@ function App() {
         </AnimatePresence>
 
         {/* Floating UI Elements */}
-        <div className="absolute inset-0 pointer-events-none p-4 md:p-6 lg:p-8 flex items-start justify-start z-40 overflow-hidden">
-          <div className="relative w-full sm:w-[400px]">
-            
-            {/* MAIN VIEW */}
-            <div 
-              className={`flex flex-col gap-6 w-full ${
-                activeView === 'main' 
-                  ? 'opacity-100 pointer-events-auto transition-opacity duration-300' 
-                  : 'opacity-0 pointer-events-none transition-none absolute'
-              }`}
-            >
-              <Sidebar onOpenRouteSettings={() => setActiveView('settings')} />
-              
-              <VehicleCard 
-                selectedVehicle={selectedVehicle}
-                onOpenGarage={() => setGarageOpen(true)}
-                onOpenVehicleSettings={() => setVehicleSettingsOpen(true)}
-              />
-            </div>
+        <div className="absolute inset-0 pointer-events-none p-4 md:p-6 lg:p-8 flex items-start justify-start z-40">
+          <AnimatePresence mode="wait" initial={false}>
+            {activeView === 'main' && (
+              <motion.div
+                key="main"
+                initial={{ left: -50, opacity: 0 }}
+                animate={{ left: 0, opacity: 1 }}
+                exit={{ left: -50, opacity: 0 }}
+                transition={{ type: "tween", ease: "easeInOut", duration: 0.3 }}
+                className="flex flex-col gap-6 relative z-40 pointer-events-none"
+              >
+                <Sidebar onOpenRouteSettings={() => setActiveView('settings')} />
 
-            {/* SETTINGS VIEW */}
-            <div 
-              className={`absolute top-0 w-full transition-all duration-300 ease-in-out ${
-                activeView === 'settings' 
-                  ? 'left-0 opacity-100 pointer-events-auto' 
-                  : '-left-[110%] opacity-0 pointer-events-none'
-              }`}
-            >
-              <RouteSettingsView onBack={() => setActiveView('main')} />
-            </div>
+                <VehicleCard
+                  selectedVehicle={selectedVehicle}
+                  onOpenGarage={() => setGarageOpen(true)}
+                  onOpenVehicleSettings={() => setVehicleSettingsOpen(true)}
+                />
+              </motion.div>
+            )}
 
-          </div>
+            {activeView === 'settings' && (
+              <motion.div
+                key="settings"
+                initial={{ left: 50, opacity: 0 }}
+                animate={{ left: 0, opacity: 1 }}
+                exit={{ left: 50, opacity: 0 }}
+                transition={{ type: "tween", ease: "easeInOut", duration: 0.3 }}
+                className="relative z-40 pointer-events-none"
+              >
+                <RouteSettingsView onBack={() => setActiveView('main')} />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* 5. My Garage Modal */}
-        <MyGarageModal 
-          isOpen={isGarageOpen} 
-          onClose={() => setGarageOpen(false)} 
+        <MyGarageModal
+          isOpen={isGarageOpen}
+          onClose={() => setGarageOpen(false)}
           onSelectVehicle={(vehicle) => {
             setSelectedVehicle(vehicle);
             setGarageOpen(false);
@@ -84,9 +86,9 @@ function App() {
         />
 
         {/* 6. Vehicle & Driver Settings Modal */}
-        <VehicleSettingsModal 
-          isOpen={isVehicleSettingsOpen} 
-          onClose={() => setVehicleSettingsOpen(false)} 
+        <VehicleSettingsModal
+          isOpen={isVehicleSettingsOpen}
+          onClose={() => setVehicleSettingsOpen(false)}
         />
 
       </div>
