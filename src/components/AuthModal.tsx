@@ -11,7 +11,7 @@ const MOCK_USER = {
   phone: '(111) 111-11-11'
 };
 
-export default function AuthModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
+export default function AuthModal({ isOpen, onClose, onLogin }: { isOpen: boolean, onClose: () => void, onLogin?: (user: any) => void }) {
   const [authStep, setAuthStep] = useState<'email' | 'password' | 'register' | 'verify_email' | 'reset_password'>('email');
   
   // Registration / Login Info
@@ -95,6 +95,7 @@ export default function AuthModal({ isOpen, onClose }: { isOpen: boolean, onClos
     if (password === MOCK_USER.password) {
       setAuthError('');
       alert("Başarılı Giriş Yapıldı: " + email);
+      if (onLogin) onLogin(MOCK_USER);
       handleClose(); // Şimdilik giriş yapıldığında pencereyi kapatıyoruz
     } else {
       setAuthError("Girdiğiniz şifre hatalı."); // Yalnızca şifre yanlışlığında hata uyarısı veriyoruz
@@ -432,6 +433,7 @@ export default function AuthModal({ isOpen, onClose }: { isOpen: boolean, onClos
                   <button 
                     onClick={() => {
                        alert("Yeni Kayıt İşlemi: Mock Tarafından Kaydedildi");
+                       if (onLogin) onLogin({ ...MOCK_USER, email, firstName, lastName, phone });
                        handleClose();
                     }}
                     disabled={!password || !isPasswordsMatch || !firstName || !phone || phone.length < 14}
