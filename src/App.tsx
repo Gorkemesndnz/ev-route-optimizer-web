@@ -3,16 +3,19 @@ import BackgroundMap from "./components/BackgroundMap";
 import Sidebar from "./components/Sidebar";
 import VehicleCard from "./components/VehicleCard";
 import RouteSettingsView from "./components/RouteSettingsView";
-import MyGarageModal from "./components/MyGarageModal";
+import GarageView from "./components/GarageView";
+import AddVehicleView from "./components/AddVehicleView";
 import VehicleSettingsModal from "./components/VehicleSettingsModal";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 function App() {
-  const [activeView, setActiveView] = useState<'main' | 'settings'>('main');
-  const [isGarageOpen, setGarageOpen] = useState(false);
+  const [activeView, setActiveView] = useState<'main' | 'settings' | 'garage' | 'add_vehicle'>('main');
+  const [vehicles, setVehicles] = useState([]);
+  const [selectedVehicleId, setSelectedVehicleId] = useState(null);
   const [isVehicleSettingsOpen, setVehicleSettingsOpen] = useState(false);
-  const [selectedVehicle, setSelectedVehicle] = useState(null);
+
+  const selectedVehicle = vehicles.find(v => v.id === selectedVehicleId) || null;
 
   // Hardcoded for demo
   const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "AIzaSy_demo";
@@ -25,7 +28,7 @@ function App() {
 
         {/* Map Blur Overlay (New Feature) */}
         <AnimatePresence>
-          {activeView === 'settings' && (
+          {activeView !== 'main' && (
             <motion.div
               key="map-blur"
               initial={{ opacity: 0 }}
@@ -54,8 +57,12 @@ function App() {
 
                 <VehicleCard
                   selectedVehicle={selectedVehicle}
-                  onOpenGarage={() => setGarageOpen(true)}
+                  onOpenGarage={() => setActiveView('garage')}
+                  onOpenAddVehicle={() => setActiveView('add_vehicle')}
                   onOpenVehicleSettings={() => setVehicleSettingsOpen(true)}
+                  onUpdateSoC={(soc) => {
+                    setVehicles(prev => prev.map(v => v.id === selectedVehicleId ? { ...v, soc } : v));
+                  }}
                 />
               </motion.div>
             )}
@@ -72,18 +79,57 @@ function App() {
                 <RouteSettingsView onBack={() => setActiveView('main')} />
               </motion.div>
             )}
+
+            {activeView === 'garage' && (
+              <motion.div
+                key="garage"
+                initial={{ left: 50, opacity: 0 }}
+                animate={{ left: 0, opacity: 1 }}
+                exit={{ left: 50, opacity: 0 }}
+                transition={{ type: "tween", ease: "easeInOut", duration: 0.3 }}
+                className="relative z-40 pointer-events-none"
+              >
+                <GarageView 
+                  vehicles={vehicles}
+                  selectedVehicleId={selectedVehicleId}
+                  onSelectVehicle={(id) => setSelectedVehicleId(id)}
+                  onRenameVehicle={(id, newName) => {
+                    setVehicles(prev => prev.map(v => v.id === id ? { ...v, customName: newName } : v));
+                  }}
+                  onDeleteVehicle={(id) => {
+                    const newVehicles = vehicles.filter(v => v.id !== id);
+                    setVehicles(newVehicles);
+                    if (selectedVehicleId === id) {
+                      setSelectedVehicleId(newVehicles.length > 0 ? newVehicles[0].id : null);
+                    }
+                  }}
+                  onAddVehicle={() => setActiveView('add_vehicle')}
+                  onBack={() => setActiveView('main')}
+                />
+              </motion.div>
+            )}
+
+            {activeView === 'add_vehicle' && (
+              <motion.div
+                key="add_vehicle"
+                initial={{ left: 50, opacity: 0 }}
+                animate={{ left: 0, opacity: 1 }}
+                exit={{ left: 50, opacity: 0 }}
+                transition={{ type: "tween", ease: "easeInOut", duration: 0.3 }}
+                className="relative z-40 pointer-events-none"
+              >
+                <AddVehicleView 
+                  onBack={() => setActiveView(vehicles.length > 0 ? 'garage' : 'main')}
+                  onVehicleAdded={(vehicle) => {
+                    setVehicles(prev => [...prev, vehicle]);
+                    setSelectedVehicleId(vehicle.id);
+                    setActiveView('main');
+                  }}
+                />
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
-
-        {/* 5. My Garage Modal */}
-        <MyGarageModal
-          isOpen={isGarageOpen}
-          onClose={() => setGarageOpen(false)}
-          onSelectVehicle={(vehicle) => {
-            setSelectedVehicle(vehicle);
-            setGarageOpen(false);
-          }}
-        />
 
         {/* 6. Vehicle & Driver Settings Modal */}
         <VehicleSettingsModal

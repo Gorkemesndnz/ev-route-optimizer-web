@@ -5,11 +5,15 @@ import { Slider } from "./ui/slider";
 export default function VehicleCard({ 
   selectedVehicle, 
   onOpenGarage, 
-  onOpenVehicleSettings 
+  onOpenAddVehicle,
+  onOpenVehicleSettings,
+  onUpdateSoC
 }: { 
   selectedVehicle: any, 
   onOpenGarage: () => void, 
-  onOpenVehicleSettings: () => void 
+  onOpenAddVehicle: () => void,
+  onOpenVehicleSettings: () => void,
+  onUpdateSoC: (soc: number) => void
 }) {
   if (!selectedVehicle) {
     return (
@@ -19,7 +23,7 @@ export default function VehicleCard({
         </div>
         <p className="text-white/70 text-sm text-center">Henüz araç seçilmedi. En iyi rota için bir araç seçin.</p>
         <Button 
-          onClick={onOpenGarage}
+          onClick={onOpenAddVehicle}
           className="bg-zinc-100 text-black hover:bg-white transition-all duration-200 active:scale-95 rounded-xl h-12 px-8 font-bold w-full max-w-[220px] shadow-lg"
         >
           <Plus className="mr-2" size={20} /> Araç Ekle / Seç
@@ -37,13 +41,13 @@ export default function VehicleCard({
           </div>
           <div className="flex flex-col">
             <span className="text-[11px] text-white/50 font-semibold tracking-wider uppercase">Seçili Araç</span>
-            <span className="text-[17px] font-bold text-white tracking-tight">{selectedVehicle.name}</span>
+            <span className="text-[17px] font-bold text-white tracking-tight">{selectedVehicle.customName || `${selectedVehicle.brand} ${selectedVehicle.model}`}</span>
           </div>
         </div>
         <button 
           onClick={onOpenGarage}
           className="text-white/60 hover:text-white p-2.5 hover:bg-white/10 rounded-full transition-all duration-200 active:scale-90 bg-white/5 border border-white/5"
-          title="Farklı Araç Seç"
+          title="Farklı Araç Seç / Düzenle"
         >
           <ArrowLeftRight size={16} />
         </button>
@@ -51,10 +55,16 @@ export default function VehicleCard({
 
       <div className="bg-white/5 p-4 rounded-2xl border border-white/10 flex flex-col gap-4 shadow-inner">
         <div className="flex justify-between items-center font-medium">
-          <span className="text-sm text-white/80 flex items-center gap-2"><Zap size={16} className="text-yellow-400 fill-yellow-400/20" /> Mevcut Şarj</span>
-          <span className="text-base text-white font-bold tracking-tight">80%</span>
+          <span className="text-sm text-white/80 flex items-center gap-2"><Zap size={16} className="text-cyan-400 fill-cyan-400/20" /> Mevcut Şarj</span>
+          <span className="text-base text-cyan-400 font-bold tracking-tight">%{selectedVehicle.soc}</span>
         </div>
-        <Slider defaultValue={[80]} max={100} step={1} className="w-full cursor-grab active:cursor-grabbing" />
+        <Slider 
+          value={[selectedVehicle.soc]} 
+          onValueChange={(val) => onUpdateSoC(val[0])}
+          max={100} 
+          step={1} 
+          className="w-full cursor-grab active:cursor-grabbing [&_[role=slider]]:bg-cyan-400 [&_[role=slider]]:border-cyan-400 [&_.bg-primary]:bg-cyan-500" 
+        />
       </div>
 
       <Button 

@@ -1,0 +1,41 @@
+﻿commit ee149abb573872ea39fdf02ce1ed95af7df1288b
+Author: Gorkemesndnz <121403043+Gorkemesndnz@users.noreply.github.com>
+Date:   Sat Mar 14 03:44:18 2026 +0300
+
+    feat: Initialize core application structure with main layout, route planning sidebar, and modal components.
+
+commit 6021bf903b018f15d889d88e155b0c2a4be38d44
+Author: Gorkemesndnz <121403043+Gorkemesndnz@users.noreply.github.com>
+Date:   Sat Mar 14 03:42:29 2026 +0300
+
+    refactor: use absolute overlay architecture for settings view to fix dnd-kit coordinate calculation
+
+commit 72ec872be614a75b45f17578c356df5483baaeeb
+Author: Gorkemesndnz <121403043+Gorkemesndnz@users.noreply.github.com>
+Date:   Sat Mar 14 03:18:52 2026 +0300
+
+    fix(ux): fix drag overlay, update search icon, add dismissable map blur
+
+commit f410a540cfe6b20eeff54f5a6754735502faa3fe
+Author: Gorkemesndnz <121403043+Gorkemesndnz@users.noreply.github.com>
+Date:   Sat Mar 14 03:13:48 2026 +0300
+
+    fix(ui): restore authentic glassmorphism styles and add map blur overlay
+
+commit 84d00db64a6425a38a369f882193338c690e08fc
+Author: Gorkemesndnz <121403043+Gorkemesndnz@users.noreply.github.com>
+Date:   Sat Mar 14 02:28:20 2026 +0300
+
+    style(ui): update accent color to light turquoise (cyan) for a more modern EV aesthetic
+
+commit 49f832a355d5f2d03d265661d3a6901b3d933647
+Author: Gorkemesndnz <121403043+Gorkemesndnz@users.noreply.github.com>
+Date:   Sat Mar 14 02:26:52 2026 +0300
+
+    style(ui): transition RouteSettingsModal from standard blue to high-end EV Emerald Green glassmorphism
+
+commit 1affb713c0dcaa7abc2316add2b5d949068cc36e
+Author: Gorkemesndnz <121403043+Gorkemesndnz@users.noreply.github.com>
+Date:   Sat Mar 14 02:20:20 2026 +0300
+
+    feat(ui): convert date and time pickers to native inputs, remove input arrows from percentages, update brand layout to css grid cols-4
