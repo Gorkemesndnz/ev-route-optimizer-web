@@ -24,7 +24,7 @@ export function LocationItem({
   } = useSortable({ id, disabled: isOverlay });
 
   const style = !isOverlay ? {
-    transform: CSS.Transform.toString(transform),
+    transform: CSS.Translate.toString(transform),
     transition: transition || undefined,
     zIndex: isDragging ? 9999 : 1,
     position: 'relative' as const,
@@ -79,33 +79,19 @@ export function LocationItem({
   }
 
   return (
-    <motion.div
-      ref={setNodeRef}
-      style={style}
-      transition={{ 
-        opacity: { duration: 0.2 },
-        height: { duration: 0.2 }
-      }}
-      initial={{ opacity: 0, height: 0, scale: 0.95 }}
-      animate={{ opacity: 1, height: "auto", scale: 1 }}
-      exit={{ 
-        opacity: 0, 
-        height: 0, 
-        scale: 0.95,
-        marginTop: 0,
-        marginBottom: 0,
-        overflow: "hidden"
-      }}
-      className={containerClasses}
+    <div 
+      ref={setNodeRef} 
+      style={style} 
+      className={cn(
+        "w-full group flex flex-row items-center gap-0 p-0.5 border rounded-3xl transition-colors duration-200",
+        isDragging ? "opacity-0 pointer-events-none" : "border-transparent bg-transparent"
+      )}
     >
       <button
-        {...(isOverlay ? {} : attributes)}
-        {...(isOverlay ? {} : listeners)}
+        {...attributes}
+        {...listeners}
         type="button"
-        className={cn(
-          "text-white/70 hover:text-white p-0 pl-1 rounded-xl transition-all shrink-0",
-          isOverlay ? "cursor-grabbing" : "cursor-grab active:cursor-grabbing"
-        )}
+        className="text-white/70 hover:text-white px-2 py-3 -ml-1 rounded-xl transition-all shrink-0 cursor-grab active:cursor-grabbing touch-none select-none flex items-center justify-center"
       >
         <GripVertical size={18} />
       </button>
@@ -119,7 +105,6 @@ export function LocationItem({
           readOnly
           value={item.value}
           onClick={(e) => {
-            if (isOverlay) return;
             e.stopPropagation();
             onClickInput?.(item);
           }}
@@ -129,8 +114,8 @@ export function LocationItem({
       </div>
 
       <div className="w-10 shrink-0 flex items-center justify-center">
-        {!isOverlay && rightAction}
+        {rightAction}
       </div>
-    </motion.div>
+    </div>
   );
 }

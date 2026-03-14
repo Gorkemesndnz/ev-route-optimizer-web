@@ -8,7 +8,6 @@ import {
   closestCorners,
   rectIntersection,
   KeyboardSensor,
-  PointerSensor,
   MouseSensor,
   TouchSensor,
   useSensor,
@@ -40,7 +39,7 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
   const sensors = useSensors(
     useSensor(MouseSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 5,
       },
     }),
     useSensor(TouchSensor, {
@@ -61,20 +60,28 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
   const handleDragEnd = (event) => {
     const { active, over } = event;
     setActiveId(null);
+    console.log("DragEnd Event:", { activeId: active?.id, overId: over?.id });
 
     if (over && active.id !== over.id) {
+      console.log("Drag is valid. Commencing array move...");
       setLocations((items) => {
         const oldIndex = items.findIndex((i) => i.id === active.id);
         const newIndex = items.findIndex((i) => i.id === over.id);
+        console.log(`Moving item from index ${oldIndex} to ${newIndex}`);
 
         const newItems = arrayMove(items, oldIndex, newIndex);
+        console.log("New items array after move:", newItems);
 
-        return newItems.map((item, index) => {
+        const finalizedItems = newItems.map((item, index) => {
           if (index === 0) return { ...item, type: "start" };
           if (index === newItems.length - 1) return { ...item, type: "destination" };
           return { ...item, type: "waypoint" };
         });
+        console.log("Finalized items to set in state:", finalizedItems);
+        return finalizedItems;
       });
+    } else {
+      console.log("Drag invalid or dropped on same position.");
     }
   };
 
@@ -152,7 +159,7 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
       <div className="relative flex flex-col gap-3">
         <DndContext
           sensors={sensors}
-          collisionDetection={rectIntersection}
+          collisionDetection={closestCenter}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
           modifiers={[restrictToVerticalAxis]}
@@ -162,7 +169,6 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
             strategy={verticalListSortingStrategy}
           >
             <div className="relative flex flex-col gap-2">
-              <AnimatePresence initial={false}>
                 {locations.map((loc, index) => {
                   const isFirst = index === 0;
                   const isLast = index === locations.length - 1;
@@ -235,13 +241,12 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
                     </button>
                   </motion.div>
                 )}
-              </AnimatePresence>
             </div>
           </SortableContext>
           <DragOverlay dropAnimation={dropAnimation}>
             {activeId && activeItem ? (
               <LocationItem
-                id={activeId}
+                id={`overlay-${activeId}`}
                 item={activeItem}
                 placeholder={activeIndex === 0 ? "Başlangıç Noktası" : activeIndex === locations.length - 1 ? "Varış Noktası" : "Durak"}
                 isFirst={activeIndex === 0}
