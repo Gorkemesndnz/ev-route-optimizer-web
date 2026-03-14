@@ -5,15 +5,14 @@ import VehicleCard from "./components/VehicleCard";
 import RouteSettingsView from "./components/RouteSettingsView";
 import GarageView from "./components/GarageView";
 import AddVehicleView from "./components/AddVehicleView";
-import VehicleSettingsModal from "./components/VehicleSettingsModal";
+import VehicleSettingsView from "./components/VehicleSettingsView";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 function App() {
-  const [activeView, setActiveView] = useState<'main' | 'settings' | 'garage' | 'add_vehicle'>('main');
+  const [activeView, setActiveView] = useState<'main' | 'settings' | 'garage' | 'add_vehicle' | 'vehicle_settings'>('main');
   const [vehicles, setVehicles] = useState([]);
   const [selectedVehicleId, setSelectedVehicleId] = useState(null);
-  const [isVehicleSettingsOpen, setVehicleSettingsOpen] = useState(false);
 
   const selectedVehicle = vehicles.find(v => v.id === selectedVehicleId) || null;
 
@@ -59,7 +58,7 @@ function App() {
                   selectedVehicle={selectedVehicle}
                   onOpenGarage={() => setActiveView('garage')}
                   onOpenAddVehicle={() => setActiveView('add_vehicle')}
-                  onOpenVehicleSettings={() => setVehicleSettingsOpen(true)}
+                  onOpenVehicleSettings={() => setActiveView('vehicle_settings')}
                   onUpdateSoC={(soc) => {
                     setVehicles(prev => prev.map(v => v.id === selectedVehicleId ? { ...v, soc } : v));
                   }}
@@ -128,14 +127,20 @@ function App() {
                 />
               </motion.div>
             )}
+            {activeView === 'vehicle_settings' && (
+              <motion.div
+                key="vehicle_settings"
+                initial={{ left: 50, opacity: 0 }}
+                animate={{ left: 0, opacity: 1 }}
+                exit={{ left: 50, opacity: 0 }}
+                transition={{ type: "tween", ease: "easeInOut", duration: 0.3 }}
+                className="relative z-40 pointer-events-none"
+              >
+                <VehicleSettingsView onBack={() => setActiveView('main')} />
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
-
-        {/* 6. Vehicle & Driver Settings Modal */}
-        <VehicleSettingsModal
-          isOpen={isVehicleSettingsOpen}
-          onClose={() => setVehicleSettingsOpen(false)}
-        />
 
       </div>
     </APIProvider>
