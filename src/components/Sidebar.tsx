@@ -140,7 +140,7 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
 
 
   return (
-    <div className="glass-panel w-full sm:w-[400px] px-4 py-5 pointer-events-auto flex flex-col gap-4 relative">
+    <div className="glass-panel w-full sm:w-[420px] px-4 py-5 pointer-events-auto flex flex-col gap-4 relative">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold tracking-tight text-white/90">Rota Planlama</h2>
       </div>

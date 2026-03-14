@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { ArrowLeft, Plus, CheckCircle2, Circle, Trash2, CarFront, Edit2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -10,8 +11,11 @@ export default function GarageView({
   onAddVehicle,
   onBack
 }) {
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [tempName, setTempName] = useState("");
+
   return (
-    <div className="glass-panel w-full sm:w-[400px] px-4 py-5 pointer-events-auto flex flex-col gap-4 relative h-[calc(100svh-4rem)] sm:h-auto sm:max-h-[85vh] overflow-y-auto custom-scrollbar">
+    <div className="glass-panel w-full sm:w-[420px] px-4 py-5 pointer-events-auto flex flex-col gap-4 relative h-[calc(100svh-4rem)] sm:h-auto sm:max-h-[85vh] overflow-y-auto custom-scrollbar">
       
       {/* Header */}
       <div className="flex items-center gap-3">
@@ -53,28 +57,50 @@ export default function GarageView({
                     {isSelected ? <CheckCircle2 size={24} className="drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]" /> : <Circle size={22} />}
                   </div>
                   
-                  <div className="flex flex-col flex-1">
-                    <span className="text-sm font-medium text-white/50">{vehicle.brand} {vehicle.model}</span>
-                    <input
-                      type="text"
-                      className="bg-transparent border-none text-white font-medium text-lg p-0 focus:outline-none focus:ring-0 placeholder-white/30 border-b border-transparent focus:border-white/20 transition-colors w-full"
-                      value={vehicle.customName}
-                      onChange={(e) => onRenameVehicle(vehicle.id, e.target.value)}
-                      placeholder="Araç İsmi (Örn: Tesla)"
-                      onClick={(e) => e.stopPropagation()}
-                    />
+                  <div className="flex flex-col flex-1 justify-center">
+                    {vehicle.customName && vehicle.customName !== `${vehicle.brand} ${vehicle.model}` && (
+                      <span className="text-[11px] font-medium text-cyan-400 uppercase tracking-wider mb-0.5">{vehicle.brand} {vehicle.model}</span>
+                    )}
+                    
+                    {editingId === vehicle.id ? (
+                      <input
+                        autoFocus
+                        type="text"
+                        className="bg-transparent border-none text-white font-bold text-lg p-0 focus:outline-none focus:ring-0 placeholder-white/30 border-b border-cyan-400/50 transition-colors w-full"
+                        value={tempName}
+                        onChange={(e) => setTempName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            onRenameVehicle(vehicle.id, tempName);
+                            setEditingId(null);
+                          } else if (e.key === 'Escape') {
+                            setEditingId(null);
+                          }
+                        }}
+                        onBlur={() => {
+                          onRenameVehicle(vehicle.id, tempName);
+                          setEditingId(null);
+                        }}
+                        placeholder="Araç İsmi"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    ) : (
+                      <span className="text-lg font-bold text-white tracking-tight">
+                        {vehicle.customName || `${vehicle.brand} ${vehicle.model}`}
+                      </span>
+                    )}
                   </div>
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-1 -mt-1 -mr-1">
+                <div className="flex flex-col items-center justify-center gap-2 pl-2 border-l border-white/10">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      const row = e.currentTarget.closest('[data-vehicle-row]');
-                      row?.querySelector('input')?.focus();
+                      setEditingId(vehicle.id);
+                      setTempName(vehicle.customName || `${vehicle.brand} ${vehicle.model}`);
                     }}
-                    className="p-2 text-white/30 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-xl transition-all active:scale-90"
+                    className="p-2 text-white/50 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-xl transition-all active:scale-90"
                     title="İsmi Düzenle"
                   >
                     <Edit2 size={16} />
@@ -85,10 +111,10 @@ export default function GarageView({
                       e.stopPropagation();
                       onDeleteVehicle(vehicle.id);
                     }}
-                    className="p-2 text-white/30 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all active:scale-90"
+                    className="p-2 text-white/50 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all active:scale-90"
                     title="Aracı Sil"
                   >
-                    <Trash2 size={18} />
+                    <Trash2 size={16} />
                   </button>
                 </div>
               </div>

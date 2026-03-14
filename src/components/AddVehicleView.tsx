@@ -31,7 +31,7 @@ export default function AddVehicleView({ onBack, onVehicleAdded }) {
   };
 
   return (
-    <div className="glass-panel w-full sm:w-[400px] px-4 py-5 pointer-events-auto flex flex-col gap-4 relative h-[calc(100svh-4rem)] sm:h-[600px] overflow-hidden">
+    <div className="glass-panel w-full sm:w-[420px] px-4 py-5 pointer-events-auto flex flex-col gap-4 relative h-[calc(100svh-4rem)] sm:h-[600px] overflow-hidden">
       
       {/* Header */}
       <div className="flex items-center gap-3 shrink-0">

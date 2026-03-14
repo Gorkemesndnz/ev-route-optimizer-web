@@ -80,7 +80,7 @@ export default function RouteSettingsView({ onBack }: { onBack: () => void }) {
   };
 
   return (
-    <div className="glass-panel w-full sm:w-[400px] h-full sm:h-auto sm:max-h-[90vh] flex flex-col pointer-events-auto">
+    <div className="glass-panel w-full sm:w-[420px] h-full sm:h-auto sm:max-h-[90vh] flex flex-col pointer-events-auto">
       {/* Header (Sticky) */}
       <div className="flex items-center gap-3 pt-6 px-6 pb-4 shrink-0 border-b border-white/10 z-10 sticky top-0 bg-transparent">
         <button 

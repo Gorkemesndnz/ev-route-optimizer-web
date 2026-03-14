@@ -1,6 +1,29 @@
 import { CarFront, Battery, ArrowLeftRight, Settings, Plus } from "lucide-react";
 import { Button } from "./ui/button";
-import { Slider } from "./ui/slider";
+
+const NativeSlider = ({ value, min, max, onChange }: { value: number, min: number, max: number, onChange: (v: number) => void }) => {
+  const percentage = ((value - min) / (max - min)) * 100;
+  return (
+    <div className="relative w-full h-1.5 bg-white/20 rounded-full shadow-inner flex items-center mt-2 mb-2">
+      <div 
+        className="absolute left-0 h-full bg-cyan-400 rounded-full shadow-[0_0_10px_rgba(34,211,238,0.5)] pointer-events-none transition-all duration-75" 
+        style={{ width: `${percentage}%` }} 
+      />
+      <input 
+        type="range" 
+        min={min} 
+        max={max} 
+        value={value} 
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="absolute w-full h-full opacity-0 cursor-ew-resize z-10 m-0 p-0"
+      />
+      <div 
+        className="absolute w-5 h-5 bg-white rounded-full shadow-md pointer-events-none transition-all duration-75 drop-shadow-[0_0_5px_rgba(34,211,238,0.5)] border border-cyan-400/20" 
+        style={{ left: `calc(${percentage}% - (${percentage * 20 / 100}px))` }}
+      />
+    </div>
+  );
+};
 
 export default function VehicleCard({ 
   selectedVehicle, 
@@ -39,9 +62,15 @@ export default function VehicleCard({
           <div className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center ring-1 ring-white/20">
             <CarFront size={20} className="text-white" />
           </div>
-          <div className="flex flex-col">
-            <span className="text-[11px] text-white/50 font-semibold tracking-wider uppercase">Seçili Araç</span>
-            <span className="text-[17px] font-bold text-white tracking-tight">{selectedVehicle.customName || `${selectedVehicle.brand} ${selectedVehicle.model}`}</span>
+          <div className="flex flex-col justify-center">
+            {selectedVehicle.customName && selectedVehicle.customName !== `${selectedVehicle.brand} ${selectedVehicle.model}` && (
+              <span className="text-[11px] font-medium text-cyan-400 uppercase tracking-wider mb-0.5">
+                {selectedVehicle.brand} {selectedVehicle.model}
+              </span>
+            )}
+            <span className="text-[17px] font-bold text-white tracking-tight">
+              {selectedVehicle.customName || `${selectedVehicle.brand} ${selectedVehicle.model}`}
+            </span>
           </div>
         </div>
         <button 
@@ -58,12 +87,11 @@ export default function VehicleCard({
           <span className="text-sm text-white/80 flex items-center gap-2"><Battery size={16} className="text-cyan-400" /> Mevcut Şarj</span>
           <span className="text-base text-cyan-400 font-bold tracking-tight">%{selectedVehicle.soc}</span>
         </div>
-        <Slider 
-          value={[selectedVehicle.soc]} 
-          onValueChange={(val) => onUpdateSoC(val[0])}
-          max={100} 
-          step={1} 
-          className="w-full cursor-grab active:cursor-grabbing [&_[data-slot=slider-track]]:bg-white/10 [&_[data-slot=slider-range]]:bg-cyan-400 [&_[data-slot=slider-thumb]]:bg-cyan-400 [&_[data-slot=slider-thumb]]:border-cyan-300 [&_[data-slot=slider-thumb]]:shadow-[0_0_10px_rgba(34,211,238,0.5)]" 
+        <NativeSlider 
+          value={selectedVehicle.soc} 
+          min={0}
+          max={100}
+          onChange={(val) => onUpdateSoC(val)}
         />
       </div>
 
