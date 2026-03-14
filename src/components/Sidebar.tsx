@@ -1,5 +1,18 @@
 import { useState } from "react";
-import { ArrowDownUp, Plus, Trash2, Bookmark, Settings, Play } from "lucide-react";
+import { 
+  Search, 
+  Settings, 
+  Navigation, 
+  Trash2, 
+  GripVertical, 
+  MapPin, 
+  ChevronRight,
+  Leaf,
+  ArrowDownUp,
+  Plus,
+  Bookmark,
+  Play
+} from "lucide-react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { Button } from "./ui/button";
 import {
@@ -141,8 +154,12 @@ export default function Sidebar({ onOpenRouteSettings }: { onOpenRouteSettings: 
 
   return (
     <div className="glass-panel w-full sm:w-[420px] px-4 py-5 pointer-events-auto flex flex-col gap-4 relative">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold tracking-tight text-white/90">Rota Planlama</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold tracking-tight text-white/90">Rota Planlama</h2>
+        <div className="flex items-center gap-2">
+          <Leaf className="text-emerald-500" size={24} />
+          <span className="text-lg font-black tracking-widest text-emerald-500 uppercase">IYONTREE</span>
+        </div>
       </div>
 
       <div className="relative flex flex-col gap-3">

@@ -6,13 +6,30 @@ import RouteSettingsView from "./components/RouteSettingsView";
 import GarageView from "./components/GarageView";
 import AddVehicleView from "./components/AddVehicleView";
 import VehicleSettingsView from "./components/VehicleSettingsView";
-import { useState } from "react";
+import MapControls from "./components/MapControls";
+import { lightMapStyle, darkMapStyle } from "./lib/mapStyles";
+import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 function App() {
   const [activeView, setActiveView] = useState<'main' | 'settings' | 'garage' | 'add_vehicle' | 'vehicle_settings'>('main');
   const [vehicles, setVehicles] = useState([]);
   const [selectedVehicleId, setSelectedVehicleId] = useState(null);
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [mapStyleKey, setMapStyleKey] = useState<'default' | 'light' | 'dark' | 'satellite'>('dark');
+  const [showTraffic, setShowTraffic] = useState(true);
+
+  // Sync with system theme on mount
+  useEffect(() => {
+    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setMapStyleKey(isDark ? 'dark' : 'light');
+  }, []);
+
+  const getMapStyle = () => {
+    if (mapStyleKey === 'light') return lightMapStyle;
+    if (mapStyleKey === 'dark') return darkMapStyle;
+    return [];
+  };
 
   const selectedVehicle = vehicles.find(v => v.id === selectedVehicleId) || null;
 
@@ -23,7 +40,20 @@ function App() {
     <APIProvider apiKey={API_KEY}>
       <div className="relative w-screen h-[100svh] overflow-hidden bg-zinc-950">
         {/* 1. Background Map */}
-        <BackgroundMap />
+        <BackgroundMap 
+          userLocation={userLocation} 
+          mapStyle={getMapStyle() as google.maps.MapTypeStyle[]} 
+          showTraffic={showTraffic}
+        />
+
+        {/* 2. Map Controls (Bottom Right) */}
+        <MapControls 
+          onLocateUser={setUserLocation} 
+          currentStyle={mapStyleKey}
+          onStyleChange={setMapStyleKey}
+          showTraffic={showTraffic}
+          onToggleTraffic={() => setShowTraffic(!showTraffic)}
+        />
 
         {/* Map Blur Overlay (New Feature) */}
         <AnimatePresence>
