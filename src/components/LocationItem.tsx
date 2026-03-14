@@ -82,9 +82,7 @@ export function LocationItem({
     <motion.div
       ref={setNodeRef}
       style={style}
-      layout
       transition={{ 
-        layout: { type: "spring", stiffness: 300, damping: 30 },
         opacity: { duration: 0.2 },
         height: { duration: 0.2 }
       }}
