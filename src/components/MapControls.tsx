@@ -60,7 +60,7 @@ export default function MapControls({
 
   return (
     <div className="absolute bottom-6 right-6 z-40 pointer-events-auto">
-      <div className="flex flex-row items-center bg-black/60 backdrop-blur-2xl border border-white/20 rounded-xl p-1 shadow-xl gap-0.5">
+      <div className="flex flex-row items-center bg-black/40 backdrop-blur-xl border border-white/20 rounded-xl p-1 shadow-2xl gap-0.5">
         <button 
           onClick={handleZoomOut}
           className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all cursor-pointer flex items-center justify-center"
