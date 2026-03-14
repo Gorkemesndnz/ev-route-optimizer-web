@@ -42,7 +42,7 @@ export function LocationItem({
       ref={setNodeRef} 
       style={style} 
       className={cn(
-        "w-full group flex flex-row items-center gap-0 p-0.5 border rounded-3xl transition-all duration-200",
+        "w-full group flex flex-row items-center gap-0 p-0.5 border rounded-3xl transition-colors duration-200",
         isDragging 
           ? "border-white/40 bg-black/60 backdrop-blur-xl shadow-2xl scale-[1.02] cursor-grabbing"
           : "border-transparent bg-transparent"
