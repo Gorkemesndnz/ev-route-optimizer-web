@@ -11,11 +11,10 @@ import AuthModal from "./components/AuthModal";
 import AccountDashboard from "./components/AccountDashboard";
 import CookieConsent from "./components/CookieConsent";
 import GeneralMenu from "./components/GeneralMenu";
-import { User, LogOut } from "lucide-react";
-import { lightMapStyle, darkMapStyle } from "./lib/mapStyles";
+import { LogOut } from "lucide-react";
 import { translations } from "./lib/translations";
-import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useMemo, useState } from "react";
 import { useSettings } from "./contexts/SettingsContext";
 import { useAuth } from "./contexts/AuthContext";
 import { useVehicle } from "./contexts/VehicleContext";
@@ -27,25 +26,23 @@ function App() {
   const [isRightMenuOpen, setIsRightMenuOpen] = useState(false);
 
   const {
-    language, getMapStyle, showTraffic, setShowTraffic, 
-    showCookieBanner, showCookieModal, setShowCookieModal, handleSaveCookies,
-    mapStyleKey, setLanguage, setMapStyleKey
+    language, getMapStyle, showTraffic,
+    setShowCookieModal,
+    mapStyleKey
   } = useSettings();
 
   const t = translations[language];
 
   const {
     currentUser, setCurrentUser,
-    isAuthModalOpen, setIsAuthModalOpen,
-    authMessage, setAuthMessage,
-    requireAuth
+    setIsAuthModalOpen,
   } = useAuth();
 
   const {
-    vehicles, setVehicles,
-    selectedVehicleId, setSelectedVehicleId,
-    selectedVehicle
+    vehicles,
   } = useVehicle();
+
+  const mapStyle = useMemo(() => getMapStyle() as google.maps.MapTypeStyle[], [getMapStyle]);
 
   const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
@@ -66,7 +63,7 @@ function App() {
         {/* 1. Background Map */}
         <BackgroundMap 
           userLocation={userLocation} 
-          mapStyle={getMapStyle() as google.maps.MapTypeStyle[]} 
+          mapStyle={mapStyle} 
           showTraffic={showTraffic}
         />
 

@@ -2,14 +2,15 @@ import { Minus, Plus, LocateFixed, Layers, Car } from "lucide-react";
 import { useMap } from "@vis.gl/react-google-maps";
 import { cn } from "@/lib/utils";
 import { translations } from "../lib/translations";
+import { memo } from "react";
 
 import { useSettings } from "../contexts/SettingsContext";
 
-export default function MapControls({ 
+const MapControls = memo(({ 
   onLocateUser, 
 }: { 
   onLocateUser: (loc: {lat: number, lng: number}) => void,
-}) {
+}) => {
   const { 
     language, 
     mapStyleKey: currentStyle, 
@@ -123,4 +124,6 @@ export default function MapControls({
       </div>
     </div>
   );
-}
+});
+
+export default MapControls;

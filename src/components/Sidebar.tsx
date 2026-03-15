@@ -14,6 +14,7 @@ import {
   Play
 } from "lucide-react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
+import { memo } from "react";
 import { Button } from "./ui/button";
 import {
   DndContext,
@@ -42,11 +43,11 @@ import { translations } from "../lib/translations";
 import { useAuth } from "../contexts/AuthContext";
 import { useSettings } from "../contexts/SettingsContext";
 
-export default function Sidebar({
+const Sidebar = memo(({
   onOpenRouteSettings,
 }: {
   onOpenRouteSettings: () => void;
-}) {
+}) => {
   const { language } = useSettings();
   const { currentUser, requireAuth } = useAuth();
   const t = translations[language];
@@ -311,4 +312,6 @@ export default function Sidebar({
       )}
     </div>
   );
-}
+});
+
+export default Sidebar;

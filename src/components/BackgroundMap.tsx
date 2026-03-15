@@ -1,7 +1,7 @@
 import { Map, Marker, useMap } from '@vis.gl/react-google-maps';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, memo } from 'react';
 
-export default function BackgroundMap({ 
+const BackgroundMap = memo(({ 
   userLocation, 
   mapStyle = [],
   showTraffic = true
@@ -9,7 +9,7 @@ export default function BackgroundMap({
   userLocation: {lat: number, lng: number} | null,
   mapStyle?: google.maps.MapTypeStyle[],
   showTraffic?: boolean
-}) {
+}) => {
   const map = useMap();
   const trafficLayerRef = useRef<google.maps.TrafficLayer | null>(null);
 
@@ -55,4 +55,6 @@ export default function BackgroundMap({
       </Map>
     </div>
   );
-}
+});
+
+export default BackgroundMap;

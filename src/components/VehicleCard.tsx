@@ -1,5 +1,6 @@
 import { CarFront, Battery, ArrowLeftRight, Settings, Plus } from "lucide-react";
 import { Button } from "./ui/button";
+import { memo } from "react";
 import { translations } from "../lib/translations";
 
 const NativeSlider = ({ value, min, max, onChange }: { value: number, min: number, max: number, onChange: (v: number) => void }) => {
@@ -29,7 +30,7 @@ const NativeSlider = ({ value, min, max, onChange }: { value: number, min: numbe
 import { useVehicle } from "../contexts/VehicleContext";
 import { useSettings } from "../contexts/SettingsContext";
 
-export default function VehicleCard({ 
+const VehicleCard = memo(({ 
   onOpenGarage, 
   onOpenAddVehicle,
   onOpenVehicleSettings
@@ -37,7 +38,7 @@ export default function VehicleCard({
   onOpenGarage: () => void, 
   onOpenAddVehicle: () => void,
   onOpenVehicleSettings: () => void
-}) {
+}) => {
   const { language } = useSettings();
   const { selectedVehicle, setVehicles, selectedVehicleId } = useVehicle();
   const t = translations[language];
@@ -111,4 +112,6 @@ export default function VehicleCard({
       </Button>
     </div>
   );
-}
+});
+
+export default VehicleCard;
