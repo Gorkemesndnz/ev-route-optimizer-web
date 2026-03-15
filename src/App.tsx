@@ -11,10 +11,6 @@ import AuthModal from "./components/AuthModal";
 import AccountDashboard from "./components/AccountDashboard";
 import CookieConsent from "./components/CookieConsent";
 import GeneralMenu from "./components/GeneralMenu";
-import PrivacyPolicyView from "./components/PrivacyPolicyView";
-import AboutUsView from "./components/AboutUsView";
-import TermsView from "./components/TermsView";
-import ContactView from "./components/ContactView";
 import { User, LogOut } from "lucide-react";
 import { lightMapStyle, darkMapStyle } from "./lib/mapStyles";
 import { translations } from "./lib/translations";
@@ -48,7 +44,6 @@ function App() {
   const [isRightMenuOpen, setIsRightMenuOpen] = useState(false);
   const [showCookieBanner, setShowCookieBanner] = useState(false);
   const [showCookieModal, setShowCookieModal] = useState(false);
-  const [activeFullScreenPage, setActiveFullScreenPage] = useState<'none' | 'about' | 'terms' | 'contact' | 'privacy'>('none');
 
   // Sync with system theme and save changes
   useEffect(() => {
@@ -332,7 +327,6 @@ function App() {
           mapStyleKey={mapStyleKey}
           setMapStyleKey={setMapStyleKey}
           currentUser={currentUser}
-          onOpenFullScreen={(page) => setActiveFullScreenPage(page)}
         />
 
         {/* Global Floating Elements */}
@@ -340,50 +334,13 @@ function App() {
           showBanner={showCookieBanner}
           showModal={showCookieModal}
           onOpenPrivacy={() => { 
-            setActiveFullScreenPage('privacy');
+            window.open('/gizlilik', '_blank');
             setShowCookieModal(false); 
           }}
           onOpenSettings={() => setShowCookieModal(true)}
           onSave={handleSaveCookies}
           language={language}
         />
-        
-        {/* Full Screen Modals */}
-        <AnimatePresence>
-          {activeFullScreenPage === 'privacy' && (
-            <PrivacyPolicyView 
-              key="privacy-page"
-              language={language}
-              onBack={() => { setActiveFullScreenPage('none'); setIsRightMenuOpen(true); }}
-              onNavigate={(page) => setActiveFullScreenPage(page)}
-            />
-          )}
-          {activeFullScreenPage === 'contact' && (
-            <ContactView 
-              key="contact-page"
-              language={language}
-              currentUser={currentUser}
-              onBack={() => { setActiveFullScreenPage('none'); setIsRightMenuOpen(true); }}
-              onNavigate={(page) => setActiveFullScreenPage(page)}
-            />
-          )}
-          {activeFullScreenPage === 'about' && (
-            <AboutUsView 
-              key="about-page"
-              language={language}
-              onBack={() => { setActiveFullScreenPage('none'); setIsRightMenuOpen(true); }}
-              onNavigate={(page) => setActiveFullScreenPage(page)}
-            />
-          )}
-          {activeFullScreenPage === 'terms' && (
-            <TermsView 
-              key="terms-page"
-              language={language}
-              onBack={() => { setActiveFullScreenPage('none'); setIsRightMenuOpen(true); }}
-              onNavigate={(page) => setActiveFullScreenPage(page)}
-            />
-          )}
-        </AnimatePresence>
       </div>
     </APIProvider>
   );

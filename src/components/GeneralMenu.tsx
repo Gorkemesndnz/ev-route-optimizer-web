@@ -137,12 +137,6 @@ export default function GeneralMenu({
   };
 
   const handleMenuClick = (id: string) => {
-    if (id === 'about' || id === 'terms' || id === 'contactUs' || id === 'privacy') {
-      const page = id === 'contactUs' ? 'contact' : id;
-      onOpenFullScreen(page as any);
-      onClose();
-      return;
-    }
     setActiveMenu(id as any);
   };
 
@@ -162,7 +156,7 @@ export default function GeneralMenu({
         { id: 'how_it_works', icon: <Cpu size={18} />, label: t.howItWorks, onClick: () => handleMenuClick('how_it_works') },
         { id: 'whats_new', icon: <Sparkles size={18} />, label: t.whatsNew, onClick: () => handleMenuClick('whats_new') },
         { id: 'faq', icon: <HelpCircle size={18} />, label: t.faq, onClick: () => handleMenuClick('faq') },
-        { id: 'about', icon: <Info size={18} />, label: t.aboutUs, onClick: () => handleMenuClick('about') }
+        { id: 'about', icon: <Info size={18} />, label: t.aboutUs, href: '/hakkimizda' }
       ]
     },
     {
@@ -171,14 +165,14 @@ export default function GeneralMenu({
         { id: 'contact', icon: <AlertTriangle size={18} />, label: t.reportBug, onClick: () => handleMenuClick('contact') },
         { id: 'suggestions', icon: <Lightbulb size={18} />, label: t.suggestions, onClick: () => handleMenuClick('suggestions') },
         { id: 'add_vehicle', icon: <PlusCircle size={18} />, label: t.addVehicle, onClick: () => handleMenuClick('add_vehicle') },
-        { id: 'contactUs', icon: <MessageSquare size={18} />, label: t.contactUs, onClick: () => handleMenuClick('contactUs') }
+        { id: 'contactUs', icon: <MessageSquare size={18} />, label: t.contactUs, href: '/iletisim' }
       ]
     },
     {
       title: t.legal,
       items: [
-        { id: 'terms', icon: <FileText size={18} />, label: t.terms, onClick: () => handleMenuClick('terms') },
-        { id: 'privacy', icon: <Shield size={18} />, label: t.privacy, onClick: () => handleMenuClick('privacy') },
+        { id: 'terms', icon: <FileText size={18} />, label: t.terms, href: '/kullanim-kosullari' },
+        { id: 'privacy', icon: <Shield size={18} />, label: t.privacy, href: '/gizlilik' },
         { id: 'cookie_consent', icon: <Cookie size={18} />, label: t.manageCookies, onClick: onOpenCookieConsent }
       ]
     }
@@ -888,32 +882,52 @@ export default function GeneralMenu({
                       <div key={idx} className="flex flex-col gap-3">
                         <h4 className="text-[11px] font-bold text-white/40 uppercase tracking-widest pl-1">{section.title}</h4>
                         <div className="flex flex-col gap-1">
-                          {section.items.map((item, itemIdx) => (
-                            <button 
-                              key={itemIdx}
-                              onClick={() => {
-                                if (item.onClick) {
-                                  item.onClick();
-                                }
-                              }}
-                              className="flex items-center justify-between w-full p-3 rounded-xl hover:bg-white/5 border border-transparent hover:border-white/5 transition-all group text-left outline-none"
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="text-white/40 group-hover:text-cyan-400 transition-colors">
-                                  {item.icon}
+                          {section.items.map((item: any, itemIdx: number) => {
+                            const content = (
+                              <>
+                                <div className="flex items-center gap-3">
+                                  <div className="text-white/40 group-hover:text-cyan-400 transition-colors">
+                                    {item.icon}
+                                  </div>
+                                  <span className="text-sm font-medium text-white/70 group-hover:text-white transition-colors">
+                                    {item.label}
+                                  </span>
                                 </div>
-                                <span className="text-sm font-medium text-white/70 group-hover:text-white transition-colors">
-                                  {item.label}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {item.value && (
-                                  <span className="text-xs font-semibold text-white/40 group-hover:text-white/60">{item.value}</span>
-                                )}
-                                <ChevronRight size={16} className="text-white/20 group-hover:text-white/50 transition-colors" />
-                              </div>
-                            </button>
-                          ))}
+                                <div className="flex items-center gap-2">
+                                  {item.value && (
+                                    <span className="text-xs font-semibold text-white/40 group-hover:text-white/60">{item.value}</span>
+                                  )}
+                                  <ChevronRight size={16} className="text-white/20 group-hover:text-white/50 transition-colors" />
+                                </div>
+                              </>
+                            );
+
+                            if (item.href) {
+                              return (
+                                <a
+                                  key={itemIdx}
+                                  href={item.href}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center justify-between w-full p-3 rounded-xl hover:bg-white/5 border border-transparent hover:border-white/5 transition-all group text-left outline-none"
+                                >
+                                  {content}
+                                </a>
+                              );
+                            }
+
+                            return (
+                              <button 
+                                key={itemIdx}
+                                onClick={() => {
+                                  if (item.onClick) item.onClick();
+                                }}
+                                className="flex items-center justify-between w-full p-3 rounded-xl hover:bg-white/5 border border-transparent hover:border-white/5 transition-all group text-left outline-none"
+                              >
+                                {content}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
                     ))}
