@@ -13,6 +13,7 @@ import CookieConsent from "./components/CookieConsent";
 import GeneralMenu from "./components/GeneralMenu";
 import PrivacyPolicyView from "./components/PrivacyPolicyView";
 import AboutUsView from "./components/AboutUsView";
+import TermsView from "./components/TermsView";
 import { User, LogOut } from "lucide-react";
 import { lightMapStyle, darkMapStyle } from "./lib/mapStyles";
 import { translations } from "./lib/translations";
@@ -20,7 +21,7 @@ import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 function App() {
-  const [activeView, setActiveView] = useState<'main' | 'settings' | 'garage' | 'add_vehicle' | 'vehicle_settings' | 'account' | 'privacy' | 'about'>('main');
+  const [activeView, setActiveView] = useState<'main' | 'settings' | 'garage' | 'add_vehicle' | 'vehicle_settings' | 'account' | 'privacy' | 'about' | 'terms'>('main');
   
   // Persistent Settings
   const [language, setLanguage] = useState<'tr' | 'en'>(() => {
@@ -41,7 +42,7 @@ function App() {
   const [showTraffic, setShowTraffic] = useState(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [previousView, setPreviousView] = useState<'main' | 'account' | 'settings' | 'garage' | 'add_vehicle' | 'vehicle_settings' | 'privacy' | 'about'>('main');
+  const [previousView, setPreviousView] = useState<'main' | 'account' | 'settings' | 'garage' | 'add_vehicle' | 'vehicle_settings' | 'privacy' | 'about' | 'terms'>('main');
   const [authMessage, setAuthMessage] = useState<string>('');
   const [isRightMenuOpen, setIsRightMenuOpen] = useState(false);
   const [showCookieBanner, setShowCookieBanner] = useState(false);
@@ -326,6 +327,7 @@ function App() {
           onOpenCookieConsent={() => { setShowCookieModal(true); setIsRightMenuOpen(false); }}
           onOpenPrivacy={() => { setPreviousView(activeView); setActiveView('privacy'); setIsRightMenuOpen(false); }}
           onOpenAbout={() => { setPreviousView(activeView); setActiveView('about'); setIsRightMenuOpen(false); }}
+          onOpenTerms={() => { setPreviousView(activeView); setActiveView('terms'); setIsRightMenuOpen(false); }}
           language={language}
           setLanguage={setLanguage}
           mapStyleKey={mapStyleKey}
@@ -353,6 +355,9 @@ function App() {
           )}
           {activeView === 'about' && (
             <AboutUsView onBack={() => setActiveView(previousView)} language={language} />
+          )}
+          {activeView === 'terms' && (
+            <TermsView onBack={() => setActiveView(previousView)} language={language} />
           )}
         </AnimatePresence>
       </div>

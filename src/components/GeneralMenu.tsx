@@ -17,9 +17,12 @@ import {
   Zap,
   Lightbulb,
   PlusCircle,
-  Info
+  Info,
+  CheckCircle,
+  ChevronLeft
 } from "lucide-react";
 import { translations } from "../lib/translations";
+import { cn } from "@/lib/utils";
 
 export default function GeneralMenu({ 
   isOpen, 
@@ -27,6 +30,7 @@ export default function GeneralMenu({
   onOpenCookieConsent,
   onOpenPrivacy,
   onOpenAbout,
+  onOpenTerms,
   language,
   setLanguage,
   mapStyleKey,
@@ -37,21 +41,32 @@ export default function GeneralMenu({
   onOpenCookieConsent: () => void;
   onOpenPrivacy: () => void;
   onOpenAbout: () => void;
+  onOpenTerms: () => void;
   language: 'tr' | 'en';
   setLanguage: (lang: 'tr' | 'en') => void;
   mapStyleKey: string;
   setMapStyleKey: (key: any) => void;
 }) {
-  const [activeMenu, setActiveMenu] = useState<'main'|'language'|'units'|'energy'|'appearance'>('main');
+  const [activeMenu, setActiveMenu] = useState<'main'|'language'|'units'|'energy'|'appearance'|'suggestions'|'add_vehicle'|'contact'|'how_it_works'|'whats_new'|'faq'>('main');
   const t = translations[language];
 
-  // Internal states for things that aren't global yet or just display values
+  // ... (keeping existing form states)
+  const [isVehicleSubmitted, setIsVehicleSubmitted] = useState(false);
+  const [isSuggestionSubmitted, setIsSuggestionSubmitted] = useState(false);
+  const [isContactSubmitted, setIsContactSubmitted] = useState(false);
+
+  // Internal states
   const [units, setUnits] = useState('Metrik');
   const [energyCons, setEnergyCons] = useState('Wh/km');
 
   const handleClose = () => {
     onClose();
-    setTimeout(() => setActiveMenu('main'), 300);
+    setTimeout(() => {
+      setActiveMenu('main');
+      setIsVehicleSubmitted(false);
+      setIsSuggestionSubmitted(false);
+      setIsContactSubmitted(false);
+    }, 300);
   };
 
   const menuSections = [
@@ -67,25 +82,25 @@ export default function GeneralMenu({
     {
       title: t.explore,
       items: [
-        { icon: <Cpu size={18} />, label: t.howItWorks },
-        { icon: <Sparkles size={18} />, label: t.whatsNew },
-        { icon: <HelpCircle size={18} />, label: t.faq },
+        { icon: <Cpu size={18} />, label: t.howItWorks, onClick: () => setActiveMenu('how_it_works') },
+        { icon: <Sparkles size={18} />, label: t.whatsNew, onClick: () => setActiveMenu('whats_new') },
+        { icon: <HelpCircle size={18} />, label: t.faq, onClick: () => setActiveMenu('faq') },
         { icon: <Info size={18} />, label: t.aboutUs, onClick: onOpenAbout }
       ]
     },
     {
       title: t.supportFeedback,
       items: [
-        { icon: <AlertTriangle size={18} />, label: t.reportBug },
-        { icon: <Lightbulb size={18} />, label: t.suggestions },
-        { icon: <PlusCircle size={18} />, label: t.addVehicle },
-        { icon: <MessageSquare size={18} />, label: t.contactUs }
+        { icon: <AlertTriangle size={18} />, label: t.reportBug, onClick: () => setActiveMenu('contact') },
+        { icon: <Lightbulb size={18} />, label: t.suggestions, onClick: () => setActiveMenu('suggestions') },
+        { icon: <PlusCircle size={18} />, label: t.addVehicle, onClick: () => setActiveMenu('add_vehicle') },
+        { icon: <MessageSquare size={18} />, label: t.contactUs, onClick: () => setActiveMenu('contact') }
       ]
     },
     {
       title: t.legal,
       items: [
-        { icon: <FileText size={18} />, label: t.terms },
+        { icon: <FileText size={18} />, label: t.terms, onClick: onOpenTerms },
         { icon: <Shield size={18} />, label: t.privacy, onClick: onOpenPrivacy },
         { icon: <Cookie size={18} />, label: t.manageCookies, onClick: onOpenCookieConsent }
       ]
@@ -93,6 +108,225 @@ export default function GeneralMenu({
   ];
 
   const renderSubMenuContent = () => {
+    if (activeMenu === 'how_it_works' || activeMenu === 'whats_new' || activeMenu === 'faq') {
+       const titles = {
+         'how_it_works': t.howItWorks,
+         'whats_new': t.whatsNew,
+         'faq': t.faq
+       };
+       const contents = {
+         'how_it_works': t.howItWorksText,
+         'whats_new': t.whatsNewText,
+         'faq': t.faqText
+       };
+
+       return (
+         <div className="flex-1 flex flex-col w-full h-full p-6">
+           <div className="flex items-center mb-8">
+             <button onClick={() => setActiveMenu('main')} className="p-2 -ml-2 text-white/50 hover:text-white transition-colors">
+               <ChevronLeft size={24} />
+             </button>
+             <h2 className="text-xl font-bold text-white flex-1 text-center mr-6">{titles[activeMenu]}</h2>
+           </div>
+           <div className="flex-1 overflow-y-auto custom-scrollbar">
+             <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-white/80 leading-relaxed whitespace-pre-wrap">
+               {contents[activeMenu]}
+             </div>
+           </div>
+         </div>
+       );
+    }
+    if (activeMenu === 'add_vehicle') {
+      return (
+        <div className="flex-1 flex flex-col w-full h-full p-6">
+          <div className="flex items-center mb-8">
+            <button onClick={() => setActiveMenu('main')} className="p-2 -ml-2 text-white/50 hover:text-white transition-colors">
+              <ChevronLeft size={24} />
+            </button>
+            <h2 className="text-xl font-bold text-white flex-1 text-center mr-6">{t.vehicleRequestTitle}</h2>
+          </div>
+
+          <AnimatePresence mode="wait">
+            {isVehicleSubmitted ? (
+              <motion.div 
+                key="success"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex-1 flex flex-col items-center justify-center text-center gap-6"
+              >
+                <div className="w-20 h-20 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-500">
+                  <CheckCircle size={48} />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-white mb-2">{t.requestReceived}</h3>
+                  <p className="text-white/60 leading-relaxed">{t.requestSuccess}</p>
+                </div>
+                <button 
+                  onClick={() => { setIsVehicleSubmitted(false); setActiveMenu('main'); }}
+                  className="mt-4 px-8 py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl border border-white/10 transition-all active:scale-95"
+                >
+                  {t.goBack}
+                </button>
+              </motion.div>
+            ) : (
+              <motion.div key="form" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6">
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-white/50 px-1">{t.vehicleBrand}</label>
+                  <input 
+                    type="text" 
+                    placeholder={t.vehicleBrandPlaceholder}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-white/50 px-1">{t.vehicleModel}</label>
+                  <input 
+                    type="text" 
+                    placeholder={t.vehicleModelPlaceholder}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-white/50 px-1">{t.vehicleDetails}</label>
+                  <textarea 
+                    rows={4}
+                    placeholder={t.vehicleDetailsPlaceholder}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all resize-none"
+                  />
+                </div>
+                <button 
+                  onClick={() => setIsVehicleSubmitted(true)}
+                  className="w-full py-4 bg-cyan-400 hover:bg-cyan-300 text-zinc-950 font-bold rounded-xl transition-all active:scale-95 shadow-[0_0_20px_rgba(34,211,238,0.3)] mt-2"
+                >
+                  {t.send}
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      );
+    }
+
+    if (activeMenu === 'suggestions') {
+      return (
+        <div className="flex-1 flex flex-col w-full h-full p-6">
+          <div className="flex items-center mb-8">
+            <button onClick={() => setActiveMenu('main')} className="p-2 -ml-2 text-white/50 hover:text-white transition-colors">
+              <ChevronLeft size={24} />
+            </button>
+            <h2 className="text-xl font-bold text-white flex-1 text-center mr-6">{t.suggestionTitle}</h2>
+          </div>
+
+          <AnimatePresence mode="wait">
+            {isSuggestionSubmitted ? (
+              <motion.div 
+                key="success"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex-1 flex flex-col items-center justify-center text-center gap-6"
+              >
+                <div className="w-20 h-20 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-500">
+                  <CheckCircle size={48} />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-white mb-2">{t.suggestionReceived}</h3>
+                  <p className="text-white/60 leading-relaxed">{t.suggestionSuccess}</p>
+                </div>
+                <button 
+                  onClick={() => { setIsSuggestionSubmitted(false); setActiveMenu('main'); }}
+                  className="mt-4 px-8 py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl border border-white/10 transition-all active:scale-95"
+                >
+                  {t.goBack}
+                </button>
+              </motion.div>
+            ) : (
+              <motion.div key="form" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6">
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-white/50 px-1">{t.subject}</label>
+                  <select className="w-full bg-zinc-900 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 transition-all appearance-none cursor-pointer">
+                    <option value="route">{t.subjects.route}</option>
+                    <option value="ui">{t.subjects.ui}</option>
+                    <option value="stations">{t.subjects.stations}</option>
+                    <option value="other">{t.subjects.other}</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-white/50 px-1">{t.message}</label>
+                  <textarea 
+                    rows={6}
+                    placeholder={t.messagePlaceholder}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all resize-none"
+                  />
+                </div>
+                <button 
+                  onClick={() => setIsSuggestionSubmitted(true)}
+                  className="w-full py-4 bg-cyan-400 hover:bg-cyan-300 text-zinc-950 font-bold rounded-xl transition-all active:scale-95 shadow-[0_0_20px_rgba(34,211,238,0.3)] mt-2"
+                >
+                  {t.send}
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      );
+    }
+
+    if (activeMenu === 'contact') {
+      return (
+        <div className="flex-1 flex flex-col w-full h-full p-6">
+          <div className="flex items-center mb-8">
+            <button onClick={() => setActiveMenu('main')} className="p-2 -ml-2 text-white/50 hover:text-white transition-colors">
+              <ChevronLeft size={24} />
+            </button>
+            <h2 className="text-xl font-bold text-white flex-1 text-center mr-6">{t.contactUs}</h2>
+          </div>
+          <AnimatePresence mode="wait">
+            {isContactSubmitted ? (
+               <motion.div 
+               key="success"
+               initial={{ opacity: 0, scale: 0.95 }}
+               animate={{ opacity: 1, scale: 1 }}
+               className="flex-1 flex flex-col items-center justify-center text-center gap-6"
+             >
+               <div className="w-20 h-20 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-500">
+                 <CheckCircle size={48} />
+               </div>
+               <div>
+                 <h3 className="text-2xl font-bold text-white mb-2">{t.requestReceived}</h3>
+                 <p className="text-white/60 leading-relaxed">{language === 'tr' ? "Mesajınız iletildi. En kısa sürede size dönüş yapacağız." : "Your message has been delivered. We will get back to you soon."}</p>
+               </div>
+               <button 
+                 onClick={() => { setIsContactSubmitted(false); setActiveMenu('main'); }}
+                 className="mt-4 px-8 py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl border border-white/10 transition-all active:scale-95"
+               >
+                 {t.goBack}
+               </button>
+             </motion.div>
+            ) : (
+              <motion.div key="form" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6">
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-white/50 px-1">{language === 'tr' ? "Ad Soyad" : "Full Name"}</label>
+                  <input type="text" className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 transition-all" />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-white/50 px-1">{language === 'tr' ? "E-posta" : "Email"}</label>
+                  <input type="email" className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 transition-all" />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-white/50 px-1">{t.message}</label>
+                  <textarea rows={5} className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 transition-all resize-none" />
+                </div>
+                <button onClick={() => setIsContactSubmitted(true)} className="w-full py-4 bg-cyan-400 hover:bg-cyan-300 text-zinc-950 font-bold rounded-xl transition-all active:scale-95 mt-2">
+                  {t.send}
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      );
+    }
+
+    // Default Submenus (Language, Units, etc)
     let title = "";
     let options: {id: any, label: string, sub: string}[] = [];
     let currentState = "";
@@ -141,7 +375,7 @@ export default function GeneralMenu({
             onClick={() => setActiveMenu('main')}
             className="w-10 h-10 -ml-2 rounded-full flex items-center justify-center text-white/50 hover:text-white transition-colors outline-none z-10"
           >
-            <X size={24} strokeWidth={2.5} />
+            <ChevronLeft size={24} strokeWidth={2.5} />
           </button>
           <div className="absolute inset-x-0 text-center pointer-events-none">
             <span className="text-[17px] font-bold text-white tracking-wide">{title}</span>

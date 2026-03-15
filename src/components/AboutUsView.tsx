@@ -1,6 +1,7 @@
 import { ChevronLeft, Zap, Shield, Users, Target } from "lucide-react";
 import { motion } from "framer-motion";
 import { translations } from "../lib/translations";
+import GlobalFooter from "./GlobalFooter";
 
 export default function AboutUsView({ 
   onBack, 
@@ -71,9 +72,7 @@ export default function AboutUsView({
           </section>
         </div>
 
-        <div className="mt-20 pt-10 border-t border-zinc-200 text-center">
-          <p className="text-zinc-400 font-medium tracking-widest uppercase text-sm">© 2026 IYONTREE YAZILIM A.Ş.</p>
-        </div>
+        <GlobalFooter language={language} />
       </div>
     </motion.div>
   );

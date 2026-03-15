@@ -1,6 +1,7 @@
 import { ChevronLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import { translations } from "../lib/translations";
+import GlobalFooter from "./GlobalFooter";
 
 export default function PrivacyPolicyView({ 
   onBack,
@@ -19,7 +20,7 @@ export default function PrivacyPolicyView({
       transition={{ duration: 0.3 }}
       className="fixed inset-0 z-[120] bg-zinc-50 overflow-y-auto pointer-events-auto text-zinc-900 custom-scrollbar"
     >
-      <div className="max-w-3xl mx-auto px-6 py-12 sm:py-20 flex flex-col">
+      <div className="max-w-3xl mx-auto px-6 py-12 sm:py-20 flex flex-col min-h-full">
         <button 
           onClick={onBack} 
           className="flex items-center gap-2 text-zinc-500 hover:text-zinc-900 mb-10 font-medium transition-colors outline-none self-start"
@@ -28,7 +29,7 @@ export default function PrivacyPolicyView({
           {t.back}
         </button>
         <h1 className="text-3xl sm:text-4xl font-extrabold mb-10 text-zinc-900">{t.privacyTitle}</h1>
-        <div className="flex flex-col gap-8 text-base leading-relaxed text-zinc-700">
+        <div className="flex-1 flex flex-col gap-8 text-base leading-relaxed text-zinc-700">
           <p className="text-lg">
             {t.privacyIntro}
           </p>
@@ -58,6 +59,7 @@ export default function PrivacyPolicyView({
             <p>{t.privacySec5Desc}</p>
           </section>
         </div>
+        <GlobalFooter language={language} />
       </div>
     </motion.div>
   );
