@@ -297,7 +297,7 @@ function App() {
           ) : (
             <button 
               onClick={() => setIsAuthModalOpen(true)}
-              className="glass-panel shadow-none px-4 py-2 font-semibold text-sm hover:bg-white/10 transition-all border-white/20 active:scale-95 text-white"
+              className="glass-panel shadow-none px-4 h-10 flex items-center justify-center font-semibold text-sm hover:bg-white/10 transition-all border-white/20 active:scale-95 text-white"
             >
               {t.login}
             </button>

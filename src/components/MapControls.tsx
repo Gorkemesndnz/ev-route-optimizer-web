@@ -64,10 +64,10 @@ export default function MapControls({
 
   return (
     <div className="absolute bottom-6 right-6 z-40 pointer-events-auto">
-      <div className="flex flex-row items-center bg-black/40 backdrop-blur-xl border border-white/20 rounded-xl p-1 shadow-2xl gap-0.5">
+      <div className="flex flex-row items-center h-10 px-1 bg-black/40 backdrop-blur-xl border border-white/20 rounded-xl shadow-2xl gap-0.5">
         <button 
           onClick={handleZoomOut}
-          className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all cursor-pointer flex items-center justify-center"
+          className="w-8 h-8 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all cursor-pointer flex items-center justify-center"
           title={t.zoomOut}
         >
           <Minus size={18} />
@@ -77,7 +77,7 @@ export default function MapControls({
         
         <button 
           onClick={handleZoomIn}
-          className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all cursor-pointer flex items-center justify-center"
+          className="w-8 h-8 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all cursor-pointer flex items-center justify-center"
           title={t.zoomIn}
         >
           <Plus size={18} />
@@ -87,7 +87,7 @@ export default function MapControls({
         
         <button 
           onClick={handleLocateMe}
-          className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all cursor-pointer flex items-center justify-center"
+          className="w-8 h-8 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all cursor-pointer flex items-center justify-center"
           title={t.locateMe}
         >
           <LocateFixed size={18} />
@@ -98,7 +98,7 @@ export default function MapControls({
         <button 
           onClick={onToggleTraffic}
           className={cn(
-            "p-2 rounded-lg transition-all cursor-pointer flex items-center justify-center min-w-[38px]",
+            "h-8 px-2 rounded-lg transition-all cursor-pointer flex items-center justify-center min-w-[38px]",
             showTraffic ? "text-cyan-400 bg-cyan-400/10" : "text-white/80 hover:text-white hover:bg-white/10"
           )}
           title={t.showTraffic}
@@ -111,7 +111,7 @@ export default function MapControls({
         <button 
           onClick={handleToggleLayers}
           className={cn(
-            "p-2 rounded-lg transition-all cursor-pointer flex flex-col items-center justify-center gap-0 min-w-[44px]",
+            "h-8 px-2 rounded-lg transition-all cursor-pointer flex flex-col items-center justify-center gap-0 min-w-[44px]",
             currentStyle !== 'default' ? "text-cyan-400 bg-cyan-400/10" : "text-white/80 hover:text-white hover:bg-white/10"
           )}
           title={t.changeMapStyle}
