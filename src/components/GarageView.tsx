@@ -5,6 +5,7 @@ import { translations } from "../lib/translations";
 
 import { useVehicle } from "../contexts/VehicleContext";
 import { useSettings } from "../contexts/SettingsContext";
+import type { Vehicle } from "../types/vehicle";
 
 export default function GarageView({
   onAddVehicle,
@@ -118,7 +119,7 @@ export default function GarageView({
                       setTempName(vehicle.customName || `${vehicle.brand} ${vehicle.model}`);
                     }}
                     className="p-2 text-white/50 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-xl transition-all active:scale-90"
-                    title={language === 'tr' ? 'İsmi Düzenle' : 'Edit Name'}
+                    title={t.save}
                   >
                     <Edit2 size={16} />
                   </button>
@@ -129,7 +130,7 @@ export default function GarageView({
                       handleDeleteVehicle(vehicle.id);
                     }}
                     className="p-2 text-white/50 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all active:scale-90"
-                    title={language === 'tr' ? 'Aracı Sil' : 'Delete Vehicle'}
+                    title={t.clear}
                   >
                     <Trash2 size={16} />
                   </button>
@@ -160,7 +161,7 @@ export default function GarageView({
 
       {vehicles.length >= 3 && (
         <p className="text-xs text-center text-white/40 mt-2">
-          {language === 'tr' ? 'Maksimum 3 adet araç ekleyebilirsiniz.' : 'You can add up to 3 vehicles.'}
+          {t.myGarageFull}
         </p>
       )}
     </div>

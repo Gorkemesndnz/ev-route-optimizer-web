@@ -14,7 +14,6 @@ export const translations = {
     apiErrorMessage: "Google Maps API Anahtarı eksik. Lütfen ortam değişkenlerinizde VITE_GOOGLE_MAPS_API_KEY değerini ayarlayın.",
     login: "Giriş Yap",
     logout: "Çıkış Yap",
-    garage: "Garajım",
     settings: "Ayarlar",
     account: "Hesabım",
     appearance: "Görünüm",
@@ -194,13 +193,6 @@ export const translations = {
     
     // Garage/Add Vehicle
     myVehicles: "Araçlarım",
-    noVehiclesInGarage: "Garajınızda henüz araç yok.",
-    selectBrand: "Marka Seçin",
-    selectModel: "Model Seçin",
-    searchBrand: "Marka ara...",
-    searchModel: "Model ara...",
-    vehicleName: "Araç Takma Adı",
-    addThisVehicle: "Bu Aracı Ekle",
     
     // Auth Modal
     welcomeBack: "Tekrar Hoş Geldiniz",
@@ -259,7 +251,15 @@ export const translations = {
       addressNotFound: "Konum adresi bulunamadı.",
       permissionDenied: "Konum izni reddedildi.",
       locateFailed: "Konum alınamadı."
-    }
+    },
+    myGarage: "Garajım",
+    addNewVehicle: "Yeni Araç Ekle",
+    searchBrandModel: "Marka, Model ara...",
+    add: "Ekle",
+    noVehiclesInGarage: "Garajınızda henüz araç bulunmuyor.",
+    myGarageFull: "Maksimum 3 adet araç ekleyebilirsiniz.",
+    vehicleName: "Araç Takma Adı",
+    clear: "Sil / Temizle"
   },
   en: {
     appTitle: "IYONTREE",
@@ -276,7 +276,6 @@ export const translations = {
     apiErrorMessage: "Google Maps API Key is missing. Please set VITE_GOOGLE_MAPS_API_KEY in your environment variables.",
     login: "Login",
     logout: "Logout",
-    garage: "My Garage",
     settings: "Settings",
     account: "Account",
     appearance: "Appearance",
@@ -456,13 +455,6 @@ export const translations = {
 
     // Garage/Add Vehicle
     myVehicles: "My Vehicles",
-    noVehiclesInGarage: "No vehicles in your garage yet.",
-    selectBrand: "Select Brand",
-    selectModel: "Select Model",
-    searchBrand: "Search brand...",
-    searchModel: "Search model...",
-    vehicleName: "Vehicle Nickname",
-    addThisVehicle: "Add This Vehicle",
 
     // Auth Modal
     welcomeBack: "Welcome Back",
@@ -521,6 +513,14 @@ export const translations = {
       addressNotFound: "Location address not found.",
       permissionDenied: "Location permission denied.",
       locateFailed: "Could not get location."
-    }
+    },
+    myGarage: "My Garage",
+    addNewVehicle: "Add New Vehicle",
+    searchBrandModel: "Search brand, model...",
+    add: "Add",
+    noVehiclesInGarage: "No vehicles in your garage yet.",
+    myGarageFull: "You can add up to 3 vehicles.",
+    vehicleName: "Vehicle Nickname",
+    clear: "Delete / Clear"
   }
 };

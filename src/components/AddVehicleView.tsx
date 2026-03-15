@@ -1,5 +1,6 @@
 import { ArrowLeft, Search, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
+import type { Vehicle } from "../types/vehicle";
 import { translations } from "../lib/translations";
 
 const MOCK_BRANDS = [
@@ -11,6 +12,11 @@ const MOCK_BRANDS = [
   { id: "hyundai", name: "Hyundai", models: ["Ioniq 5", "Ioniq 6", "Kona Electric"] },
   { id: "kia", name: "Kia", models: ["EV6", "Niro EV"] },
 ];
+interface Brand {
+  id: string;
+  name: string;
+  models: string[];
+}
 
 import { useSettings } from "../contexts/SettingsContext";
 import { useVehicle } from "../contexts/VehicleContext";
@@ -25,15 +31,15 @@ export default function AddVehicleView({
   const { language } = useSettings();
   const { setVehicles, setSelectedVehicleId } = useVehicle();
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedBrand, setSelectedBrand] = useState<any>(null);
+  const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null);
   const t = translations[language];
 
   const filteredBrands = MOCK_BRANDS.filter(b => 
     b.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleModelSelect = (brand: any, model: string) => {
-    const newVehicle = {
+  const handleModelSelect = (brand: Brand, model: string) => {
+    const newVehicle: Vehicle = {
       id: crypto.randomUUID(),
       brand: brand.name,
       model: model,
