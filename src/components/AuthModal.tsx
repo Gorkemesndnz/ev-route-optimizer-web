@@ -1,16 +1,13 @@
-import { useState, useEffect, useRef } from "react";
 import { X, ChevronLeft } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { translations } from "../lib/translations";
+import { useAuthForm } from "../hooks/useAuthForm";
 
-const MOCK_USER = {
-  email: 'admin@iyontree.com',
-  password: '1234',
-  firstName: 'admin',
-  lastName: 'admin',
-  phone: '(111) 111-11-11'
-};
+import EmailStep from "./auth/EmailStep";
+import PasswordStep from "./auth/PasswordStep";
+import RegisterStep from "./auth/RegisterStep";
+import VerifyEmailStep from "./auth/VerifyEmailStep";
+import ResetPasswordStep from "./auth/ResetPasswordStep";
 
 export default function AuthModal({ 
   isOpen, 
@@ -26,149 +23,116 @@ export default function AuthModal({
   language?: 'tr' | 'en';
 }) {
   const t = translations[language];
-  const [authStep, setAuthStep] = useState<'email' | 'password' | 'register' | 'verify_email' | 'reset_password'>('email');
-  
-  // Registration / Login Info
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [phone, setPhone] = useState('');
-  
-  // Errors & Validations
-  const [authError, setAuthError] = useState('');
-  
-  // OTP States
-  const [otp, setOtp] = useState('');
-  const [timeLeft, setTimeLeft] = useState(120);
-  const [otpError, setOtpError] = useState('');
-
-  // Refs for Keyboard Navigation
-  const lastNameRef = useRef<HTMLInputElement>(null);
-  const phoneRef = useRef<HTMLInputElement>(null);
-  const passwordRef = useRef<HTMLInputElement>(null);
-  const confirmPasswordRef = useRef<HTMLInputElement>(null);
-
-  // Email Validation Regex
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-  // 120-Second Countdown Timer Logic
-  useEffect(() => {
-    if (authStep !== 'verify_email' || timeLeft <= 0) return;
-    
-    const timer = setInterval(() => {
-      setTimeLeft(prev => prev - 1);
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [authStep, timeLeft]);
-
-  // Format mm:ss
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-    const s = (seconds % 60).toString().padStart(2, '0');
-    return `${m}:${s}`;
-  };
-
-  // --- Handlers & Formatters --- //
+  const {
+    authStep,
+    setAuthStep,
+    email,
+    setEmail,
+    password,
+    setPassword,
+    confirmPassword,
+    setConfirmPassword,
+    firstName,
+    setFirstName,
+    lastName,
+    setLastName,
+    phone,
+    setPhone,
+    authError,
+    setAuthError,
+    otp,
+    otpError,
+    timeLeft,
+    resetForm,
+    handleEmailSubmit,
+    handlePasswordSubmit,
+    handleOtpChange,
+    handleResend,
+    handleGoToVerify,
+    isPasswordsMatch
+  } = useAuthForm(language, onLogin, onClose);
 
   const handleClose = () => {
-    // Tüm state'leri ve adımı kapatıldığında orijinal haline resetler
-    setAuthStep('email');
-    setEmail('');
-    setPassword('');
-    setConfirmPassword('');
-    setFirstName('');
-    setLastName('');
-    setPhone('');
-    setOtp('');
-    setTimeLeft(120);
-    setOtpError('');
-    setAuthError('');
+    resetForm();
     onClose();
   };
 
-  const handleEmailSubmit = () => {
-    setAuthError('');
-    if (!email) return;
-
-    if (!emailRegex.test(email)) {
-      setAuthError(language === 'tr' ? 'Lütfen geçerli bir e-posta girin.' : 'Please enter a valid email.');
-      return;
-    }
-
-    if (email.toLowerCase() === MOCK_USER.email) {
-      setAuthStep('password');
-    } else {
-      setAuthStep('register');
+  const renderStep = () => {
+    switch (authStep) {
+      case 'email':
+        return (
+          <EmailStep 
+            email={email}
+            setEmail={setEmail}
+            authError={authError}
+            setAuthError={setAuthError}
+            handleEmailSubmit={handleEmailSubmit}
+            customMessage={customMessage}
+            language={language}
+          />
+        );
+      case 'password':
+        return (
+          <PasswordStep 
+            email={email}
+            password={password}
+            setPassword={setPassword}
+            authError={authError}
+            setAuthError={setAuthError}
+            handlePasswordSubmit={handlePasswordSubmit}
+            handleGoToVerify={handleGoToVerify}
+            setAuthStep={setAuthStep}
+            language={language}
+          />
+        );
+      case 'register':
+        return (
+          <RegisterStep 
+            email={email}
+            firstName={firstName}
+            setFirstName={setFirstName}
+            lastName={lastName}
+            setLastName={setLastName}
+            phone={phone}
+            setPhone={setPhone}
+            password={password}
+            setPassword={setPassword}
+            confirmPassword={confirmPassword}
+            setConfirmPassword={setConfirmPassword}
+            isPasswordsMatch={isPasswordsMatch}
+            onLogin={onLogin}
+            handleClose={handleClose}
+            language={language}
+          />
+        );
+      case 'verify_email':
+        return (
+          <VerifyEmailStep 
+            email={email}
+            otp={otp}
+            handleOtpChange={handleOtpChange}
+            otpError={otpError}
+            timeLeft={timeLeft}
+            handleResend={handleResend}
+            language={language}
+          />
+        );
+      case 'reset_password':
+        return (
+          <ResetPasswordStep 
+            password={password}
+            setPassword={setPassword}
+            confirmPassword={confirmPassword}
+            setConfirmPassword={setConfirmPassword}
+            isPasswordsMatch={isPasswordsMatch}
+            handleClose={handleClose}
+            language={language}
+          />
+        );
+      default:
+        return null;
     }
   };
-
-  const handlePasswordSubmit = () => {
-    if (password === MOCK_USER.password) {
-      setAuthError('');
-      alert("Başarılı Giriş Yapıldı: " + email);
-      if (onLogin) onLogin(MOCK_USER);
-      handleClose(); // Şimdilik giriş yapıldığında pencereyi kapatıyoruz
-    } else {
-      setAuthError(language === 'tr' ? "Girdiğiniz şifre hatalı." : "Incorrect password."); // Yalnızca şifre yanlışlığında hata uyarısı veriyoruz
-    }
-  };
-
-  const formatPhoneNumber = (value: string) => {
-    if (!value) return value;
-    const phoneNumber = value.replace(/[^\d]/g, ""); // Sadece rakamları al
-    const phoneNumberLength = phoneNumber.length;
-    
-    if (phoneNumberLength < 4) return phoneNumber;
-    if (phoneNumberLength < 7) {
-      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
-    }
-    if (phoneNumberLength < 9) {
-      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 8)}`;
-    }
-    return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 8)}-${phoneNumber.slice(8, 10)}`;
-  };
-
-  const nameRegexObj = /[^a-zA-ZğüşıöçĞÜŞİÖÇ ]/g;
-
-  // --- OTP Handlers --- //
-
-  const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.replace(/[^0-9]/g, '');
-    if (val.length <= 6) {
-      setOtp(val);
-      setOtpError('');
-
-      // Auto-Submit Logic
-      if (val.length === 6) {
-        if (val === '111111') {
-          setOtpError('');
-          setAuthStep('reset_password'); // Doğruysa şifre sıfırlama ekranına geç
-        } else {
-          setOtpError('Hatalı doğrulama kodu.');
-        }
-      }
-    }
-  };
-
-  const handleResend = () => {
-    setTimeLeft(120);
-    setOtp('');
-    setOtpError('');
-  };
-
-  const handleGoToVerify = () => {
-    setAuthStep('verify_email');
-    setTimeLeft(120);
-    setOtp('');
-    setOtpError('');
-    setAuthError('');
-  };
-
-  // Check if passwords matching (for Register and Reset Password)
-  const isPasswordsMatch = password === confirmPassword;
 
   return (
     <AnimatePresence>
@@ -214,387 +178,7 @@ export default function AuthModal({
               <X size={18} />
             </button>
             
-            {/* Adım 1: Email */}
-            {authStep === 'email' && (
-              <motion.div
-                key="email"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.2 }}
-              >
-                <div className="flex flex-col items-center gap-2 mt-6 mb-4">
-                  <span className="text-2xl font-black tracking-widest text-emerald-500 uppercase">{t.appTitle}</span>
-                  <h2 className="text-xl font-bold text-white tracking-wide text-center whitespace-pre-line">
-                    {customMessage || (language === 'tr' ? "Giriş Yap veya Kayıt Ol" : "Login or Register")}
-                  </h2>
-                </div>
-
-                <div className="flex flex-col gap-4">
-                  <div className="flex flex-col gap-2 relative">
-                    <label className="text-sm font-medium text-white/70">{t.emailAddress}</label>
-                    <input 
-                      type="text" 
-                      autoFocus
-                      value={email}
-                      onChange={(e) => { setEmail(e.target.value); setAuthError(''); }}
-                      onKeyDown={(e) => e.key === 'Enter' && handleEmailSubmit()}
-                      placeholder="ornek@iyontree.com"
-                      className={cn(
-                        "w-full bg-white/5 border rounded-xl py-3 px-4 text-white focus:outline-none transition-all font-medium placeholder:text-white/30 shadow-inner",
-                        authError && authStep === 'email' ? "border-red-500/50 focus:border-red-500/50 focus:bg-red-500/5" : "border-white/10 focus:border-cyan-400/50 focus:bg-white/10"
-                      )} 
-                    />
-                    <AnimatePresence>
-                      {authError && authStep === 'email' && (
-                        <motion.span 
-                          initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }}
-                          className="text-red-400 text-sm font-medium mt-0.5"
-                        >
-                          {authError}
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
-                  <button 
-                    onClick={handleEmailSubmit}
-                    disabled={!email}
-                    className="w-full bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 disabled:hover:bg-cyan-400 text-black font-bold py-3.5 rounded-xl transition-all duration-200 active:scale-[0.98] mt-2 shadow-[0_0_15px_rgba(34,211,238,0.2)]"
-                  >
-                    {language === 'tr' ? 'Devam Et' : 'Continue'}
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-4 my-2 opacity-50">
-                  <div className="h-px bg-white/20 flex-1"></div>
-                  <span className="text-xs font-semibold text-white/70 uppercase tracking-widest">{language === 'tr' ? 'Veya' : 'Or'}</span>
-                  <div className="h-px bg-white/20 flex-1"></div>
-                </div>
-
-                <div className="flex flex-col gap-3">
-                  <button className="w-full bg-white/5 hover:bg-white/15 border border-white/10 py-3 rounded-xl font-medium text-white transition-all active:scale-[0.98] shadow-sm">
-                    {language === 'tr' ? 'Google ile Devam Et' : 'Continue with Google'}
-                  </button>
-                  <button className="w-full bg-white/5 hover:bg-white/15 border border-white/10 py-3 rounded-xl font-medium text-white transition-all active:scale-[0.98] shadow-sm">
-                    {language === 'tr' ? 'Apple ile Devam Et' : 'Continue with Apple'}
-                  </button>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Adım 2: Password */}
-            {authStep === 'password' && (
-              <motion.div
-                key="password"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
-              >
-                <div className="flex flex-col gap-2 mt-8 mb-2">
-                  <h2 className="text-2xl font-bold text-white tracking-wide">{t.welcomeBack}</h2>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-sm text-cyan-400 font-medium break-all">{email}</span>
-                    <button onClick={() => { setAuthStep('email'); setAuthError(''); setPassword(''); }} className="text-xs shrink-0 text-white/50 hover:text-white underline decoration-white/30 underline-offset-2 transition-colors">{language === 'tr' ? 'Değiştir' : 'Change'}</button>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-4 mt-2">
-                  <div className="flex flex-col gap-2 relative">
-                    <label className="text-sm font-medium text-white/70">{t.password}</label>
-                    <input 
-                      type="password" 
-                      autoFocus
-                      value={password}
-                      onChange={(e) => { setPassword(e.target.value); setAuthError(''); }}
-                      onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
-                      placeholder="••••••••"
-                      className={cn(
-                        "w-full bg-white/5 border rounded-xl py-3 px-4 text-white focus:outline-none transition-all font-medium placeholder:text-white/30 shadow-inner",
-                        authError && authStep === 'password' ? "border-red-500/50 focus:border-red-500/50 focus:bg-red-500/5" : "border-white/10 focus:border-cyan-400/50 focus:bg-white/10"
-                      )} 
-                    />
-                    <AnimatePresence>
-                      {authError && authStep === 'password' && (
-                        <motion.span 
-                          initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }}
-                          className="text-red-400 text-sm font-medium mt-0.5"
-                        >
-                          {authError}
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
-                  <button 
-                    onClick={handlePasswordSubmit}
-                    disabled={!password}
-                    className="w-full bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 disabled:hover:bg-cyan-400 text-black font-bold py-3.5 rounded-xl transition-all duration-200 active:scale-[0.98] mt-2 shadow-[0_0_15px_rgba(34,211,238,0.2)]"
-                  >
-                    {t.login}
-                  </button>
-                </div>
-
-                <div className="flex justify-center mt-2">
-                  <button onClick={handleGoToVerify} className="text-sm text-white/50 hover:text-white transition-colors">
-                    {language === 'tr' ? 'Şifremi Unuttum' : 'Forgot Password'}
-                  </button>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Adım 3: Register */}
-            {authStep === 'register' && (
-              <motion.div
-                key="register"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
-              >
-                <div className="flex flex-col gap-1.5 mt-8 mb-2">
-                  <h2 className="text-2xl font-bold text-white tracking-wide">{t.registerNow}</h2>
-                  <p className="text-sm text-white/50 leading-relaxed">
-                    {language === 'tr' ? 'ile hesap oluştur.' : 'Create an account with'} <span className="text-cyan-400 font-medium break-all">{email}</span>.
-                  </p>
-                </div>
-
-                <div className="flex flex-col gap-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-medium text-white/70">{t.firstName}</label>
-                      <input 
-                        type="text" 
-                        autoFocus
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value.replace(nameRegexObj, ''))}
-                        onKeyDown={(e) => e.key === 'Enter' && lastNameRef.current?.focus()}
-                        placeholder={t.firstName}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all font-medium placeholder:text-white/30 shadow-inner" 
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-medium text-white/70">{t.lastName}</label>
-                      <input 
-                        type="text" 
-                        ref={lastNameRef}
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value.replace(nameRegexObj, ''))}
-                        onKeyDown={(e) => e.key === 'Enter' && phoneRef.current?.focus()}
-                        placeholder={t.lastName}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all font-medium placeholder:text-white/30 shadow-inner" 
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-1.5">
-                     <label className="text-sm font-medium text-white/70">{language === 'tr' ? 'Telefon Numarası' : 'Phone Number'}</label>
-                    <input 
-                      type="tel" 
-                      ref={phoneRef}
-                      value={phone}
-                      onChange={(e) => setPhone(formatPhoneNumber(e.target.value))}
-                      onKeyDown={(e) => e.key === 'Enter' && passwordRef.current?.focus()}
-                      placeholder="(555) 000-00-00"
-                      maxLength={15}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all font-medium placeholder:text-white/30 shadow-inner font-mono tracking-wide" 
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-sm font-medium text-white/70">{language === 'tr' ? 'Şifre Belirle' : 'Set Password'}</label>
-                    <input 
-                      type="password" 
-                      ref={passwordRef}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && confirmPasswordRef.current?.focus()}
-                      placeholder="••••••••"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all font-medium placeholder:text-white/30 shadow-inner" 
-                    />
-                  </div>
-                  
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-sm font-medium text-white/70">{language === 'tr' ? 'Şifre Tekrar' : 'Confirm Password'}</label>
-                    <input 
-                      type="password"
-                      ref={confirmPasswordRef} 
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && password && isPasswordsMatch && firstName && phone && phone.length >= 14) {
-                           alert("Yeni Kayıt İşlemi: Mock Tarafından Kaydedildi");
-                           handleClose();
-                        }
-                      }}
-                      placeholder="••••••••"
-                      className={cn(
-                        "w-full bg-white/5 border rounded-xl py-3 px-4 text-white focus:outline-none transition-all font-medium placeholder:text-white/30 shadow-inner",
-                        (!isPasswordsMatch && confirmPassword) ? "border-red-500/50 focus:border-red-500/50 focus:bg-red-500/5" : "border-white/10 focus:border-cyan-400/50 focus:bg-white/10"
-                      )} 
-                    />
-                    <AnimatePresence>
-                      {(!isPasswordsMatch && confirmPassword) && (
-                        <motion.span 
-                          initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }}
-                          className="text-red-400 text-sm font-medium mt-0.5"
-                        >
-                          Şifreler uyuşmuyor.
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
-                  <button 
-                    onClick={() => {
-                       if (onLogin) onLogin({ ...MOCK_USER, email, firstName, lastName, phone });
-                       handleClose();
-                    }}
-                    disabled={!password || !isPasswordsMatch || !firstName || !phone || phone.length < 14}
-                    className="w-full bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 disabled:hover:bg-cyan-400 text-black font-bold py-3.5 rounded-xl transition-all duration-200 active:scale-[0.98] mt-2 shadow-[0_0_15px_rgba(34,211,238,0.2)]"
-                  >
-                    {language === 'tr' ? 'Kayıt Ol ve Doğrula' : 'Register and Verify'}
-                  </button>
-                </div>
-                
-              </motion.div>
-            )}
-
-            {/* Adım 4: Doğrulama (OTP) */}
-            {authStep === 'verify_email' && (
-              <motion.div
-                key="verify_email"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
-              >
-                <div className="flex flex-col gap-1.5 mt-8 mb-4 items-center text-center">
-                  <h2 className="text-2xl font-bold text-white tracking-wide">{language === 'tr' ? 'Doğrulama Kodu' : 'Verification Code'}</h2>
-                  <p className="text-sm text-white/50 leading-relaxed">
-                    {language === 'tr' ? 'adresine gönderdiğimiz 6 haneli kodu aşağıya giriniz.' : 'Please enter the 6-digit code we sent to'} <span className="text-cyan-400 font-medium break-all">{email}</span>.
-                  </p>
-                </div>
-
-                <div className="flex flex-col gap-4 mt-2">
-                  <div className="flex flex-col gap-2 items-center">
-                    <input 
-                      type="text" 
-                      autoFocus
-                      maxLength={6}
-                      value={otp}
-                      disabled={timeLeft === 0}
-                      onChange={handleOtpChange}
-                      placeholder="••••••"
-                      className={cn(
-                        "w-full max-w-[200px] text-center text-3xl tracking-[0.5em] bg-white/5 border rounded-xl py-3 px-4 text-white focus:outline-none transition-all font-black placeholder:text-white/10 shadow-inner",
-                        otpError ? "border-red-500/50 focus:border-red-500/50 focus:bg-red-500/5" : "border-white/10 focus:border-cyan-400/50 focus:bg-white/10 disabled:opacity-50"
-                      )} 
-                    />
-                    {/* Hata Mesajı */}
-                    <AnimatePresence>
-                      {otpError && (
-                        <motion.span 
-                          initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }}
-                          className="text-red-400 text-sm font-medium mt-1"
-                        >
-                          {otpError}
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
-                  {/* Sayaç ve Tekrar Gönder */}
-                  <div className="flex justify-center mt-2">
-                    {timeLeft > 0 ? (
-                      <span className="text-sm font-medium text-white/50 bg-black/40 px-3 py-1.5 rounded-full border border-white/5">
-                        {language === 'tr' ? 'Kalan süre:' : 'Time left:'} <span className="text-white">{formatTime(timeLeft)}</span>
-                      </span>
-                    ) : (
-                      <button 
-                        onClick={handleResend}
-                        className="text-sm text-cyan-400 hover:text-cyan-300 font-medium underline decoration-cyan-400/30 underline-offset-4 transition-all"
-                      >
-                        {language === 'tr' ? 'Kodu Tekrar Gönder' : 'Resend Code'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Adım 5: Şifre Sıfırlama */}
-            {authStep === 'reset_password' && (
-              <motion.div
-                key="reset_password"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
-              >
-                <div className="flex flex-col gap-1.5 mt-8 mb-2">
-                  <h2 className="text-2xl font-bold text-white tracking-wide">{language === 'tr' ? 'Yeni Şifre' : 'New Password'}</h2>
-                  <p className="text-sm text-white/50">
-                    {language === 'tr' ? 'Hesabınız için yeni bir şifre belirleyin.' : 'Set a new password for your account.'}
-                  </p>
-                </div>
-
-                <div className="flex flex-col gap-4 mt-2">
-                  <div className="flex flex-col gap-2">
-                    <label className="text-sm font-medium text-white/70">{language === 'tr' ? 'Yeni Şifre' : 'New Password'}</label>
-                    <input 
-                      type="password" 
-                      autoFocus
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all font-medium placeholder:text-white/30 shadow-inner" 
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <label className="text-sm font-medium text-white/70">{language === 'tr' ? 'Şifreyi Tekrar Girin' : 'Retype Password'}</label>
-                    <input 
-                      type="password" 
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && password && isPasswordsMatch) {
-                          alert("Yeni Parola Kaydedildi. Oturum Açılıyor...");
-                          handleClose();
-                        }
-                      }}
-                      placeholder="••••••••"
-                      className={cn(
-                        "w-full bg-white/5 border rounded-xl py-3 px-4 text-white focus:outline-none transition-all font-medium placeholder:text-white/30 shadow-inner",
-                        (!isPasswordsMatch && confirmPassword) ? "border-red-500/50 focus:border-red-500/50 focus:bg-red-500/5" : "border-white/10 focus:border-cyan-400/50 focus:bg-white/10"
-                      )} 
-                    />
-                    <AnimatePresence>
-                      {(!isPasswordsMatch && confirmPassword) && (
-                        <motion.span 
-                          initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }}
-                          className="text-red-400 text-sm font-medium mt-0.5"
-                        >
-                          Şifreler uyuşmuyor.
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
-                  <button 
-                    onClick={() => {
-                      handleClose();
-                    }}
-                    disabled={!password || !isPasswordsMatch}
-                    className="w-full bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 disabled:hover:bg-cyan-400 text-black font-bold py-3.5 rounded-xl transition-all duration-200 active:scale-[0.98] mt-4 shadow-[0_0_15px_rgba(34,211,238,0.2)]"
-                  >
-                    {language === 'tr' ? 'Şifreyi Yenile (Mock)' : 'Reset Password (Mock)'}
-                  </button>
-                </div>
-              </motion.div>
-            )}
+            {renderStep()}
 
           </motion.div>
         </div>
