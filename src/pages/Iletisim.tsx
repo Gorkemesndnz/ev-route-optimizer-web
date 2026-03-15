@@ -5,6 +5,7 @@ import { Mail, MapPin, Send, Instagram, Linkedin, Twitter, CheckCircle2 } from "
 import { motion } from "framer-motion";
 import { contactSchema } from "../lib/validation";
 import { z } from "zod";
+import CustomSelect from "../components/ui/CustomSelect";
 
 export default function Iletisim() {
   const { language: lang } = useMarketing();
@@ -71,14 +72,12 @@ export default function Iletisim() {
   };
 
   const subjectOptions = lang === 'tr' ? [
-    { value: 'select', label: 'Seçiniz...' },
     { value: 'investment', label: 'Yatırım' },
     { value: 'partnership', label: 'İşbirliği' },
     { value: 'marketing', label: 'Marka, Reklam ve Tanıtım' },
     { value: 'bug', label: 'Sistemsel Bir Sorun' },
     { value: 'other', label: 'Diğer' }
   ] : [
-    { value: 'select', label: 'Select...' },
     { value: 'investment', label: 'Investment' },
     { value: 'partnership', label: 'Partnership' },
     { value: 'marketing', label: 'Marketing & PR' },
@@ -162,19 +161,14 @@ export default function Iletisim() {
 
               <div className="flex flex-col gap-2 mt-2 relative">
                 <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider pl-1 transition-colors">{lang === 'tr' ? 'Konu' : 'Subject'}</label>
-                <div className="relative">
-                  <select 
-                    value={subject}
-                    onChange={(e) => { setSubject(e.target.value); setSubjectError(''); }}
-                    className={`h-12 w-full bg-white dark:bg-slate-800 border rounded-2xl px-4 outline-none transition-all font-medium text-slate-800 dark:text-slate-200 appearance-none cursor-pointer ${
-                      subjectError ? 'border-red-400 dark:border-red-500 focus:border-red-500 bg-red-50 dark:bg-red-900/20' : 'border-slate-200 dark:border-slate-700 hover:border-cyan-300 dark:hover:border-cyan-500 focus:border-cyan-500'
-                    }`}
-                  >
-                    {subjectOptions.map(opt => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
-                </div>
+                <CustomSelect 
+                  options={subjectOptions}
+                  value={subject}
+                  onChange={(val) => { setSubject(val); setSubjectError(''); }}
+                  placeholder={lang === 'tr' ? "Seçiniz..." : "Select..."}
+                  error={!!subjectError}
+                  dark={false}
+                />
                 {subjectError && <span className="absolute -bottom-5 left-1 text-[10px] text-red-500 font-bold">{subjectError}</span>}
               </div>
 

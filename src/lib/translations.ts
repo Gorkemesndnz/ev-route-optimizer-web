@@ -201,6 +201,10 @@ export const translations = {
     alreadyHaveAccount: "Zaten hesabınız var mı?",
     noAccount: "Hesabınız yok mu?",
     register: "Kayıt Ol",
+    continueWithGoogle: "Google ile Devam Et",
+    continueWithApple: "Apple ile Devam Et",
+    or: "Veya",
+    continue: "Devam Et",
     
     aboutUsTitle: "Geleceğin Enerjisini Optimize Ediyoruz: IYONTREE",
     aboutText: "IYONTREE, elektrikli araç (EV) kullanıcılarının menzil endişesini (range anxiety) ortadan kaldırmak ve şarj planlamasını fiziksel dünya koşullarına göre optimize etmek amacıyla geliştirilmiş yapay zeka destekli bir platformdur.\n\nBu proje, Düzce Üniversitesi Bilgisayar Mühendisliği 4. sınıf öğrencisi Görkem Esendeniz tarafından bitirme tezi kapsamında tasarlanmış ve hayata geçirilmiştir. Amacımız, salt mesafe ölçümünün ötesine geçen gelişmiş tüketim algoritmalarıyla, sürdürülebilir e-mobilite ekosistemine yenilikçi ve güvenilir bir çözüm sunmaktır.",
@@ -464,6 +468,10 @@ export const translations = {
     alreadyHaveAccount: "Already have an account?",
     noAccount: "Don't have an account?",
     register: "Register",
+    continueWithGoogle: "Continue with Google",
+    continueWithApple: "Continue with Apple",
+    or: "Or",
+    continue: "Continue",
     
     aboutUsTitle: "Optimizing the Future of Energy: IYONTREE",
     aboutText: "IYONTREE is an AI-powered platform developed to eliminate range anxiety for electric vehicle (EV) users and optimize charging planning according to physical world conditions.\n\nThis project was designed and implemented by Görkem Esendeniz, a senior Computer Engineering student at Düzce University, as part of his graduation thesis. Our goal is to provide an innovative and reliable solution to the sustainable e-mobility ecosystem with advanced consumption algorithms that go beyond simple distance measurement.",

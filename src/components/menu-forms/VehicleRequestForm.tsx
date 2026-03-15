@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, CheckCircle } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { translations } from "../../lib/translations";
 import { useSettings } from "../../contexts/SettingsContext";
@@ -8,6 +8,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { vehicleRequestSchema } from "../../lib/validation";
 import type { VehicleRequestFormData } from "../../lib/validation";
 import { z } from "zod";
+import CustomSelect from "../ui/CustomSelect";
 
 interface VehicleRequestFormProps {
   onSuccess: () => void;
@@ -151,20 +152,13 @@ export const VehicleRequestForm: React.FC<VehicleRequestFormProps> = ({ onSucces
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-white/50 px-1">{t.vehicleBrand}</label>
-          <div className="relative">
-            <select 
-              value={formData.brand}
-              onChange={(e) => handleInputChange('brand', e.target.value)}
-              className={cn(
-                "w-full bg-zinc-900 border border-white/10 rounded-xl py-2.5 px-4 text-white focus:outline-none transition-all appearance-none cursor-pointer outline-none",
-                errors.brand ? "border-red-500/50 focus:border-red-500" : "focus:border-cyan-400/50"
-              )}
-            >
-              <option value="" disabled>{t.subjects.select}</option>
-              {BRANDS.map(brand => <option key={brand} value={brand}>{brand}</option>)}
-            </select>
-            <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
-          </div>
+          <CustomSelect 
+            options={BRANDS.map(brand => ({ value: brand, label: brand }))}
+            value={formData.brand}
+            onChange={(val) => handleInputChange('brand', val)}
+            placeholder={t.subjects.select}
+            error={!!errors.brand}
+          />
           {errors.brand && <p className="text-red-400 text-xs px-1">{errors.brand}</p>}
         </div>
 

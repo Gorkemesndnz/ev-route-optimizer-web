@@ -1,0 +1,446 @@
+{
+  "C:\\Ev_Route_Optimizer_Web\\@\\components\\ui\\badge.tsx": [
+    {
+      "line": 36,
+      "ruleId": "react-refresh/only-export-components",
+      "message": "Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components."
+    }
+  ],
+  "C:\\Ev_Route_Optimizer_Web\\@\\components\\ui\\button.tsx": [
+    {
+      "line": 57,
+      "ruleId": "react-refresh/only-export-components",
+      "message": "Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components."
+    }
+  ],
+  "C:\\Ev_Route_Optimizer_Web\\@\\components\\ui\\form.tsx": [
+    {
+      "line": 170,
+      "ruleId": "react-refresh/only-export-components",
+      "message": "Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components."
+    }
+  ],
+  "C:\\Ev_Route_Optimizer_Web\\@\\components\\ui\\toggle.tsx": [
+    {
+      "line": 43,
+      "ruleId": "react-refresh/only-export-components",
+      "message": "Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components."
+    }
+  ],
+  "src/components\\AboutUsView.tsx": [
+    {
+      "line": 13,
+      "ruleId": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type."
+    }
+  ],
+  "src/components\\AccountDashboard.tsx": [
+    {
+      "line": 2,
+      "ruleId": "@typescript-eslint/no-unused-vars",
+      "message": "'Settings' is defined but never used."
+    }
+  ],
+  "src/components\\AuthModal.tsx": [
+    {
+      "line": 18,
+      "ruleId": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type."
+    }
+  ],
+  "src/components\\ContactView.tsx": [
+    {
+      "line": 3,
+      "ruleId": "@typescript-eslint/no-unused-vars",
+      "message": "'Phone' is defined but never used."
+    },
+    {
+      "line": 19,
+      "ruleId": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type."
+    },
+    {
+      "line": 157,
+      "ruleId": "@typescript-eslint/no-unused-expressions",
+      "message": "Expected an assignment or function call and instead saw an expression."
+    }
+  ],
+  "src/components\\CookieConsent.tsx": [
+    {
+      "line": 3,
+      "ruleId": "@typescript-eslint/no-unused-vars",
+      "message": "'Cookie' is defined but never used."
+    },
+    {
+      "line": 33,
+      "ruleId": "react-hooks/set-state-in-effect",
+      "message": "Error: Calling setState synchronously within an effect can trigger cascading renders\n\nEffects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:\n* Update external systems with the latest state from React.\n* Subscribe for updates from some external system, calling setState in a callback function when external state changes.\n\nCalling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).\n\nC:\\Ev_Route_Optimizer_Web\\src\\components\\CookieConsent.tsx:33:13\n  31 |           try {\n  32 |             const parsed = JSON.parse(saved);\n> 33 |             setAnalytical(Boolean(parsed.analytical ?? true));\n     |             ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect\n  34 |             setCrashReports(Boolean(parsed.crashReports ?? true));\n  35 |           } catch {\n  36 |             setAnalytical(true);"
+    }
+  ],
+  "src/components\\GarageView.tsx": [
+    {
+      "line": 8,
+      "ruleId": "@typescript-eslint/no-unused-vars",
+      "message": "'Vehicle' is defined but never used."
+    }
+  ],
+  "src/components\\GeneralMenu.tsx": [
+    {
+      "line": 28,
+      "ruleId": "@typescript-eslint/no-unused-vars",
+      "message": "'useAuth' is defined but never used."
+    },
+    {
+      "line": 56,
+      "ruleId": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type."
+    },
+    {
+      "line": 136,
+      "ruleId": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type."
+    },
+    {
+      "line": 222,
+      "ruleId": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type."
+    },
+    {
+      "line": 224,
+      "ruleId": "@typescript-eslint/no-unused-vars",
+      "message": "'val' is defined but never used."
+    },
+    {
+      "line": 224,
+      "ruleId": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type."
+    },
+    {
+      "line": 362,
+      "ruleId": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type."
+    }
+  ],
+  "src/components\\LocationSearchModal.tsx": [
+    {
+      "line": 23,
+      "ruleId": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type."
+    },
+    {
+      "line": 38,
+      "ruleId": "@typescript-eslint/no-unused-vars",
+      "message": "'e' is defined but never used."
+    },
+    {
+      "line": 38,
+      "ruleId": "no-empty",
+      "message": "Empty block statement."
+    },
+    {
+      "line": 103,
+      "ruleId": "@typescript-eslint/no-unused-vars",
+      "message": "'description' is defined but never used."
+    }
+  ],
+  "src/components\\MapControls.tsx": [
+    {
+      "line": 57,
+      "ruleId": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type."
+    }
+  ],
+  "src/components\\MyGarageModal.tsx": [
+    {
+      "line": 7,
+      "ruleId": "@typescript-eslint/no-unused-vars",
+      "message": "'Vehicle' is defined but never used."
+    }
+  ],
+  "src/components\\PrivacyPolicyView.tsx": [
+    {
+      "line": 13,
+      "ruleId": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type."
+    },
+    {
+      "line": 18,
+      "ruleId": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type."
+    }
+  ],
+  "src/components\\RouteSettingsModal.tsx": [
+    {
+      "line": 3,
+      "ruleId": "@typescript-eslint/no-unused-vars",
+      "message": "'Clock' is defined but never used."
+    }
+  ],
+  "src/components\\Sidebar.tsx": [
+    {
+      "line": 10,
+      "ruleId": "@typescript-eslint/no-unused-vars",
+      "message": "'AnimatePresence' is defined but never used."
+    }
+  ],
+  "src/components\\TermsView.tsx": [
+    {
+      "line": 13,
+      "ruleId": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type."
+    }
+  ],
+  "src/components\\auth\\PasswordStep.tsx": [
+    {
+      "line": 14,
+      "ruleId": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type."
+    }
+  ],
+  "src/components\\auth\\RegisterStep.tsx": [
+    {
+      "line": 2,
+      "ruleId": "@typescript-eslint/no-unused-vars",
+      "message": "'AnimatePresence' is defined but never used."
+    }
+  ],
+  "src/components\\menu-forms\\BugReportForm.tsx": [
+    {
+      "line": 2,
+      "ruleId": "@typescript-eslint/no-unused-vars",
+      "message": "'AnimatePresence' is defined but never used."
+    },
+    {
+      "line": 34,
+      "ruleId": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type."
+    }
+  ],
+  "src/components\\menu-forms\\SuggestionForm.tsx": [
+    {
+      "line": 2,
+      "ruleId": "@typescript-eslint/no-unused-vars",
+      "message": "'AnimatePresence' is defined but never used."
+    },
+    {
+      "line": 33,
+      "ruleId": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type."
+    }
+  ],
+  "src/components\\menu-forms\\VehicleRequestForm.tsx": [
+    {
+      "line": 10,
+      "ruleId": "@typescript-eslint/no-unused-vars",
+      "message": "'z' is defined but never used."
+    },
+    {
+      "line": 61,
+      "ruleId": "@typescript-eslint/no-unused-vars",
+      "message": "'err' is defined but never used."
+    }
+  ],
+  "src/components\\ui\\badge.tsx": [
+    {
+      "line": 52,
+      "ruleId": "react-refresh/only-export-components",
+      "message": "Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components."
+    }
+  ],
+  "src/components\\ui\\button.tsx": [
+    {
+      "line": 60,
+      "ruleId": "react-refresh/only-export-components",
+      "message": "Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components."
+    }
+  ],
+  "src/components\\ui\\form.tsx": [
+    {
+      "line": 3,
+      "ruleId": "@typescript-eslint/no-unused-vars",
+      "message": "'useFormContext' is defined but never used."
+    }
+  ],
+  "src/components\\ui\\tabs.tsx": [
+    {
+      "line": 80,
+      "ruleId": "react-refresh/only-export-components",
+      "message": "Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components."
+    }
+  ],
+  "src/components\\ui\\toggle.tsx": [
+    {
+      "line": 42,
+      "ruleId": "react-refresh/only-export-components",
+      "message": "Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components."
+    }
+  ],
+  "src/contexts\\AuthContext.tsx": [
+    {
+      "line": 4,
+      "ruleId": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type."
+    },
+    {
+      "line": 5,
+      "ruleId": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type."
+    },
+    {
+      "line": 16,
+      "ruleId": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type."
+    },
+    {
+      "line": 37,
+      "ruleId": "react-refresh/only-export-components",
+      "message": "Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components."
+    }
+  ],
+  "src/contexts\\SettingsContext.tsx": [
+    {
+      "line": 9,
+      "ruleId": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type."
+    },
+    {
+      "line": 16,
+      "ruleId": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type."
+    },
+    {
+      "line": 30,
+      "ruleId": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type."
+    },
+    {
+      "line": 54,
+      "ruleId": "react-hooks/set-state-in-effect",
+      "message": "Error: Calling setState synchronously within an effect can trigger cascading renders\n\nEffects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:\n* Update external systems with the latest state from React.\n* Subscribe for updates from some external system, calling setState in a callback function when external state changes.\n\nCalling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).\n\nC:\\Ev_Route_Optimizer_Web\\src\\contexts\\SettingsContext.tsx:54:11\n  52 |         const is30DaysOld = (Date.now() - parsed.timestamp) > 30 * 24 * 60 * 60 * 1000;\n  53 |         if (!parsed.allAccepted && is30DaysOld) {\n> 54 |           setShowCookieBanner(true);\n     |           ^^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect\n  55 |         }\n  56 |       } catch {\n  57 |         setShowCookieBanner(true);"
+    },
+    {
+      "line": 64,
+      "ruleId": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type."
+    },
+    {
+      "line": 79,
+      "ruleId": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type."
+    },
+    {
+      "line": 102,
+      "ruleId": "react-refresh/only-export-components",
+      "message": "Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components."
+    }
+  ],
+  "src/contexts\\VehicleContext.tsx": [
+    {
+      "line": 57,
+      "ruleId": "react-refresh/only-export-components",
+      "message": "Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components."
+    }
+  ],
+  "src/hooks\\useAuthForm.ts": [
+    {
+      "line": 2,
+      "ruleId": "@typescript-eslint/no-unused-vars",
+      "message": "'translations' is defined but never used."
+    },
+    {
+      "line": 18,
+      "ruleId": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type."
+    },
+    {
+      "line": 69,
+      "ruleId": "@typescript-eslint/no-unused-vars",
+      "message": "'err' is defined but never used."
+    }
+  ],
+  "src/pages\\BasePageLayout.tsx": [
+    {
+      "line": 3,
+      "ruleId": "@typescript-eslint/no-unused-vars",
+      "message": "'Moon' is defined but never used."
+    },
+    {
+      "line": 3,
+      "ruleId": "@typescript-eslint/no-unused-vars",
+      "message": "'Sun' is defined but never used."
+    },
+    {
+      "line": 14,
+      "ruleId": "react-refresh/only-export-components",
+      "message": "Fast refresh only works when a file only exports components. Move your React context(s) to a separate file."
+    },
+    {
+      "line": 21,
+      "ruleId": "react-refresh/only-export-components",
+      "message": "Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components."
+    }
+  ],
+  "src/pages\\GizlilikPolitikasi.tsx": [
+    {
+      "line": 1,
+      "ruleId": "@typescript-eslint/no-unused-vars",
+      "message": "'useEffect' is defined but never used."
+    },
+    {
+      "line": 1,
+      "ruleId": "@typescript-eslint/no-unused-vars",
+      "message": "'useState' is defined but never used."
+    }
+  ],
+  "src/pages\\Hakkimizda.tsx": [
+    {
+      "line": 1,
+      "ruleId": "@typescript-eslint/no-unused-vars",
+      "message": "'useEffect' is defined but never used."
+    },
+    {
+      "line": 1,
+      "ruleId": "@typescript-eslint/no-unused-vars",
+      "message": "'useState' is defined but never used."
+    }
+  ],
+  "src/pages\\Iletisim.tsx": [
+    {
+      "line": 11,
+      "ruleId": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type."
+    },
+    {
+      "line": 30,
+      "ruleId": "react-hooks/set-state-in-effect",
+      "message": "Error: Calling setState synchronously within an effect can trigger cascading renders\n\nEffects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:\n* Update external systems with the latest state from React.\n* Subscribe for updates from some external system, calling setState in a callback function when external state changes.\n\nCalling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).\n\nC:\\Ev_Route_Optimizer_Web\\src\\pages\\Iletisim.tsx:30:9\n  28 |       try {\n  29 |         const user = JSON.parse(userStr);\n> 30 |         setCurrentUser(user);\n     |         ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect\n  31 |         setName(`${user.firstName} ${user.lastName}`);\n  32 |         setEmail(user.email);\n  33 |       } catch (e) {}"
+    },
+    {
+      "line": 33,
+      "ruleId": "@typescript-eslint/no-unused-vars",
+      "message": "'e' is defined but never used."
+    },
+    {
+      "line": 33,
+      "ruleId": "no-empty",
+      "message": "Empty block statement."
+    },
+    {
+      "line": 39,
+      "ruleId": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type."
+    }
+  ],
+  "src/pages\\KullanimKosullari.tsx": [
+    {
+      "line": 1,
+      "ruleId": "@typescript-eslint/no-unused-vars",
+      "message": "'useEffect' is defined but never used."
+    },
+    {
+      "line": 1,
+      "ruleId": "@typescript-eslint/no-unused-vars",
+      "message": "'useState' is defined but never used."
+    }
+  ]
+}

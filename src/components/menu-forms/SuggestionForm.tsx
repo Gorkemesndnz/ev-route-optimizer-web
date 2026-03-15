@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, CheckCircle } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { translations } from "../../lib/translations";
 import { useSettings } from "../../contexts/SettingsContext";
@@ -8,6 +8,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { suggestionSchema } from "../../lib/validation";
 import type { SuggestionFormData } from "../../lib/validation";
 import { z } from "zod";
+import CustomSelect from "../ui/CustomSelect";
 
 interface SuggestionFormProps {
   onSuccess: () => void;
@@ -130,26 +131,21 @@ export const SuggestionForm: React.FC<SuggestionFormProps> = ({ onSuccess }) => 
 
       <div className="flex flex-col gap-2">
         <label className="text-sm font-medium text-white/50 px-1">{t.subject}</label>
-        <div className="relative">
-          <select 
-            value={formData.subject}
-            onChange={(e) => handleInputChange('subject', e.target.value)}
-            className={cn(
-              "w-full bg-zinc-900 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none transition-all appearance-none cursor-pointer outline-none",
-              errors.subject ? "border-red-500/50 focus:border-red-500" : "focus:border-cyan-400/50"
-            )}
-          >
-            <option value="" disabled>{t.subjects.select}</option>
-            <option value="route">{t.subjects.route}</option>
-            <option value="ui">{t.subjects.ui}</option>
-            <option value="vehicle">{t.subjects.vehicle}</option>
-            <option value="station">{t.subjects.station}</option>
-            <option value="feedback">{t.subjects.feedback}</option>
-            <option value="location">{t.subjects.location}</option>
-            <option value="other">{t.subjects.other}</option>
-          </select>
-          <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
-        </div>
+        <CustomSelect 
+          options={[
+            { value: "route", label: t.subjects.route },
+            { value: "ui", label: t.subjects.ui },
+            { value: "vehicle", label: t.subjects.vehicle },
+            { value: "station", label: t.subjects.station },
+            { value: "feedback", label: t.subjects.feedback },
+            { value: "location", label: t.subjects.location },
+            { value: "other", label: t.subjects.other },
+          ]}
+          value={formData.subject}
+          onChange={(val) => handleInputChange('subject', val)}
+          placeholder={t.subjects.select}
+          error={!!errors.subject}
+        />
         {errors.subject && <p className="text-red-400 text-xs px-1">{errors.subject}</p>}
       </div>
 

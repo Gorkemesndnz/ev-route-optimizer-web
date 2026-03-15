@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import GlobalFooter from "./GlobalFooter";
 import { contactSchema } from "../lib/validation";
 import { z } from "zod";
+import CustomSelect from "./ui/CustomSelect";
 
 export default function ContactView({ 
   language, 
@@ -30,6 +31,14 @@ export default function ContactView({
   const [emailError, setEmailError] = useState('');
   const [subjectError, setSubjectError] = useState('');
   const [messageError, setMessageError] = useState('');
+
+  const subjectOptions = [
+    { value: "investment", label: t.contactSubjects.investment },
+    { value: "partnership", label: t.contactSubjects.partnership },
+    { value: "branding", label: t.contactSubjects.branding },
+    { value: "systemic", label: t.contactSubjects.systemic },
+    { value: "other", label: t.contactSubjects.other },
+  ];
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (currentUser) return;
@@ -171,24 +180,14 @@ export default function ContactView({
 
                   <div className="flex flex-col gap-2">
                     <label className="text-sm font-bold text-white/30 uppercase tracking-widest px-1">{t.subject}</label>
-                    <div className="relative">
-                      <select 
-                        value={subject}
-                        onChange={(e) => { setSubject(e.target.value); setSubjectError(''); }}
-                        className={cn(
-                          "w-full bg-zinc-900/50 border rounded-2xl py-4 px-6 text-white focus:outline-none appearance-none cursor-pointer outline-none transition-all",
-                          subjectError ? "border-red-500/50 focus:border-red-500 bg-red-500/5" : "border-white/10 focus:border-cyan-400/50"
-                        )}
-                      >
-                        <option value="select" disabled>{t.contactSubjects.select}</option>
-                        <option value="investment">{t.contactSubjects.investment}</option>
-                        <option value="partnership">{t.contactSubjects.partnership}</option>
-                        <option value="branding">{t.contactSubjects.branding}</option>
-                        <option value="systemic">{t.contactSubjects.systemic}</option>
-                        <option value="other">{t.contactSubjects.other}</option>
-                      </select>
-                      <ChevronLeft size={20} className="absolute right-6 top-1/2 -translate-y-1/2 -rotate-90 text-white/30 pointer-events-none" />
-                    </div>
+                    <CustomSelect 
+                      options={subjectOptions}
+                      value={subject}
+                      onChange={(val) => { setSubject(val); setSubjectError(''); }}
+                      placeholder={t.contactSubjects.select}
+                      error={!!subjectError}
+                      dark={true}
+                    />
                     {subjectError && <p className="text-red-400 text-xs px-1 font-medium">{subjectError}</p>}
                   </div>
 

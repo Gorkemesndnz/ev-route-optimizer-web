@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, CheckCircle } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { translations } from "../../lib/translations";
 import { useSettings } from "../../contexts/SettingsContext";
@@ -8,6 +8,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { bugReportSchema } from "../../lib/validation";
 import type { BugReportFormData } from "../../lib/validation";
 import { z } from "zod";
+import CustomSelect from "../ui/CustomSelect";
 
 interface BugReportFormProps {
   onSuccess: () => void;
@@ -17,6 +18,15 @@ export const BugReportForm: React.FC<BugReportFormProps> = ({ onSuccess }) => {
   const { language } = useSettings();
   const { currentUser } = useAuth();
   const t = translations[language];
+
+  const subjectOptions = [
+    { value: "vehicle", label: t.bugSubjects.vehicle },
+    { value: "map", label: t.bugSubjects.map },
+    { value: "station", label: t.bugSubjects.station },
+    { value: "route", label: t.bugSubjects.route },
+    { value: "profile", label: t.bugSubjects.profile },
+    { value: "other", label: t.bugSubjects.other },
+  ];
 
   const [formData, setFormData] = useState<BugReportFormData>({
     name: currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : '',
@@ -132,25 +142,13 @@ export const BugReportForm: React.FC<BugReportFormProps> = ({ onSuccess }) => {
 
       <div className="flex flex-col gap-2">
         <label className="text-sm font-medium text-white/50 px-1">{t.subject}</label>
-        <div className="relative">
-          <select 
-            value={formData.subject}
-            onChange={(e) => handleInputChange('subject', e.target.value)}
-            className={cn(
-              "w-full bg-zinc-900 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none transition-all appearance-none cursor-pointer outline-none",
-              errors.subject ? "border-red-500/50 focus:border-red-500" : "focus:border-cyan-400/50"
-            )}
-          >
-            <option value="" disabled>{t.bugSubjects.select}</option>
-            <option value="vehicle">{t.bugSubjects.vehicle}</option>
-            <option value="map">{t.bugSubjects.map}</option>
-            <option value="station">{t.bugSubjects.station}</option>
-            <option value="route">{t.bugSubjects.route}</option>
-            <option value="profile">{t.bugSubjects.profile}</option>
-            <option value="other">{t.bugSubjects.other}</option>
-          </select>
-          <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
-        </div>
+        <CustomSelect 
+          options={subjectOptions}
+          value={formData.subject}
+          onChange={(val) => handleInputChange('subject', val)}
+          placeholder={t.bugSubjects.select}
+          error={!!errors.subject}
+        />
         {errors.subject && <p className="text-red-400 text-xs px-1">{errors.subject}</p>}
       </div>
 
