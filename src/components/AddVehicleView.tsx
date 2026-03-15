@@ -1,6 +1,5 @@
 import { ArrowLeft, Search, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
-import { cn } from "@/lib/utils";
 import { translations } from "../lib/translations";
 
 const MOCK_BRANDS = [
@@ -35,7 +34,7 @@ export default function AddVehicleView({
 
   const handleModelSelect = (brand: any, model: string) => {
     const newVehicle = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       brand: brand.name,
       model: model,
       customName: `${brand.name} ${model}`,
@@ -61,7 +60,7 @@ export default function AddVehicleView({
           <ArrowLeft size={20} />
         </button>
         <h2 className="text-xl font-bold tracking-tight text-white/90">
-          {selectedBrand ? t.selectModel : (language === 'tr' ? 'Araç Ekle' : 'Add Vehicle')}
+          {selectedBrand ? t.selectModel : t.addVehicleTitle}
         </h2>
       </div>
 
@@ -96,7 +95,7 @@ export default function AddVehicleView({
               
               {filteredBrands.length === 0 && (
                 <div className="col-span-2 py-8 text-center text-white/50 text-sm">
-                  {language === 'tr' ? 'Sonuç bulunamadı' : 'No results found'}
+                  {t.noResults}
                 </div>
               )}
             </div>

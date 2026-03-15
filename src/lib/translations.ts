@@ -8,6 +8,10 @@ export const translations = {
     addWaypoint: "Durak Ekle",
     savedRoutes: "Kayıtlı Rotalar",
     planRoute: "Rotayı Planla",
+    addVehicleTitle: "Araç Ekle",
+    noResults: "Sonuç bulunamadı",
+    apiErrorTitle: "Yapılandırma Hatası",
+    apiErrorMessage: "Google Maps API Anahtarı eksik. Lütfen ortam değişkenlerinizde VITE_GOOGLE_MAPS_API_KEY değerini ayarlayın.",
     login: "Giriş Yap",
     logout: "Çıkış Yap",
     garage: "Garajım",
@@ -237,6 +241,25 @@ export const translations = {
     // Privacy Policy
     privacyTitle: "İYONTREE Gizlilik Politikası ve KVKK Aydınlatma Metni",
     privacyText: "1. Veri Sorumlusu ve Amacımız\nIYONTREE platformu olarak, elektrikli araç (EV) ekosistemini daha verimli hale getirmeyi ve size en doğru fizik tabanlı rota optimizasyonunu sunmayı hedefliyoruz. Bu Gizlilik Politikası, 6698 sayılı Kişisel Verilerin Korunması Kanunu (\"KVKK\") uyarınca, kişisel verilerinizin nasıl toplandığı, işlendiği, korunduğu ve hangi durumlarda paylaşılabileceği konusunda sizi şeffaf bir şekilde bilgilendirmek amacıyla hazırlanmıştır.\n\n2. Hangi Verileri Topluyoruz?\nSize hizmet sunabilmek için aşağıdaki veri kategorilerini işlemekteyiz: Kimlik ve İletişim Verileri: Adınız, soyadınız ve e-posta adresiniz. Konum ve Rota Verileri: Başlangıç, varış, ara duraklar ve anlık GPS konumunuz. Araç ve Telemetri Verileri: Seçtiğiniz araç markası, modeli, SoC ve rota boyunca oluşan tahmini enerji tüketim değerleri. Cihaz ve Analitik Verileri: Tarayıcı tipi, işletim sistemi, IP adresi ve uygulama içi gezinme tercihleriniz.\n\n3. Verilerinizi Neden Kullanıyoruz? (İşleme Amaçları)\nTopladığımız veriler, hizmet kalitemizi artırmak ve size özel bir deneyim sunmak için şu amaçlarla kullanılır: Araç fiziğine ve hava durumuna dayalı en hassas tüketim ve şarj planlamasını gerçekleştirmek. Sistemsel hataları tespit etmek, uygulamayı güncellemek ve kullanıcı desteği sağlamak. Yasal yükümlülüklerimizi yerine getirmek.\n\n4. Veri Paylaşımı, İşbirlikleri ve Algoritma Eğitimi (Önemli)\nIYONTREE, kişisel kimlik bilgilerini reklam veya pazarlama amacıyla asla üçüncü şahıslara satmaz. Bununla birlikte, algoritmamızın doğruluğunu artırmak ve e-mobiliteyi geliştirmek amacıyla; tamamen anonimleştirilmiş teknik veriler (rota alışkanlıkları, tüketim eğrileri) stratejik paydaşlar ve akademik araştırmalar için kullanılabilir.\n\n5. Veri Güvenliği ve Saklama Süresi\nVerileriniz, yetkisiz erişime karşı endüstri standardı şifreleme yöntemleriyle korunmaktadır. Kullanıcı hesabınızı silmeniz durumunda, aktif kişisel verileriniz sistemlerimizden kalıcı olarak silinir.\n\n6. KVKK Kapsamındaki Haklarınız\nKVKK uyarınca; verilerinizin işlenip işlenmediğini öğrenme ve yasal şartlar oluştuğunda silinmesini (Unutulma Hakkı) talep etme hakkına sahipsiniz. Tüm talepleriniz için contact@iyontree.com adresi üzerinden bizimle iletişime geçebilirsiniz.",
+    searchModal: {
+      title: "Durak Seçimi",
+      placeholder: "Durak eklenecek adresi arayın...",
+      startTitle: "Başlangıç Konumu",
+      startPlaceholder: "Başlangıç konumunuzu giriniz...",
+      destTitle: "Varış Noktası",
+      destPlaceholder: "Nereye gitmek istiyorsunuz?",
+      waypointTitle: "Durak Seçimi",
+      waypointPlaceholder: "durak adresini giriniz...",
+      clear: "Temizle",
+      useCurrentLocation: "Mevcut Konumu Kullan",
+      searchResults: "Arama Sonuçları",
+      recentSearches: "Son Aramalar",
+      noRecentSearches: "Henüz arama geçmişi yok.",
+      locationNotSupported: "Konum servisi desteklenmiyor.",
+      addressNotFound: "Konum adresi bulunamadı.",
+      permissionDenied: "Konum izni reddedildi.",
+      locateFailed: "Konum alınamadı."
+    }
   },
   en: {
     appTitle: "IYONTREE",
@@ -247,6 +270,10 @@ export const translations = {
     addWaypoint: "Add Waypoint",
     savedRoutes: "Saved Routes",
     planRoute: "Plan Route",
+    addVehicleTitle: "Add Vehicle",
+    noResults: "No results found",
+    apiErrorTitle: "Configuration Error",
+    apiErrorMessage: "Google Maps API Key is missing. Please set VITE_GOOGLE_MAPS_API_KEY in your environment variables.",
     login: "Login",
     logout: "Logout",
     garage: "My Garage",
@@ -476,5 +503,24 @@ export const translations = {
     // Privacy Policy
     privacyTitle: "IYONTREE Privacy Policy and KVKK Notice",
     privacyText: "1. Data Controller and Our Purpose\nAt IYONTREE, we aim to make the EV ecosystem more efficient and provide you with the most accurate physics-based route optimization. This Privacy Policy has been prepared to inform you transparently about how your personal data is collected, processed, and protected in accordance with KVKK.\n\n2. What Data Do We Collect?\nTo provide our services, we process the following data categories: Identity and Contact Data (Name, email), Location and Route Data (GPS, waypoints), Vehicle and Telemetry Data (Model, SoC, energy usage), and Device and Analytical Data (Browser, IP, preferences).\n\n3. Why Do We Use Your Data? (Processing Purposes)\nThe data we collect is used to: Perform precise consumption and charging planning based on vehicle physics and weather. Detect systemic errors, update the application, and provide support. Fulfill legal obligations.\n\n4. Data Sharing, Collaborations, and Algorithm Training (Important)\nIYONTREE never sells personal identity information for advertising or marketing. However, to strengthen our AI infrastructure and improve e-mobility, fully anonymized technical data (route habits, consumption curves) may be shared for algorithm training and strategic collaborations.\n\n5. Data Security and Retention Period\nYour data is protected with industry-standard encryption. If you delete your account, your personal data is permanently deleted. Legal logs are kept for the period required by law.\n\n6. Your Rights Under KVKK\nUnder Article 11 of the KVKK, you have the right to learn if your data is processed and request deletion (Right to be Forgotten). You can contact us at contact@iyontree.com for all requests.",
+    searchModal: {
+      title: "Select Point",
+      placeholder: "Search for address to add stop...",
+      startTitle: "Starting Location",
+      startPlaceholder: "Enter your starting location...",
+      destTitle: "Destination Point",
+      destPlaceholder: "Where do you want to go?",
+      waypointTitle: "Stop Selection",
+      waypointPlaceholder: "Enter stop address...",
+      clear: "Clear",
+      useCurrentLocation: "Use Current Location",
+      searchResults: "Search Results",
+      recentSearches: "Recent Searches",
+      noRecentSearches: "No search history yet.",
+      locationNotSupported: "Location service not supported.",
+      addressNotFound: "Location address not found.",
+      permissionDenied: "Location permission denied.",
+      locateFailed: "Could not get location."
+    }
   }
 };

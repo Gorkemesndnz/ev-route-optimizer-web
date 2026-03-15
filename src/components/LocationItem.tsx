@@ -1,7 +1,6 @@
 import { CSS } from "@dnd-kit/utilities";
 import { useSortable } from "@dnd-kit/sortable";
-import { GripVertical, MapPin, Trash2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { GripVertical, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function LocationItem({

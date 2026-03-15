@@ -1,7 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { useMapsLibrary } from "@vis.gl/react-google-maps";
 import { Dialog, DialogContent } from "./ui/dialog";
-import { Navigation, Clock, Search, MapPin, X, Loader2, Target } from "lucide-react";
+import { Clock, Search, MapPin, X, Loader2, Target } from "lucide-react";
+import { useSettings } from "../contexts/SettingsContext";
+import { translations } from "../lib/translations";
+import { useDebounce } from "../hooks/useDebounce";
 
 export function LocationSearchModal({ 
   isOpen, 
@@ -9,7 +12,11 @@ export function LocationSearchModal({
   item,
   onSelectLocation
 }) {
+  const { language } = useSettings();
+  const t = translations[language];
+
   const [searchValue, setSearchValue] = useState("");
+  const debouncedSearchValue = useDebounce(searchValue, 300);
   const [predictions, setPredictions] = useState([]);
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState("");
@@ -72,13 +79,10 @@ export function LocationSearchModal({
     }
   }, [isOpen, item]);
 
-  const handleSearch = (e) => {
-    const val = e.target.value;
-    setSearchValue(val);
-
-    if (val.length > 2 && autocompleteService.current) {
+  useEffect(() => {
+    if (debouncedSearchValue.length > 2 && autocompleteService.current) {
       autocompleteService.current.getPlacePredictions({ 
-        input: val, 
+        input: debouncedSearchValue, 
         componentRestrictions: { country: "TR" } 
       }, (res, status) => {
         if (status === window.google.maps.places.PlacesServiceStatus.OK && res) {
@@ -90,6 +94,10 @@ export function LocationSearchModal({
     } else {
       setPredictions([]);
     }
+  }, [debouncedSearchValue]);
+
+  const handleSearch = (e) => {
+    setSearchValue(e.target.value);
   };
 
   const handleSelectPrediction = (placeId, description) => {
@@ -113,7 +121,7 @@ export function LocationSearchModal({
   const handleLocateClick = async () => {
     setLocationError("");
     if (!navigator.geolocation) {
-      setLocationError("Konum servisi desteklenmiyor.");
+      setLocationError(t.searchModal.locationNotSupported);
       return;
     }
 
@@ -131,7 +139,7 @@ export function LocationSearchModal({
                setSearchValue("");
                onClose();
             } else {
-               setLocationError("Konum adresi bulunamadı.");
+               setLocationError(t.searchModal.addressNotFound);
             }
           });
         } else {
@@ -141,27 +149,27 @@ export function LocationSearchModal({
       (error) => {
         setIsLocating(false);
         if (error.code === error.PERMISSION_DENIED) {
-          setLocationError("Konum izni reddedildi.");
+          setLocationError(t.searchModal.permissionDenied);
         } else {
-          setLocationError("Konum alınamadı.");
+          setLocationError(t.searchModal.locateFailed);
         }
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
   };
 
-  let title = "Durak Seçimi";
-  let placeholder = "Durak eklenecek adresi arayın...";
+  let title = t.searchModal.title;
+  let placeholder = t.searchModal.placeholder;
 
   if (item?.currentIndex === 0) {
-    title = "Başlangıç Konumu";
-    placeholder = "Başlangıç konumunuzu giriniz...";
+    title = t.searchModal.startTitle;
+    placeholder = t.searchModal.startPlaceholder;
   } else if (item?.totalCount && item?.currentIndex === (item?.totalCount - 1)) {
-    title = "Varış Noktası";
-    placeholder = "Nereye gitmek istiyorsunuz?";
+    title = t.searchModal.destTitle;
+    placeholder = t.searchModal.destPlaceholder;
   } else if (item?.totalCount > 3 && item?.currentIndex > 0) {
-    title = `${item.currentIndex}. Durak Seçimi`;
-    placeholder = `${item.currentIndex}. durak adresini giriniz...`;
+    title = item.currentIndex + ". " + t.searchModal.waypointTitle;
+    placeholder = item.currentIndex + ". " + t.searchModal.waypointPlaceholder;
   }
 
   return (
@@ -193,7 +201,7 @@ export function LocationSearchModal({
                         setTimeout(() => inputRef.current?.focus(), 0);
                       }}
                       className="p-1.5 text-white/50 hover:text-white transition-colors"
-                      title="Temizle"
+                      title={t.searchModal.clear}
                     >
                       <X size={18} />
                     </button>
@@ -205,7 +213,7 @@ export function LocationSearchModal({
                   onClick={handleLocateClick}
                   disabled={isLocating}
                   className="p-1.5 text-white/50 hover:text-white transition-colors disabled:opacity-50"
-                  title="Mevcut Konumu Kullan"
+                  title={t.searchModal.useCurrentLocation}
                 >
                   {isLocating ? <Loader2 size={20} className="animate-spin" /> : <Target size={22} />}
                 </button>
@@ -217,9 +225,9 @@ export function LocationSearchModal({
           </div>
 
           <div className="flex flex-col min-h-[240px]">
-            {predictions.length > 0 ? (
+             {predictions.length > 0 ? (
               <div className="flex flex-col gap-1">
-                 <h4 className="text-white/20 text-xs font-bold uppercase tracking-widest mb-3 px-2">Arama Sonuçları</h4>
+                 <h4 className="text-white/20 text-xs font-bold uppercase tracking-widest mb-3 px-2">{t.searchModal.searchResults}</h4>
                  {predictions.map(pred => (
                    <button 
                      key={pred.place_id} 
@@ -239,9 +247,9 @@ export function LocationSearchModal({
             ) : (
               <div className="animate-in fade-in duration-500">
                  <div className="flex items-center justify-between mb-4 px-2">
-                   <h4 className="text-white/20 text-xs font-bold uppercase tracking-widest">Son Aramalar</h4>
+                   <h4 className="text-white/20 text-xs font-bold uppercase tracking-widest">{t.searchModal.recentSearches}</h4>
                    {recentSearches.length > 0 && (
-                     <button onClick={clearRecentSearches} className="text-white/40 hover:text-white text-xs transition-colors">Temizle</button>
+                     <button onClick={clearRecentSearches} className="text-white/40 hover:text-white text-xs transition-colors">{t.searchModal.clear}</button>
                    )}
                  </div>
                  
@@ -265,7 +273,7 @@ export function LocationSearchModal({
                        </div>
                      </button>
                    )) : (
-                     <div className="px-2 py-4 text-white/30 text-sm">Henüz arama geçmişi yok.</div>
+                      <div className="px-2 py-4 text-white/30 text-sm">{t.searchModal.noRecentSearches}</div>
                    )}
                  </div>
               </div>

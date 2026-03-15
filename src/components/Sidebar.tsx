@@ -1,26 +1,17 @@
-import { useState } from "react";
 import {
-  Search,
   Settings,
-  Navigation,
   Trash2,
-  GripVertical,
-  MapPin,
-  ChevronRight,
   Leaf,
   ArrowDownUp,
   Plus,
   Bookmark,
-  Play
 } from "lucide-react";
-import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { memo } from "react";
-import { Button } from "./ui/button";
 import {
   DndContext,
   closestCenter,
-  closestCorners,
-  rectIntersection,
   KeyboardSensor,
   MouseSensor,
   TouchSensor,
@@ -33,8 +24,6 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
-import { cn } from "@/lib/utils";
 
 import { LocationItem } from "./LocationItem";
 import { LocationSearchModal } from "./LocationSearchModal";
@@ -57,7 +46,6 @@ const Sidebar = memo(({
   ]);
 
   const [activeSearchItem, setActiveSearchItem] = useState(null);
-  const [activeId, setActiveId] = useState(null);
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -76,35 +64,27 @@ const Sidebar = memo(({
     })
   );
 
-  const handleDragStart = (event) => {
-    setActiveId(event.active.id);
+  const handleDragStart = () => {
+    // Logic for drag start if needed, but activeId was removed
   };
 
   const handleDragEnd = (event) => {
     const { active, over } = event;
-    setActiveId(null);
-    console.log("DragEnd Event:", { activeId: active?.id, overId: over?.id });
 
     if (over && active.id !== over.id) {
-      console.log("Drag is valid. Commencing array move...");
       setLocations((items) => {
         const oldIndex = items.findIndex((i) => i.id === active.id);
         const newIndex = items.findIndex((i) => i.id === over.id);
-        console.log(`Moving item from index ${oldIndex} to ${newIndex}`);
 
         const newItems = arrayMove(items, oldIndex, newIndex);
-        console.log("New items array after move:", newItems);
 
         const finalizedItems = newItems.map((item, index) => {
           if (index === 0) return { ...item, type: "start" };
           if (index === newItems.length - 1) return { ...item, type: "destination" };
           return { ...item, type: "waypoint" };
         });
-        console.log("Finalized items to set in state:", finalizedItems);
         return finalizedItems;
       });
-    } else {
-      console.log("Drag invalid or dropped on same position.");
     }
   };
 
@@ -130,7 +110,7 @@ const Sidebar = memo(({
     setLocations((prev) => {
       const newItems = [...prev];
       const newWaypoint = {
-        id: `waypoint-${Date.now()}`,
+        id: `waypoint-${crypto.randomUUID()}`,
         type: "waypoint",
         value: "",
       };

@@ -1,27 +1,9 @@
 import { useState } from "react";
-import { X, User, Car, Map, Settings, Battery, Zap, Navigation } from "lucide-react";
+import { X, Car, Map, Settings, Battery, Zap, Navigation } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { translations } from "../lib/translations";
 
-interface UserProfile {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-}
-
-interface Vehicle {
-  id: string;
-  brand: string;
-  model: string;
-  variant?: string;
-  batteryCapacity: number;
-  maxChargingPower: number;
-  rangeWLTP: number;
-  plugType: string;
-  soc?: number;
-}
 
 import { useAuth } from "../contexts/AuthContext";
 import { useVehicle } from "../contexts/VehicleContext";

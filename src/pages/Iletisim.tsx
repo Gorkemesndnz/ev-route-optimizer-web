@@ -56,7 +56,6 @@ export default function Iletisim() {
       contactSchema.parse(formData);
       // Valid data
       setIsSubmitted(true);
-      console.log("Form validated successfully", formData);
     } catch (err) {
       if (err instanceof z.ZodError) {
         err.issues.forEach((issue) => {

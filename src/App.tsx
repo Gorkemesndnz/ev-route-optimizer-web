@@ -28,7 +28,6 @@ function App() {
   const {
     language, getMapStyle, showTraffic,
     setShowCookieModal,
-    mapStyleKey
   } = useSettings();
 
   const t = translations[language];
@@ -49,9 +48,9 @@ function App() {
   if (!API_KEY) {
     return (
       <div className="w-screen h-screen bg-zinc-950 flex flex-col items-center justify-center p-8 text-center">
-        <h1 className="text-2xl font-bold text-red-500 mb-4">Configuration Error</h1>
+        <h1 className="text-2xl font-bold text-red-500 mb-4">{t.apiErrorTitle}</h1>
         <p className="text-white/70 max-w-md">
-          Google Maps API Key is missing. Please set <code className="bg-white/10 px-2 py-1 rounded text-cyan-400">VITE_GOOGLE_MAPS_API_KEY</code> in your environment variables.
+          {t.apiErrorMessage}
         </p>
       </div>
     );

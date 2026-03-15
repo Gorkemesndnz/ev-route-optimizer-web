@@ -18,7 +18,6 @@ import {
   Lightbulb,
   PlusCircle,
   Info,
-  CheckCircle,
   ChevronLeft,
   ChevronDown
 } from "lucide-react";
@@ -41,21 +40,16 @@ export default function GeneralMenu({
   onOpenCookieConsent: () => void;
 }) {
   const { language, setLanguage, mapStyleKey, setMapStyleKey } = useSettings();
-  const { currentUser } = useAuth();
   const [activeMenu, setActiveMenu] = useState<'main'|'language'|'units'|'energy'|'appearance'|'suggestions'|'add_vehicle'|'contact'|'how_it_works'|'whats_new'|'faq'|'about'|'terms'|'privacy'>('main');
   const t = translations[language];
 
   // Internal states
-  const [units, setUnits] = useState('Metrik');
-  const [energyCons, setEnergyCons] = useState('Wh/km');
+  const [units, setUnits] = useState(t.metric);
+  const [energyCons, setEnergyCons] = useState(t.energyPerDist);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
   const handleClose = () => {
     onClose();
-    setTimeout(() => {
-      setActiveMenu('main');
-      setOpenFaqIndex(null);
-    }, 300);
   };
 
   const handleMenuClick = (id: string) => {
@@ -316,7 +310,10 @@ export default function GeneralMenu({
   };
 
   return (
-    <AnimatePresence>
+    <AnimatePresence onExitComplete={() => {
+      setActiveMenu('main');
+      setOpenFaqIndex(null);
+    }}>
       {isOpen && (
         <>
           <motion.div
