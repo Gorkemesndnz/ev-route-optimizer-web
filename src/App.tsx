@@ -14,6 +14,7 @@ import GeneralMenu from "./components/GeneralMenu";
 import PrivacyPolicyView from "./components/PrivacyPolicyView";
 import AboutUsView from "./components/AboutUsView";
 import TermsView from "./components/TermsView";
+import ContactView from "./components/ContactView";
 import { User, LogOut } from "lucide-react";
 import { lightMapStyle, darkMapStyle } from "./lib/mapStyles";
 import { translations } from "./lib/translations";
@@ -47,6 +48,7 @@ function App() {
   const [isRightMenuOpen, setIsRightMenuOpen] = useState(false);
   const [showCookieBanner, setShowCookieBanner] = useState(false);
   const [showCookieModal, setShowCookieModal] = useState(false);
+  const [activeFullScreenPage, setActiveFullScreenPage] = useState<'none' | 'about' | 'terms' | 'contact' | 'privacy'>('none');
 
   // Sync with system theme and save changes
   useEffect(() => {
@@ -325,13 +327,12 @@ function App() {
           isOpen={isRightMenuOpen} 
           onClose={() => setIsRightMenuOpen(false)} 
           onOpenCookieConsent={() => { setShowCookieModal(true); setIsRightMenuOpen(false); }}
-          onOpenPrivacy={() => { setPreviousView(activeView); setActiveView('privacy'); setIsRightMenuOpen(false); }}
-          onOpenAbout={() => { setPreviousView(activeView); setActiveView('about'); setIsRightMenuOpen(false); }}
-          onOpenTerms={() => { setPreviousView(activeView); setActiveView('terms'); setIsRightMenuOpen(false); }}
           language={language}
           setLanguage={setLanguage}
           mapStyleKey={mapStyleKey}
           setMapStyleKey={setMapStyleKey}
+          currentUser={currentUser}
+          onOpenFullScreen={(page) => setActiveFullScreenPage(page)}
         />
 
         {/* Global Floating Elements */}
@@ -339,8 +340,7 @@ function App() {
           showBanner={showCookieBanner}
           showModal={showCookieModal}
           onOpenPrivacy={() => { 
-            setPreviousView(activeView); 
-            setActiveView('privacy');
+            setActiveFullScreenPage('privacy');
             setShowCookieModal(false); 
           }}
           onOpenSettings={() => setShowCookieModal(true)}
@@ -350,14 +350,38 @@ function App() {
         
         {/* Full Screen Modals */}
         <AnimatePresence>
-          {activeView === 'privacy' && (
-            <PrivacyPolicyView onBack={() => setActiveView(previousView)} language={language} />
+          {activeFullScreenPage === 'privacy' && (
+            <PrivacyPolicyView 
+              key="privacy-page"
+              language={language}
+              onBack={() => { setActiveFullScreenPage('none'); setIsRightMenuOpen(true); }}
+              onNavigate={(page) => setActiveFullScreenPage(page)}
+            />
           )}
-          {activeView === 'about' && (
-            <AboutUsView onBack={() => setActiveView(previousView)} language={language} />
+          {activeFullScreenPage === 'contact' && (
+            <ContactView 
+              key="contact-page"
+              language={language}
+              currentUser={currentUser}
+              onBack={() => { setActiveFullScreenPage('none'); setIsRightMenuOpen(true); }}
+              onNavigate={(page) => setActiveFullScreenPage(page)}
+            />
           )}
-          {activeView === 'terms' && (
-            <TermsView onBack={() => setActiveView(previousView)} language={language} />
+          {activeFullScreenPage === 'about' && (
+            <AboutUsView 
+              key="about-page"
+              language={language}
+              onBack={() => { setActiveFullScreenPage('none'); setIsRightMenuOpen(true); }}
+              onNavigate={(page) => setActiveFullScreenPage(page)}
+            />
+          )}
+          {activeFullScreenPage === 'terms' && (
+            <TermsView 
+              key="terms-page"
+              language={language}
+              onBack={() => { setActiveFullScreenPage('none'); setIsRightMenuOpen(true); }}
+              onNavigate={(page) => setActiveFullScreenPage(page)}
+            />
           )}
         </AnimatePresence>
       </div>

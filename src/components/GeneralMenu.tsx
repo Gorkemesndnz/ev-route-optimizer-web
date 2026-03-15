@@ -25,36 +25,61 @@ import {
 import { translations } from "../lib/translations";
 import { cn } from "@/lib/utils";
 
+const evBrands = ["Tesla", "Togg", "BMW", "Mercedes-Benz", "Audi", "Porsche", "Hyundai", "Kia", "BYD", "MG", "Ford", "Volvo", "Renault", "Peugeot", "Diğer"];
+
 export default function GeneralMenu({ 
   isOpen, 
   onClose,
   onOpenCookieConsent,
-  onOpenPrivacy,
-  onOpenAbout,
-  onOpenTerms,
   language,
   setLanguage,
   mapStyleKey,
-  setMapStyleKey
+  setMapStyleKey,
+  currentUser,
+  onOpenFullScreen
 }: { 
   isOpen: boolean; 
   onClose: () => void;
   onOpenCookieConsent: () => void;
-  onOpenPrivacy: () => void;
-  onOpenAbout: () => void;
-  onOpenTerms: () => void;
   language: 'tr' | 'en';
   setLanguage: (lang: 'tr' | 'en') => void;
   mapStyleKey: string;
   setMapStyleKey: (key: any) => void;
+  currentUser?: { firstName: string; lastName: string; email: string } | null;
+  onOpenFullScreen: (page: 'contact' | 'about' | 'terms' | 'privacy') => void;
 }) {
-  const [activeMenu, setActiveMenu] = useState<'main'|'language'|'units'|'energy'|'appearance'|'suggestions'|'add_vehicle'|'contact'|'how_it_works'|'whats_new'|'faq'>('main');
+  const [activeMenu, setActiveMenu] = useState<'main'|'language'|'units'|'energy'|'appearance'|'suggestions'|'add_vehicle'|'contact'|'how_it_works'|'whats_new'|'faq'|'about'|'terms'|'privacy'>('main');
   const t = translations[language];
 
   // ... (keeping existing form states)
   const [isVehicleSubmitted, setIsVehicleSubmitted] = useState(false);
   const [isSuggestionSubmitted, setIsSuggestionSubmitted] = useState(false);
   const [isContactSubmitted, setIsContactSubmitted] = useState(false);
+
+  // Bug Report Form States
+  const [bugName, setBugName] = useState(currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : '');
+  const [bugEmail, setBugEmail] = useState(currentUser?.email || '');
+  const [bugSubject, setBugSubject] = useState('');
+  const [bugMessage, setBugMessage] = useState('');
+  const [bugEmailError, setBugEmailError] = useState('');
+
+  // Suggestion Form States
+  const [sugName, setSugName] = useState(currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : '');
+  const [sugEmail, setSugEmail] = useState(currentUser?.email || '');
+  const [sugSubject, setSugSubject] = useState('');
+  const [sugMessage, setSugMessage] = useState('');
+  const [sugEmailError, setSugEmailError] = useState('');
+
+  // Vehicle Form States
+  const [brandSearchQuery, setBrandSearchQuery] = useState('');
+  const [selectedBrand, setSelectedBrand] = useState('');
+  const [customBrand, setCustomBrand] = useState('');
+  const [vModel, setVModel] = useState('');
+  const [vMessage, setVMessage] = useState('');
+  const [vName, setVName] = useState(currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : '');
+  const [vEmail, setVEmail] = useState(currentUser?.email || '');
+  const [vEmailError, setVEmailError] = useState('');
+  const [isBrandDropdownOpen, setIsBrandDropdownOpen] = useState(false);
 
   // Internal states
   const [units, setUnits] = useState('Metrik');
@@ -69,43 +94,92 @@ export default function GeneralMenu({
       setIsSuggestionSubmitted(false);
       setIsContactSubmitted(false);
       setOpenFaqIndex(null);
+      // Reset bug form only if guest, or keep synced with user
+      if (!currentUser) {
+        setBugName('');
+        setBugEmail('');
+      } else {
+        setBugName(`${currentUser.firstName} ${currentUser.lastName}`);
+        setBugEmail(currentUser.email);
+      }
+      setBugSubject('');
+      setBugMessage('');
+      setBugEmailError('');
+
+      // Reset suggestion form
+      if (!currentUser) {
+        setSugName('');
+        setSugEmail('');
+      } else {
+        setSugName(`${currentUser.firstName} ${currentUser.lastName}`);
+        setSugEmail(currentUser.email);
+      }
+      setSugSubject('');
+      setSugMessage('');
+      setSugEmailError('');
+
+      // Reset vehicle form
+      setBrandSearchQuery('');
+      setSelectedBrand('');
+      setCustomBrand('');
+      setVModel('');
+      setVMessage('');
+      if (!currentUser) {
+        setVName('');
+        setVEmail('');
+      } else {
+        setVName(`${currentUser.firstName} ${currentUser.lastName}`);
+        setVEmail(currentUser.email);
+      }
+      setVEmailError('');
+      setIsBrandDropdownOpen(false);
     }, 300);
+  };
+
+  const handleMenuClick = (id: string) => {
+    if (id === 'about' || id === 'terms' || id === 'contactUs' || id === 'privacy') {
+      const page = id === 'contactUs' ? 'contact' : id;
+      onOpenFullScreen(page as any);
+      onClose();
+      return;
+    }
+    setActiveMenu(id as any);
   };
 
   const menuSections = [
     {
       title: t.preferences,
       items: [
-        { icon: <Moon size={18} />, label: t.appearance, value: mapStyleKey === 'dark' ? t.dark : (mapStyleKey === 'light' ? t.light : t.system), onClick: () => setActiveMenu('appearance') },
-        { icon: <Globe size={18} />, label: t.language, value: language === 'tr' ? 'Türkçe' : 'English', onClick: () => setActiveMenu('language') },
-        { icon: <Ruler size={18} />, label: t.units, value: units, onClick: () => setActiveMenu('units') },
-        { icon: <Zap size={18} />, label: t.energyConsumption, value: energyCons, onClick: () => setActiveMenu('energy') }
+        { id: 'appearance', icon: <Moon size={18} />, label: t.appearance, value: mapStyleKey === 'dark' ? t.dark : (mapStyleKey === 'light' ? t.light : t.system), onClick: () => handleMenuClick('appearance') },
+        { id: 'language', icon: <Globe size={18} />, label: t.language, value: language === 'tr' ? 'Türkçe' : 'English', onClick: () => handleMenuClick('language') },
+        { id: 'units', icon: <Ruler size={18} />, label: t.units, value: units, onClick: () => handleMenuClick('units') },
+        { id: 'energy', icon: <Zap size={18} />, label: t.energyConsumption, value: energyCons, onClick: () => handleMenuClick('energy') }
       ]
     },
     {
       title: t.explore,
       items: [
-        { icon: <Cpu size={18} />, label: t.howItWorks, onClick: () => setActiveMenu('how_it_works') },
-        { icon: <Sparkles size={18} />, label: t.whatsNew, onClick: () => setActiveMenu('whats_new') },
-        { icon: <HelpCircle size={18} />, label: t.faq, onClick: () => setActiveMenu('faq') },
-        { icon: <Info size={18} />, label: t.aboutUs, onClick: onOpenAbout }
+        { id: 'how_it_works', icon: <Cpu size={18} />, label: t.howItWorks, onClick: () => handleMenuClick('how_it_works') },
+        { id: 'whats_new', icon: <Sparkles size={18} />, label: t.whatsNew, onClick: () => handleMenuClick('whats_new') },
+        { id: 'faq', icon: <HelpCircle size={18} />, label: t.faq, onClick: () => handleMenuClick('faq') },
+        { id: 'about', icon: <Info size={18} />, label: t.aboutUs, onClick: () => handleMenuClick('about') }
       ]
     },
     {
       title: t.supportFeedback,
       items: [
-        { icon: <AlertTriangle size={18} />, label: t.reportBug, onClick: () => setActiveMenu('contact') },
-        { icon: <Lightbulb size={18} />, label: t.suggestions, onClick: () => setActiveMenu('suggestions') },
-        { icon: <PlusCircle size={18} />, label: t.addVehicle, onClick: () => setActiveMenu('add_vehicle') },
-        { icon: <MessageSquare size={18} />, label: t.contactUs, onClick: () => setActiveMenu('contact') }
+        { id: 'contact', icon: <AlertTriangle size={18} />, label: t.reportBug, onClick: () => handleMenuClick('contact') },
+        { id: 'suggestions', icon: <Lightbulb size={18} />, label: t.suggestions, onClick: () => handleMenuClick('suggestions') },
+        { id: 'add_vehicle', icon: <PlusCircle size={18} />, label: t.addVehicle, onClick: () => handleMenuClick('add_vehicle') },
+        { id: 'contactUs', icon: <MessageSquare size={18} />, label: t.contactUs, onClick: () => handleMenuClick('contactUs') }
       ]
     },
     {
       title: t.legal,
       items: [
-        { icon: <FileText size={18} />, label: t.terms, onClick: onOpenTerms },
-        { icon: <Shield size={18} />, label: t.privacy, onClick: onOpenPrivacy },
-        { icon: <Cookie size={18} />, label: t.manageCookies, onClick: onOpenCookieConsent }
+        { id: 'terms', icon: <FileText size={18} />, label: t.terms, onClick: () => handleMenuClick('terms') },
+        { id: 'privacy', icon: <Shield size={18} />, label: t.privacy, onClick: () => handleMenuClick('privacy') },
+        { id: 'cookie_consent', icon: <Cookie size={18} />, label: t.manageCookies, onClick: onOpenCookieConsent }
       ]
     }
   ];
@@ -186,10 +260,45 @@ export default function GeneralMenu({
       );
     }
     if (activeMenu === 'add_vehicle') {
+      const filteredBrands = evBrands.filter(b => 
+        b.toLowerCase().includes(brandSearchQuery.toLowerCase())
+      );
+
+      const isVehicleFormValid = 
+        vName.trim() !== '' && 
+        vEmail.trim() !== '' && 
+        vEmailError === '' && 
+        vModel.trim() !== '' && 
+        ((selectedBrand && selectedBrand !== 'Diğer') || (selectedBrand === 'Diğer' && customBrand.trim() !== ''));
+
+      const handleBrandSelect = (brand: string) => {
+        setSelectedBrand(brand);
+        setBrandSearchQuery(brand === 'Diğer' ? '' : brand);
+        setIsBrandDropdownOpen(false);
+      };
+
+      const handleVNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (currentUser) return;
+        const val = e.target.value;
+        const regex = /^[a-zA-ZğüşıöçĞÜŞİÖÇ\s]*$/;
+        if (regex.test(val)) {
+          setVName(val);
+        }
+      };
+
+      const validateVEmail = () => {
+        const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (vEmail.trim() !== '' && !regex.test(vEmail)) {
+          setVEmailError(t.validation.invalidEmail);
+        } else {
+          setVEmailError('');
+        }
+      };
+
       return (
-        <div className="flex-1 flex flex-col w-full h-full p-6">
+        <div className="flex-1 flex flex-col w-full h-full p-6 relative">
           <div className="flex items-center mb-8">
-            <button onClick={() => setActiveMenu('main')} className="p-2 -ml-2 text-white/50 hover:text-white transition-colors">
+            <button onClick={() => setActiveMenu('main')} className="p-2 -ml-2 text-white/50 hover:text-white transition-colors outline-none cursor-pointer">
               <ChevronLeft size={24} />
             </button>
             <h2 className="text-xl font-bold text-white flex-1 text-center mr-6">{t.vehicleRequestTitle}</h2>
@@ -197,6 +306,7 @@ export default function GeneralMenu({
 
           <AnimatePresence mode="wait">
             {isVehicleSubmitted ? (
+               // ... (success state)
               <motion.div 
                 key="success"
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -218,49 +328,183 @@ export default function GeneralMenu({
                 </button>
               </motion.div>
             ) : (
-              <motion.div key="form" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6">
+              <motion.div key="form" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6 h-full overflow-y-auto custom-scrollbar pr-1 pb-4">
+                {/* User Info */}
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-white/50 px-1">{t.vehicleBrand}</label>
+                  <label className="text-sm font-medium text-white/50 px-1">{t.fullname}</label>
                   <input 
                     type="text" 
-                    placeholder={t.vehicleBrandPlaceholder}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all"
+                    value={vName}
+                    onChange={handleVNameChange}
+                    readOnly={!!currentUser}
+                    placeholder={t.fullname}
+                    className={cn(
+                      "w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 transition-all",
+                      currentUser && "opacity-60 cursor-not-allowed bg-black/20"
+                    )} 
                   />
                 </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-white/50 px-1">{t.email}</label>
+                  <input 
+                    type="email" 
+                    value={vEmail}
+                    onChange={(e) => !currentUser && setVEmail(e.target.value)}
+                    onBlur={validateVEmail}
+                    readOnly={!!currentUser}
+                    placeholder={t.email}
+                    className={cn(
+                      "w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none transition-all",
+                      vEmailError ? "border-red-500/50 focus:border-red-500" : "focus:border-cyan-400/50",
+                      currentUser && "opacity-60 cursor-not-allowed bg-black/20"
+                    )} 
+                  />
+                  {vEmailError && <p className="text-red-400 text-xs px-1">{vEmailError}</p>}
+                </div>
+
+                {/* Brand Selector (Combobox) */}
+                <div className="flex flex-col gap-2 relative">
+                  <label className="text-sm font-medium text-white/50 px-1">{t.vehicleBrand}</label>
+                  <div className="relative">
+                    <input 
+                      type="text" 
+                      value={isBrandDropdownOpen ? brandSearchQuery : (selectedBrand || brandSearchQuery)}
+                      onChange={(e) => {
+                        setBrandSearchQuery(e.target.value);
+                        if (!isBrandDropdownOpen) setIsBrandDropdownOpen(true);
+                        if (selectedBrand) setSelectedBrand('');
+                      }}
+                      onClick={() => setIsBrandDropdownOpen(true)}
+                      placeholder={t.vehicleBrandPlaceholder}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all outline-none"
+                    />
+                    <ChevronDown size={18} className={cn("absolute right-4 top-1/2 -translate-y-1/2 text-white/30 transition-transform duration-300 pointer-events-none", isBrandDropdownOpen && "rotate-180")} />
+                  </div>
+
+                  {/* Dropdown List */}
+                  <AnimatePresence>
+                    {isBrandDropdownOpen && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="absolute top-full left-0 right-0 mt-2 bg-zinc-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-[100] overflow-hidden max-h-[240px] overflow-y-auto custom-scrollbar"
+                      >
+                        {filteredBrands.length > 0 ? (
+                          filteredBrands.map((brand) => (
+                            <button
+                              key={brand}
+                              onClick={() => handleBrandSelect(brand)}
+                              className="w-full text-left px-5 py-3 text-sm text-white/70 hover:text-white hover:bg-white/5 transition-colors border-b border-white/5 last:border-0 outline-none"
+                            >
+                              {brand}
+                            </button>
+                          ))
+                        ) : (
+                          <div className="px-5 py-4 text-sm text-white/30 italic">Sonuç bulunamadı</div>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Conditional Custom Brand Input */}
+                <AnimatePresence>
+                  {selectedBrand === 'Diğer' && (
+                    <motion.div 
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="flex flex-col gap-2 overflow-hidden"
+                    >
+                      <label className="text-sm font-medium text-white/50 px-1">{t.customBrandLabel}</label>
+                      <input 
+                        type="text" 
+                        value={customBrand}
+                        onChange={(e) => setCustomBrand(e.target.value)}
+                        placeholder={t.customBrandPlaceholder}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all outline-none"
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium text-white/50 px-1">{t.vehicleModel}</label>
                   <input 
                     type="text" 
+                    value={vModel}
+                    onChange={(e) => setVModel(e.target.value)}
                     placeholder={t.vehicleModelPlaceholder}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all outline-none"
                   />
                 </div>
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium text-white/50 px-1">{t.vehicleDetails}</label>
                   <textarea 
                     rows={4}
+                    value={vMessage}
+                    onChange={(e) => setVMessage(e.target.value)}
                     placeholder={t.vehicleDetailsPlaceholder}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all resize-none"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all resize-none outline-none"
                   />
                 </div>
                 <button 
                   onClick={() => setIsVehicleSubmitted(true)}
-                  className="w-full py-4 bg-cyan-400 hover:bg-cyan-300 text-zinc-950 font-bold rounded-xl transition-all active:scale-95 shadow-[0_0_20px_rgba(34,211,238,0.3)] mt-2"
+                  disabled={!isVehicleFormValid}
+                  className={cn(
+                    "w-full py-4 font-bold rounded-xl transition-all active:scale-95 mt-2 shadow-[0_0_20px_rgba(34,211,238,0.2)]",
+                    isVehicleFormValid ? "bg-cyan-400 hover:bg-cyan-300 text-zinc-950" : "bg-white/5 text-white/20 cursor-not-allowed shadow-none border border-white/5"
+                  )}
                 >
                   {t.send}
                 </button>
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Close dropdown on outside click handling - simplistic overlay */}
+          {isBrandDropdownOpen && (
+            <div 
+              className="fixed inset-0 z-[95]" 
+              onClick={() => setIsBrandDropdownOpen(false)}
+            />
+          )}
         </div>
       );
     }
 
     if (activeMenu === 'suggestions') {
+      const isSugFormValid = 
+        sugName.trim() !== '' && 
+        sugEmail.trim() !== '' && 
+        sugSubject !== '' && 
+        sugSubject !== 'select' && 
+        sugMessage.trim() !== '' && 
+        sugEmailError === '';
+
+      const handleSugNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (currentUser) return;
+        const val = e.target.value;
+        const regex = /^[a-zA-ZğüşıöçĞÜŞİÖÇ\s]*$/;
+        if (regex.test(val)) {
+          setSugName(val);
+        }
+      };
+
+      const validateSugEmail = () => {
+        const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (sugEmail.trim() !== '' && !regex.test(sugEmail)) {
+          setSugEmailError(t.validation.invalidEmail);
+        } else {
+          setSugEmailError('');
+        }
+      };
+
       return (
         <div className="flex-1 flex flex-col w-full h-full p-6">
           <div className="flex items-center mb-8">
-            <button onClick={() => setActiveMenu('main')} className="p-2 -ml-2 text-white/50 hover:text-white transition-colors">
+            <button onClick={() => setActiveMenu('main')} className="p-2 -ml-2 text-white/50 hover:text-white transition-colors outline-none cursor-pointer">
               <ChevronLeft size={24} />
             </button>
             <h2 className="text-xl font-bold text-white flex-1 text-center mr-6">{t.suggestionTitle}</h2>
@@ -289,27 +533,75 @@ export default function GeneralMenu({
                 </button>
               </motion.div>
             ) : (
-              <motion.div key="form" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6">
+              <motion.div key="form" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6 h-full overflow-y-auto custom-scrollbar pr-1 pb-4">
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-white/50 px-1">{t.fullname}</label>
+                  <input 
+                    type="text" 
+                    value={sugName}
+                    onChange={handleSugNameChange}
+                    readOnly={!!currentUser}
+                    placeholder={t.fullname}
+                    className={cn(
+                      "w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 transition-all",
+                      currentUser && "opacity-60 cursor-not-allowed bg-black/20"
+                    )} 
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-white/50 px-1">{t.email}</label>
+                  <input 
+                    type="email" 
+                    value={sugEmail}
+                    onChange={(e) => !currentUser && setSugEmail(e.target.value)}
+                    onBlur={validateSugEmail}
+                    readOnly={!!currentUser}
+                    placeholder={t.email}
+                    className={cn(
+                      "w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none transition-all",
+                      sugEmailError ? "border-red-500/50 focus:border-red-500" : "focus:border-cyan-400/50",
+                      currentUser && "opacity-60 cursor-not-allowed bg-black/20"
+                    )} 
+                  />
+                  {sugEmailError && <p className="text-red-400 text-xs px-1">{sugEmailError}</p>}
+                </div>
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium text-white/50 px-1">{t.subject}</label>
-                  <select className="w-full bg-zinc-900 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 transition-all appearance-none cursor-pointer">
-                    <option value="route">{t.subjects.route}</option>
-                    <option value="ui">{t.subjects.ui}</option>
-                    <option value="stations">{t.subjects.stations}</option>
-                    <option value="other">{t.subjects.other}</option>
-                  </select>
+                  <div className="relative">
+                    <select 
+                      value={sugSubject}
+                      onChange={(e) => setSugSubject(e.target.value)}
+                      className="w-full bg-zinc-900 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 transition-all appearance-none cursor-pointer outline-none"
+                    >
+                      <option value="select" disabled>{t.subjects.select}</option>
+                      <option value="route">{t.subjects.route}</option>
+                      <option value="ui">{t.subjects.ui}</option>
+                      <option value="vehicle">{t.subjects.vehicle}</option>
+                      <option value="station">{t.subjects.station}</option>
+                      <option value="feedback">{t.subjects.feedback}</option>
+                      <option value="location">{t.subjects.location}</option>
+                      <option value="other">{t.subjects.other}</option>
+                    </select>
+                    <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
+                  </div>
                 </div>
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium text-white/50 px-1">{t.message}</label>
                   <textarea 
                     rows={6}
+                    value={sugMessage}
+                    onChange={(e) => setSugMessage(e.target.value)}
                     placeholder={t.messagePlaceholder}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all resize-none"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all resize-none outline-none"
                   />
                 </div>
                 <button 
                   onClick={() => setIsSuggestionSubmitted(true)}
-                  className="w-full py-4 bg-cyan-400 hover:bg-cyan-300 text-zinc-950 font-bold rounded-xl transition-all active:scale-95 shadow-[0_0_20px_rgba(34,211,238,0.3)] mt-2"
+                  disabled={!isSugFormValid}
+                  className={cn(
+                    "w-full py-4 font-bold rounded-xl transition-all active:scale-95 mt-2 shadow-[0_0_20px_rgba(34,211,238,0.2)]",
+                    isSugFormValid ? "bg-cyan-400 hover:bg-cyan-300 text-zinc-950" : "bg-white/5 text-white/20 cursor-not-allowed shadow-none border border-white/5"
+                  )}
                 >
                   {t.send}
                 </button>
@@ -321,13 +613,40 @@ export default function GeneralMenu({
     }
 
     if (activeMenu === 'contact') {
+      const isBugFormValid = 
+        bugName.trim() !== '' && 
+        bugEmail.trim() !== '' && 
+        bugSubject !== '' && 
+        bugSubject !== 'select' && 
+        bugMessage.trim() !== '' && 
+        bugEmailError === '';
+
+      const handleBugNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (currentUser) return;
+        const val = e.target.value;
+        // Only allow alphabetical characters (including Turkish) and spaces
+        const regex = /^[a-zA-ZğüşıöçĞÜŞİÖÇ\s]*$/;
+        if (regex.test(val)) {
+          setBugName(val);
+        }
+      };
+
+      const validateEmail = () => {
+        const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (bugEmail.trim() !== '' && !regex.test(bugEmail)) {
+          setBugEmailError(t.validation.invalidEmail);
+        } else {
+          setBugEmailError('');
+        }
+      };
+
       return (
         <div className="flex-1 flex flex-col w-full h-full p-6">
           <div className="flex items-center mb-8">
-            <button onClick={() => setActiveMenu('main')} className="p-2 -ml-2 text-white/50 hover:text-white transition-colors">
+            <button onClick={() => setActiveMenu('main')} className="p-2 -ml-2 text-white/50 hover:text-white transition-colors outline-none cursor-pointer">
               <ChevronLeft size={24} />
             </button>
-            <h2 className="text-xl font-bold text-white flex-1 text-center mr-6">{t.contactUs}</h2>
+            <h2 className="text-xl font-bold text-white flex-1 text-center mr-6">{t.bugReportTitle}</h2>
           </div>
           <AnimatePresence mode="wait">
             {isContactSubmitted ? (
@@ -341,8 +660,8 @@ export default function GeneralMenu({
                  <CheckCircle size={48} />
                </div>
                <div>
-                 <h3 className="text-2xl font-bold text-white mb-2">{t.requestReceived}</h3>
-                 <p className="text-white/60 leading-relaxed">{language === 'tr' ? "Mesajınız iletildi. En kısa sürede size dönüş yapacağız." : "Your message has been delivered. We will get back to you soon."}</p>
+                 <h3 className="text-2xl font-bold text-white mb-2">{t.bugReportReceived}</h3>
+                 <p className="text-white/60 leading-relaxed">{t.bugReportSuccess}</p>
                </div>
                <button 
                  onClick={() => { setIsContactSubmitted(false); setActiveMenu('main'); }}
@@ -352,20 +671,75 @@ export default function GeneralMenu({
                </button>
              </motion.div>
             ) : (
-              <motion.div key="form" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6">
+              <motion.div key="form" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6 h-full overflow-y-auto custom-scrollbar pr-1 pb-4">
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-white/50 px-1">{language === 'tr' ? "Ad Soyad" : "Full Name"}</label>
-                  <input type="text" className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 transition-all" />
+                  <label className="text-sm font-medium text-white/50 px-1">{t.fullname}</label>
+                  <input 
+                    type="text" 
+                    value={bugName}
+                    onChange={handleBugNameChange}
+                    readOnly={!!currentUser}
+                    placeholder={t.fullname}
+                    className={cn(
+                      "w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 transition-all",
+                      currentUser && "opacity-60 cursor-not-allowed bg-black/20"
+                    )} 
+                  />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-white/50 px-1">{language === 'tr' ? "E-posta" : "Email"}</label>
-                  <input type="email" className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 transition-all" />
+                  <label className="text-sm font-medium text-white/50 px-1">{t.email}</label>
+                  <input 
+                    type="email" 
+                    value={bugEmail}
+                    onChange={(e) => !currentUser && setBugEmail(e.target.value)}
+                    onBlur={validateEmail}
+                    readOnly={!!currentUser}
+                    placeholder={t.email}
+                    className={cn(
+                      "w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none transition-all",
+                      bugEmailError ? "border-red-500/50 focus:border-red-500" : "focus:border-cyan-400/50",
+                      currentUser && "opacity-60 cursor-not-allowed bg-black/20"
+                    )} 
+                  />
+                  {bugEmailError && <p className="text-red-400 text-xs px-1">{bugEmailError}</p>}
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-white/50 px-1">{t.subject}</label>
+                  <div className="relative">
+                    <select 
+                      value={bugSubject}
+                      onChange={(e) => setBugSubject(e.target.value)}
+                      className="w-full bg-zinc-900 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 transition-all appearance-none cursor-pointer outline-none"
+                    >
+                      <option value="select" disabled>{t.bugSubjects.select}</option>
+                      <option value="vehicle">{t.bugSubjects.vehicle}</option>
+                      <option value="map">{t.bugSubjects.map}</option>
+                      <option value="station">{t.bugSubjects.station}</option>
+                      <option value="route">{t.bugSubjects.route}</option>
+                      <option value="profile">{t.bugSubjects.profile}</option>
+                      <option value="other">{t.bugSubjects.other}</option>
+                    </select>
+                    <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
+                  </div>
                 </div>
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium text-white/50 px-1">{t.message}</label>
-                  <textarea rows={5} className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 transition-all resize-none" />
+                  <textarea 
+                    rows={5} 
+                    value={bugMessage}
+                    onChange={(e) => setBugMessage(e.target.value)}
+                    placeholder={t.bugMessagePlaceholder}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 transition-all resize-none outline-none" 
+                  />
                 </div>
-                <button onClick={() => setIsContactSubmitted(true)} className="w-full py-4 bg-cyan-400 hover:bg-cyan-300 text-zinc-950 font-bold rounded-xl transition-all active:scale-95 mt-2">
+                <button 
+                  onClick={() => setIsContactSubmitted(true)} 
+                  disabled={!isBugFormValid}
+                  className={cn(
+                    "w-full py-4 font-bold rounded-xl transition-all active:scale-95 mt-2 shadow-[0_0_20px_rgba(34,211,238,0.2)]",
+                    isBugFormValid ? "bg-cyan-400 hover:bg-cyan-300 text-zinc-950" : "bg-white/5 text-white/20 cursor-not-allowed shadow-none border border-white/5"
+                  )}
+                >
                   {t.send}
                 </button>
               </motion.div>
