@@ -42,10 +42,13 @@ const BackgroundMap = memo(({
   return (
     <div className="absolute inset-0 z-0">
       <Map
-        defaultCenter={{ lat: 39.92077, lng: 32.85411 }} // Ankara default
+        defaultCenter={{ lat: 38.9637, lng: 35.2433 }} // Better center for Turkey
         defaultZoom={6}
+        minZoom={3}
+        maxZoom={20}
         gestureHandling={'greedy'}
         disableDefaultUI={true}
+        backgroundColor="#09090b" // Match with zinc-950
         styles={mapStyle}
         className="w-full h-full"
       >
