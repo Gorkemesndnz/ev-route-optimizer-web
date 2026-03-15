@@ -19,7 +19,8 @@ import {
   PlusCircle,
   Info,
   CheckCircle,
-  ChevronLeft
+  ChevronLeft,
+  ChevronDown
 } from "lucide-react";
 import { translations } from "../lib/translations";
 import { cn } from "@/lib/utils";
@@ -58,6 +59,7 @@ export default function GeneralMenu({
   // Internal states
   const [units, setUnits] = useState('Metrik');
   const [energyCons, setEnergyCons] = useState('Wh/km');
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
   const handleClose = () => {
     onClose();
@@ -66,6 +68,7 @@ export default function GeneralMenu({
       setIsVehicleSubmitted(false);
       setIsSuggestionSubmitted(false);
       setIsContactSubmitted(false);
+      setOpenFaqIndex(null);
     }, 300);
   };
 
@@ -108,16 +111,14 @@ export default function GeneralMenu({
   ];
 
   const renderSubMenuContent = () => {
-    if (activeMenu === 'how_it_works' || activeMenu === 'whats_new' || activeMenu === 'faq') {
+    if (activeMenu === 'how_it_works' || activeMenu === 'whats_new') {
        const titles = {
          'how_it_works': t.howItWorks,
-         'whats_new': t.whatsNew,
-         'faq': t.faq
+         'whats_new': t.whatsNew
        };
        const contents = {
          'how_it_works': t.howItWorksText,
-         'whats_new': t.whatsNewText,
-         'faq': t.faqText
+         'whats_new': t.whatsNewText
        };
 
        return (
@@ -135,6 +136,54 @@ export default function GeneralMenu({
            </div>
          </div>
        );
+    }
+
+    if (activeMenu === 'faq') {
+      return (
+        <div className="flex-1 flex flex-col w-full h-full">
+          <div className="flex items-center p-6 mb-2">
+            <button onClick={() => setActiveMenu('main')} className="p-2 -ml-2 text-white/50 hover:text-white transition-colors outline-none">
+              <ChevronLeft size={24} />
+            </button>
+            <h2 className="text-xl font-bold text-white flex-1 text-center mr-6">{t.faq}</h2>
+          </div>
+          <div className="flex-1 overflow-y-auto custom-scrollbar px-6 pb-6">
+            <div className="flex flex-col border border-white/10 rounded-3xl overflow-hidden bg-white/5">
+              {(t.faqList as any[]).map((faq, index) => {
+                const isOpen = openFaqIndex === index;
+                return (
+                  <div key={index} className={cn("border-b border-white/10 last:border-0", isOpen && "bg-white/[0.03]")}>
+                    <button 
+                      onClick={() => setOpenFaqIndex(isOpen ? null : index)}
+                      className="w-full flex items-center justify-between p-5 text-left outline-none transition-colors hover:bg-white/5"
+                    >
+                      <span className={cn("text-sm font-semibold transition-colors pr-4", isOpen ? "text-cyan-400" : "text-white/80")}>
+                        {faq.q}
+                      </span>
+                      <ChevronDown size={18} className={cn("text-white/30 shrink-0 transition-transform duration-300", isOpen && "rotate-180 text-cyan-400")} />
+                    </button>
+                    <AnimatePresence>
+                      {isOpen && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.3, ease: "easeInOut" }}
+                          className="overflow-hidden"
+                        >
+                          <div className="px-5 pb-5 pt-1 text-xs leading-relaxed text-white/60">
+                            {faq.a}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      );
     }
     if (activeMenu === 'add_vehicle') {
       return (
