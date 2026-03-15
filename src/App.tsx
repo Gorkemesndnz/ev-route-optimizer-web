@@ -12,32 +12,54 @@ import AccountDashboard from "./components/AccountDashboard";
 import CookieConsent from "./components/CookieConsent";
 import GeneralMenu from "./components/GeneralMenu";
 import PrivacyPolicyView from "./components/PrivacyPolicyView";
+import AboutUsView from "./components/AboutUsView";
 import { User, LogOut } from "lucide-react";
 import { lightMapStyle, darkMapStyle } from "./lib/mapStyles";
+import { translations } from "./lib/translations";
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 function App() {
-  const [activeView, setActiveView] = useState<'main' | 'settings' | 'garage' | 'add_vehicle' | 'vehicle_settings' | 'account' | 'privacy'>('main');
+  const [activeView, setActiveView] = useState<'main' | 'settings' | 'garage' | 'add_vehicle' | 'vehicle_settings' | 'account' | 'privacy' | 'about'>('main');
+  
+  // Persistent Settings
+  const [language, setLanguage] = useState<'tr' | 'en'>(() => {
+    const saved = localStorage.getItem('iyontree_language');
+    return (saved === 'en' || saved === 'tr') ? saved : 'tr';
+  });
+  
+  const [mapStyleKey, setMapStyleKey] = useState<'default' | 'light' | 'dark' | 'satellite' | 'system'>(() => {
+    const saved = localStorage.getItem('iyontree_map_style');
+    const valid = ['default', 'light', 'dark', 'satellite', 'system'];
+    return (saved && valid.includes(saved)) ? (saved as any) : 'system';
+  });
+
+  const t = translations[language];
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
-  const [mapStyleKey, setMapStyleKey] = useState<'default' | 'light' | 'dark' | 'satellite'>('dark');
   const [showTraffic, setShowTraffic] = useState(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [previousView, setPreviousView] = useState<'main' | 'account'>('main');
+  const [previousView, setPreviousView] = useState<'main' | 'account' | 'settings' | 'garage' | 'add_vehicle' | 'vehicle_settings' | 'privacy' | 'about'>('main');
   const [authMessage, setAuthMessage] = useState<string>('');
   const [isRightMenuOpen, setIsRightMenuOpen] = useState(false);
   const [showCookieBanner, setShowCookieBanner] = useState(false);
   const [showCookieModal, setShowCookieModal] = useState(false);
 
-  // Sync with system theme on mount
+  // Sync with system theme and save changes
   useEffect(() => {
-    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setMapStyleKey(isDark ? 'dark' : 'light');
+    localStorage.setItem('iyontree_language', language);
+    document.documentElement.lang = language;
+    document.documentElement.className = "notranslate";
+  }, [language]);
 
-    // Cookie Check Logic
+  useEffect(() => {
+    localStorage.setItem('iyontree_map_style', mapStyleKey);
+  }, [mapStyleKey]);
+
+  useEffect(() => {
+    // Initial Cookie Check
     const saved = localStorage.getItem('iyontree_cookies');
     if (saved) {
       try {
@@ -63,8 +85,17 @@ function App() {
   };
 
   const getMapStyle = () => {
-    if (mapStyleKey === 'light') return lightMapStyle;
-    if (mapStyleKey === 'dark') return darkMapStyle;
+    let effective: 'light' | 'dark' | 'default' | 'satellite' = 'light';
+    
+    if (mapStyleKey === 'system') {
+      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      effective = isDark ? 'dark' : 'light';
+    } else {
+      effective = mapStyleKey as any;
+    }
+    
+    if (effective === 'light') return lightMapStyle;
+    if (effective === 'dark') return darkMapStyle;
     return [];
   };
 
@@ -90,9 +121,10 @@ function App() {
           onStyleChange={setMapStyleKey}
           showTraffic={showTraffic}
           onToggleTraffic={() => setShowTraffic(!showTraffic)}
+          language={language}
         />
 
-        {/* Map Blur Overlay (New Feature) */}
+        {/* Map Blur Overlay */}
         <AnimatePresence>
           {activeView !== 'main' && (
             <motion.div
@@ -113,16 +145,17 @@ function App() {
             {activeView === 'main' && (
               <motion.div
                 key="main"
-                initial={{ left: -50, opacity: 0 }}
-                animate={{ left: 0, opacity: 1 }}
-                exit={{ left: -50, opacity: 0 }}
+                initial={{ x: -50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -50, opacity: 0 }}
                 transition={{ type: "tween", ease: "easeInOut", duration: 0.3 }}
                 className="flex flex-col gap-6 relative z-40 pointer-events-none"
               >
                 <Sidebar 
                   onOpenRouteSettings={() => setActiveView('settings')} 
                   currentUser={currentUser}
-                  onRequireAuth={(msg) => { setAuthMessage(msg); setIsAuthModalOpen(true); }}
+                  onRequireAuth={(msg) => { setAuthMessage(msg || t.savedRoutesPrompt); setIsAuthModalOpen(true); }}
+                  language={language}
                 />
 
                 <VehicleCard
@@ -133,6 +166,7 @@ function App() {
                   onUpdateSoC={(soc) => {
                     setVehicles(prev => prev.map(v => v.id === selectedVehicleId ? { ...v, soc } : v));
                   }}
+                  language={language}
                 />
               </motion.div>
             )}
@@ -140,22 +174,25 @@ function App() {
             {activeView === 'settings' && (
               <motion.div
                 key="settings"
-                initial={{ left: 50, opacity: 0 }}
-                animate={{ left: 0, opacity: 1 }}
-                exit={{ left: 50, opacity: 0 }}
+                initial={{ x: 50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: 50, opacity: 0 }}
                 transition={{ type: "tween", ease: "easeInOut", duration: 0.3 }}
                 className="relative z-40 pointer-events-none"
               >
-                <RouteSettingsView onBack={() => setActiveView('main')} />
+                <RouteSettingsView 
+                  onBack={() => setActiveView('main')} 
+                  language={language}
+                />
               </motion.div>
             )}
 
             {activeView === 'garage' && (
               <motion.div
                 key="garage"
-                initial={{ left: 50, opacity: 0 }}
-                animate={{ left: 0, opacity: 1 }}
-                exit={{ left: 50, opacity: 0 }}
+                initial={{ x: 50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: 50, opacity: 0 }}
                 transition={{ type: "tween", ease: "easeInOut", duration: 0.3 }}
                 className="relative z-40 pointer-events-none"
               >
@@ -175,6 +212,7 @@ function App() {
                   }}
                   onAddVehicle={() => setActiveView('add_vehicle')}
                   onBack={() => setActiveView(previousView === 'account' ? 'account' : 'main')}
+                  language={language}
                 />
               </motion.div>
             )}
@@ -182,9 +220,9 @@ function App() {
             {activeView === 'add_vehicle' && (
               <motion.div
                 key="add_vehicle"
-                initial={{ left: 50, opacity: 0 }}
-                animate={{ left: 0, opacity: 1 }}
-                exit={{ left: 50, opacity: 0 }}
+                initial={{ x: 50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: 50, opacity: 0 }}
                 transition={{ type: "tween", ease: "easeInOut", duration: 0.3 }}
                 className="relative z-40 pointer-events-none"
               >
@@ -195,19 +233,20 @@ function App() {
                     setSelectedVehicleId(vehicle.id);
                     setActiveView(previousView === 'account' ? 'account' : 'main');
                   }}
+                  language={language}
                 />
               </motion.div>
             )}
             {activeView === 'vehicle_settings' && (
               <motion.div
                 key="vehicle_settings"
-                initial={{ left: 50, opacity: 0 }}
-                animate={{ left: 0, opacity: 1 }}
-                exit={{ left: 50, opacity: 0 }}
+                initial={{ x: 50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: 50, opacity: 0 }}
                 transition={{ type: "tween", ease: "easeInOut", duration: 0.3 }}
                 className="relative z-40 pointer-events-none"
               >
-                <VehicleSettingsView onBack={() => setActiveView('main')} />
+                <VehicleSettingsView onBack={() => setActiveView('main')} language={language} />
               </motion.div>
             )}
             {activeView === 'account' && currentUser && (
@@ -217,13 +256,14 @@ function App() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
-                className="relative z-50"
+                className="relative z-50 pointer-events-none"
               >
                 <AccountDashboard 
                   user={currentUser}
                   activeVehicle={selectedVehicle}
                   onChangeVehicle={() => { setPreviousView('account'); setActiveView('garage'); }}
                   onClose={() => setActiveView('main')}
+                  language={language}
                 />
               </motion.div>
             )}
@@ -234,7 +274,6 @@ function App() {
         <div className="absolute top-6 right-6 z-40 flex items-center gap-3 pointer-events-auto">
           {currentUser ? (
             <div className="flex flex-row-reverse items-center group overflow-hidden py-1">
-              {/* 1. Avatar (Sağda sabit kalacak) */}
               <button 
                 onClick={() => setActiveView('account')}
                 className="w-10 h-10 rounded-full glass-panel flex items-center justify-center font-bold text-sm text-white border border-white/20 shadow-none shrink-0 z-10 hover:border-white/40 transition-all outline-none"
@@ -242,11 +281,10 @@ function App() {
                 {currentUser.firstName?.charAt(0).toUpperCase() || ''}{currentUser.lastName?.charAt(0).toUpperCase() || ''}
               </button>
               
-              {/* 2. Hidden Logout Menu (Sola doğru pürüzsüzce açılacak) */}
               <div className="flex items-center overflow-hidden transition-all duration-300 ease-in-out max-w-0 opacity-0 group-hover:max-w-[70px] group-hover:opacity-100 group-hover:mr-2">
                 <button 
                   onClick={() => setCurrentUser(null)}
-                  title="Çıkış Yap"
+                  title={t.logout}
                   className="w-10 h-10 shrink-0 rounded-full glass-panel flex items-center justify-center text-red-500 hover:text-red-400 border border-white/20 shadow-none transition-all hover:bg-white/10 outline-none"
                 >
                   <LogOut size={18} />
@@ -258,7 +296,7 @@ function App() {
               onClick={() => setIsAuthModalOpen(true)}
               className="glass-panel shadow-none px-4 py-2 font-semibold text-sm hover:bg-white/10 transition-all border-white/20 active:scale-95 text-white"
             >
-              Giriş Yap
+              {t.login}
             </button>
           )}
 
@@ -278,6 +316,7 @@ function App() {
           onClose={() => { setIsAuthModalOpen(false); setAuthMessage(''); }} 
           onLogin={(user) => { setCurrentUser(user); setActiveView('account'); }}
           customMessage={authMessage}
+          language={language}
         />
 
         {/* Right General Menu */}
@@ -285,7 +324,12 @@ function App() {
           isOpen={isRightMenuOpen} 
           onClose={() => setIsRightMenuOpen(false)} 
           onOpenCookieConsent={() => { setShowCookieModal(true); setIsRightMenuOpen(false); }}
-          onOpenPrivacy={() => { setPreviousView(activeView === 'account' ? 'account' : 'main'); setActiveView('privacy'); setIsRightMenuOpen(false); }}
+          onOpenPrivacy={() => { setPreviousView(activeView); setActiveView('privacy'); setIsRightMenuOpen(false); }}
+          onOpenAbout={() => { setPreviousView(activeView); setActiveView('about'); setIsRightMenuOpen(false); }}
+          language={language}
+          setLanguage={setLanguage}
+          mapStyleKey={mapStyleKey}
+          setMapStyleKey={setMapStyleKey}
         />
 
         {/* Global Floating Elements */}
@@ -293,18 +337,22 @@ function App() {
           showBanner={showCookieBanner}
           showModal={showCookieModal}
           onOpenPrivacy={() => { 
-            setPreviousView(activeView === 'account' ? 'account' : 'main'); 
+            setPreviousView(activeView); 
             setActiveView('privacy');
             setShowCookieModal(false); 
           }}
           onOpenSettings={() => setShowCookieModal(true)}
           onSave={handleSaveCookies}
+          language={language}
         />
         
-        {/* Full Screen Modals without map background constraints */}
+        {/* Full Screen Modals */}
         <AnimatePresence>
           {activeView === 'privacy' && (
-            <PrivacyPolicyView onBack={() => setActiveView(previousView)} />
+            <PrivacyPolicyView onBack={() => setActiveView(previousView)} language={language} />
+          )}
+          {activeView === 'about' && (
+            <AboutUsView onBack={() => setActiveView(previousView)} language={language} />
           )}
         </AnimatePresence>
       </div>

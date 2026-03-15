@@ -37,16 +37,20 @@ import { cn } from "@/lib/utils";
 
 import { LocationItem } from "./LocationItem";
 import { LocationSearchModal } from "./LocationSearchModal";
+import { translations } from "../lib/translations";
 
 export default function Sidebar({
   onOpenRouteSettings,
   currentUser,
-  onRequireAuth
+  onRequireAuth,
+  language = 'tr'
 }: {
   onOpenRouteSettings: () => void;
   currentUser: any;
   onRequireAuth: (msg: string) => void;
+  language?: 'tr' | 'en';
 }) {
+  const t = translations[language];
   const [locations, setLocations] = useState([
     { id: "start", type: "start", value: "" },
     { id: "dest", type: "destination", value: "" },
@@ -163,10 +167,10 @@ export default function Sidebar({
   return (
     <div className="glass-panel w-full sm:w-[420px] px-4 py-5 pointer-events-auto flex flex-col gap-4 relative">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold tracking-tight text-white/90">Rota Planlama</h2>
+        <h2 className="text-xl font-bold tracking-tight text-white/90">{t.routePlanning}</h2>
         <div className="flex items-center gap-2">
           <Leaf className="text-emerald-500" size={24} />
-          <span className="text-lg font-black tracking-widest text-emerald-500 uppercase">IYONTREE</span>
+          <span className="text-lg font-black tracking-widest text-emerald-500 uppercase">{t.appTitle}</span>
         </div>
       </div>
 
@@ -185,7 +189,7 @@ export default function Sidebar({
               {locations.map((loc, index) => {
                 const isFirst = index === 0;
                 const isLast = index === locations.length - 1;
-                const label = isFirst ? "Başlangıç Noktası" : isLast ? "Varış Noktası" : locations.length === 3 ? "Durak" : `${index}. Durak`;
+                const label = isFirst ? t.startPoint : isLast ? t.destinationPoint : locations.length === 3 ? t.waypoint : `${index}. ${t.waypoint}`;
 
                 return (
                   <LocationItem
@@ -266,20 +270,20 @@ export default function Sidebar({
           onClick={addWaypoint}
           className="text-sm font-medium text-white/70 hover:text-white transition-colors flex items-center gap-1"
         >
-          <Plus size={16} /> Durak Ekle
+          <Plus size={16} /> {t.addWaypoint}
         </button>
         <button
           onClick={() => {
             if (!currentUser) {
-              onRequireAuth("Kayıtlı Rotalar İçin\nGiriş Yap veya Kayıt Ol");
+              onRequireAuth(t.savedRoutesPrompt);
             } else {
               // Gelecekte eklenecek "Kayıtlı Rotalar" ekranı
-              alert("Kayıtlı Rotalar: Modül Yapım Aşamasında");
+              alert(language === 'tr' ? "Kayıtlı Rotalar: Modül Yapım Aşamasında" : "Saved Routes: Module Under Construction");
             }
           }}
           className="text-sm font-medium text-white/70 hover:text-white transition-colors flex items-center gap-1"
         >
-          <Bookmark size={16} /> Kayıtlı Rotalar
+          <Bookmark size={16} /> {t.savedRoutes}
         </button>
       </div>
 
@@ -294,7 +298,7 @@ export default function Sidebar({
         <button
           className="flex-1 py-3 bg-white text-black font-semibold rounded-2xl hover:bg-gray-200 transition-all flex justify-center items-center gap-2"
         >
-          Rotayı Planla
+          {t.planRoute}
         </button>
       </div>
 

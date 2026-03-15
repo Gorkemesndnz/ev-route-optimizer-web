@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { X, ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { translations } from "../lib/translations";
 
 const MOCK_USER = {
   email: 'admin@iyontree.com',
@@ -15,13 +16,16 @@ export default function AuthModal({
   isOpen, 
   onClose, 
   onLogin,
-  customMessage
+  customMessage,
+  language = 'tr'
 }: { 
   isOpen: boolean;
   onClose: () => void;
   onLogin?: (user: any) => void; 
   customMessage?: string;
+  language?: 'tr' | 'en';
 }) {
+  const t = translations[language];
   const [authStep, setAuthStep] = useState<'email' | 'password' | 'register' | 'verify_email' | 'reset_password'>('email');
   
   // Registration / Login Info
@@ -90,7 +94,7 @@ export default function AuthModal({
     if (!email) return;
 
     if (!emailRegex.test(email)) {
-      setAuthError('Lütfen geçerli bir e-posta girin.');
+      setAuthError(language === 'tr' ? 'Lütfen geçerli bir e-posta girin.' : 'Please enter a valid email.');
       return;
     }
 
@@ -108,7 +112,7 @@ export default function AuthModal({
       if (onLogin) onLogin(MOCK_USER);
       handleClose(); // Şimdilik giriş yapıldığında pencereyi kapatıyoruz
     } else {
-      setAuthError("Girdiğiniz şifre hatalı."); // Yalnızca şifre yanlışlığında hata uyarısı veriyoruz
+      setAuthError(language === 'tr' ? "Girdiğiniz şifre hatalı." : "Incorrect password."); // Yalnızca şifre yanlışlığında hata uyarısı veriyoruz
     }
   };
 
@@ -199,7 +203,7 @@ export default function AuthModal({
                 }}
                 className="absolute top-6 left-6 h-8 flex items-center justify-center gap-1 text-white/50 hover:text-white transition-all transform hover:scale-105 active:scale-95 bg-transparent text-sm font-medium z-10"
               >
-                <ChevronLeft size={16} /> Geri
+                <ChevronLeft size={16} /> {t.back}
               </button>
             )}
 
@@ -220,15 +224,15 @@ export default function AuthModal({
                 transition={{ duration: 0.2 }}
               >
                 <div className="flex flex-col items-center gap-2 mt-6 mb-4">
-                  <span className="text-2xl font-black tracking-widest text-emerald-500 uppercase">IYONTREE</span>
+                  <span className="text-2xl font-black tracking-widest text-emerald-500 uppercase">{t.appTitle}</span>
                   <h2 className="text-xl font-bold text-white tracking-wide text-center whitespace-pre-line">
-                    {customMessage || "Giriş Yap veya Kayıt Ol"}
+                    {customMessage || (language === 'tr' ? "Giriş Yap veya Kayıt Ol" : "Login or Register")}
                   </h2>
                 </div>
 
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-2 relative">
-                    <label className="text-sm font-medium text-white/70">E-posta Adresi</label>
+                    <label className="text-sm font-medium text-white/70">{t.emailAddress}</label>
                     <input 
                       type="text" 
                       autoFocus
@@ -258,22 +262,22 @@ export default function AuthModal({
                     disabled={!email}
                     className="w-full bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 disabled:hover:bg-cyan-400 text-black font-bold py-3.5 rounded-xl transition-all duration-200 active:scale-[0.98] mt-2 shadow-[0_0_15px_rgba(34,211,238,0.2)]"
                   >
-                    Devam Et
+                    {language === 'tr' ? 'Devam Et' : 'Continue'}
                   </button>
                 </div>
 
                 <div className="flex items-center gap-4 my-2 opacity-50">
                   <div className="h-px bg-white/20 flex-1"></div>
-                  <span className="text-xs font-semibold text-white/70 uppercase tracking-widest">Veya</span>
+                  <span className="text-xs font-semibold text-white/70 uppercase tracking-widest">{language === 'tr' ? 'Veya' : 'Or'}</span>
                   <div className="h-px bg-white/20 flex-1"></div>
                 </div>
 
                 <div className="flex flex-col gap-3">
                   <button className="w-full bg-white/5 hover:bg-white/15 border border-white/10 py-3 rounded-xl font-medium text-white transition-all active:scale-[0.98] shadow-sm">
-                    Google ile Devam Et
+                    {language === 'tr' ? 'Google ile Devam Et' : 'Continue with Google'}
                   </button>
                   <button className="w-full bg-white/5 hover:bg-white/15 border border-white/10 py-3 rounded-xl font-medium text-white transition-all active:scale-[0.98] shadow-sm">
-                    Apple ile Devam Et
+                    {language === 'tr' ? 'Apple ile Devam Et' : 'Continue with Apple'}
                   </button>
                 </div>
               </motion.div>
@@ -289,16 +293,16 @@ export default function AuthModal({
                 transition={{ duration: 0.2 }}
               >
                 <div className="flex flex-col gap-2 mt-8 mb-2">
-                  <h2 className="text-2xl font-bold text-white tracking-wide">Tekrar Hoş Geldin</h2>
+                  <h2 className="text-2xl font-bold text-white tracking-wide">{t.welcomeBack}</h2>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-sm text-cyan-400 font-medium break-all">{email}</span>
-                    <button onClick={() => { setAuthStep('email'); setAuthError(''); setPassword(''); }} className="text-xs shrink-0 text-white/50 hover:text-white underline decoration-white/30 underline-offset-2 transition-colors">Değiştir</button>
+                    <button onClick={() => { setAuthStep('email'); setAuthError(''); setPassword(''); }} className="text-xs shrink-0 text-white/50 hover:text-white underline decoration-white/30 underline-offset-2 transition-colors">{language === 'tr' ? 'Değiştir' : 'Change'}</button>
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-4 mt-2">
                   <div className="flex flex-col gap-2 relative">
-                    <label className="text-sm font-medium text-white/70">Şifre</label>
+                    <label className="text-sm font-medium text-white/70">{t.password}</label>
                     <input 
                       type="password" 
                       autoFocus
@@ -328,13 +332,13 @@ export default function AuthModal({
                     disabled={!password}
                     className="w-full bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 disabled:hover:bg-cyan-400 text-black font-bold py-3.5 rounded-xl transition-all duration-200 active:scale-[0.98] mt-2 shadow-[0_0_15px_rgba(34,211,238,0.2)]"
                   >
-                    Giriş Yap
+                    {t.login}
                   </button>
                 </div>
 
                 <div className="flex justify-center mt-2">
                   <button onClick={handleGoToVerify} className="text-sm text-white/50 hover:text-white transition-colors">
-                    Şifremi Unuttum
+                    {language === 'tr' ? 'Şifremi Unuttum' : 'Forgot Password'}
                   </button>
                 </div>
               </motion.div>
@@ -350,42 +354,42 @@ export default function AuthModal({
                 transition={{ duration: 0.2 }}
               >
                 <div className="flex flex-col gap-1.5 mt-8 mb-2">
-                  <h2 className="text-2xl font-bold text-white tracking-wide">Aramıza Katıl</h2>
+                  <h2 className="text-2xl font-bold text-white tracking-wide">{t.registerNow}</h2>
                   <p className="text-sm text-white/50 leading-relaxed">
-                    <span className="text-cyan-400 font-medium break-all">{email}</span> ile hesap oluştur.
+                    {language === 'tr' ? 'ile hesap oluştur.' : 'Create an account with'} <span className="text-cyan-400 font-medium break-all">{email}</span>.
                   </p>
                 </div>
 
                 <div className="flex flex-col gap-3">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-medium text-white/70">Ad</label>
+                      <label className="text-sm font-medium text-white/70">{t.firstName}</label>
                       <input 
                         type="text" 
                         autoFocus
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value.replace(nameRegexObj, ''))}
                         onKeyDown={(e) => e.key === 'Enter' && lastNameRef.current?.focus()}
-                        placeholder="Ad"
+                        placeholder={t.firstName}
                         className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all font-medium placeholder:text-white/30 shadow-inner" 
                       />
                     </div>
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-medium text-white/70">Soyad</label>
+                      <label className="text-sm font-medium text-white/70">{t.lastName}</label>
                       <input 
                         type="text" 
                         ref={lastNameRef}
                         value={lastName}
                         onChange={(e) => setLastName(e.target.value.replace(nameRegexObj, ''))}
                         onKeyDown={(e) => e.key === 'Enter' && phoneRef.current?.focus()}
-                        placeholder="Soyad"
+                        placeholder={t.lastName}
                         className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all font-medium placeholder:text-white/30 shadow-inner" 
                       />
                     </div>
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                     <label className="text-sm font-medium text-white/70">Telefon Numarası</label>
+                     <label className="text-sm font-medium text-white/70">{language === 'tr' ? 'Telefon Numarası' : 'Phone Number'}</label>
                     <input 
                       type="tel" 
                       ref={phoneRef}
@@ -399,7 +403,7 @@ export default function AuthModal({
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-sm font-medium text-white/70">Şifre Belirle</label>
+                    <label className="text-sm font-medium text-white/70">{language === 'tr' ? 'Şifre Belirle' : 'Set Password'}</label>
                     <input 
                       type="password" 
                       ref={passwordRef}
@@ -412,7 +416,7 @@ export default function AuthModal({
                   </div>
                   
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-sm font-medium text-white/70">Şifre Tekrar</label>
+                    <label className="text-sm font-medium text-white/70">{language === 'tr' ? 'Şifre Tekrar' : 'Confirm Password'}</label>
                     <input 
                       type="password"
                       ref={confirmPasswordRef} 
@@ -444,14 +448,13 @@ export default function AuthModal({
 
                   <button 
                     onClick={() => {
-                       alert("Yeni Kayıt İşlemi: Mock Tarafından Kaydedildi");
                        if (onLogin) onLogin({ ...MOCK_USER, email, firstName, lastName, phone });
                        handleClose();
                     }}
                     disabled={!password || !isPasswordsMatch || !firstName || !phone || phone.length < 14}
                     className="w-full bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 disabled:hover:bg-cyan-400 text-black font-bold py-3.5 rounded-xl transition-all duration-200 active:scale-[0.98] mt-2 shadow-[0_0_15px_rgba(34,211,238,0.2)]"
                   >
-                    Kayıt Ol ve Doğrula
+                    {language === 'tr' ? 'Kayıt Ol ve Doğrula' : 'Register and Verify'}
                   </button>
                 </div>
                 
@@ -468,9 +471,9 @@ export default function AuthModal({
                 transition={{ duration: 0.2 }}
               >
                 <div className="flex flex-col gap-1.5 mt-8 mb-4 items-center text-center">
-                  <h2 className="text-2xl font-bold text-white tracking-wide">Doğrulama Kodu</h2>
+                  <h2 className="text-2xl font-bold text-white tracking-wide">{language === 'tr' ? 'Doğrulama Kodu' : 'Verification Code'}</h2>
                   <p className="text-sm text-white/50 leading-relaxed">
-                    <span className="text-cyan-400 font-medium break-all">{email}</span> adresine gönderdiğimiz 6 haneli kodu aşağıya giriniz.
+                    {language === 'tr' ? 'adresine gönderdiğimiz 6 haneli kodu aşağıya giriniz.' : 'Please enter the 6-digit code we sent to'} <span className="text-cyan-400 font-medium break-all">{email}</span>.
                   </p>
                 </div>
 
@@ -506,14 +509,14 @@ export default function AuthModal({
                   <div className="flex justify-center mt-2">
                     {timeLeft > 0 ? (
                       <span className="text-sm font-medium text-white/50 bg-black/40 px-3 py-1.5 rounded-full border border-white/5">
-                        Kalan süre: <span className="text-white">{formatTime(timeLeft)}</span>
+                        {language === 'tr' ? 'Kalan süre:' : 'Time left:'} <span className="text-white">{formatTime(timeLeft)}</span>
                       </span>
                     ) : (
                       <button 
                         onClick={handleResend}
                         className="text-sm text-cyan-400 hover:text-cyan-300 font-medium underline decoration-cyan-400/30 underline-offset-4 transition-all"
                       >
-                        Kodu Tekrar Gönder
+                        {language === 'tr' ? 'Kodu Tekrar Gönder' : 'Resend Code'}
                       </button>
                     )}
                   </div>
@@ -531,15 +534,15 @@ export default function AuthModal({
                 transition={{ duration: 0.2 }}
               >
                 <div className="flex flex-col gap-1.5 mt-8 mb-2">
-                  <h2 className="text-2xl font-bold text-white tracking-wide">Yeni Şifre</h2>
+                  <h2 className="text-2xl font-bold text-white tracking-wide">{language === 'tr' ? 'Yeni Şifre' : 'New Password'}</h2>
                   <p className="text-sm text-white/50">
-                    Hesabınız için yeni bir şifre belirleyin.
+                    {language === 'tr' ? 'Hesabınız için yeni bir şifre belirleyin.' : 'Set a new password for your account.'}
                   </p>
                 </div>
 
                 <div className="flex flex-col gap-4 mt-2">
                   <div className="flex flex-col gap-2">
-                    <label className="text-sm font-medium text-white/70">Yeni Şifre</label>
+                    <label className="text-sm font-medium text-white/70">{language === 'tr' ? 'Yeni Şifre' : 'New Password'}</label>
                     <input 
                       type="password" 
                       autoFocus
@@ -551,7 +554,7 @@ export default function AuthModal({
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <label className="text-sm font-medium text-white/70">Şifreyi Tekrar Girin</label>
+                    <label className="text-sm font-medium text-white/70">{language === 'tr' ? 'Şifreyi Tekrar Girin' : 'Retype Password'}</label>
                     <input 
                       type="password" 
                       value={confirmPassword}
@@ -582,13 +585,12 @@ export default function AuthModal({
 
                   <button 
                     onClick={() => {
-                      alert("Yeni Parola Kaydedildi. Oturum Açılıyor...");
                       handleClose();
                     }}
                     disabled={!password || !isPasswordsMatch}
                     className="w-full bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 disabled:hover:bg-cyan-400 text-black font-bold py-3.5 rounded-xl transition-all duration-200 active:scale-[0.98] mt-4 shadow-[0_0_15px_rgba(34,211,238,0.2)]"
                   >
-                    Şifreyi Yenile (Mock)
+                    {language === 'tr' ? 'Şifreyi Yenile (Mock)' : 'Reset Password (Mock)'}
                   </button>
                 </div>
               </motion.div>

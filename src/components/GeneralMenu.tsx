@@ -16,107 +16,119 @@ import {
   Moon,
   Zap,
   Lightbulb,
-  PlusCircle
+  PlusCircle,
+  Info
 } from "lucide-react";
+import { translations } from "../lib/translations";
 
 export default function GeneralMenu({ 
   isOpen, 
   onClose,
   onOpenCookieConsent,
-  onOpenPrivacy
+  onOpenPrivacy,
+  onOpenAbout,
+  language,
+  setLanguage,
+  mapStyleKey,
+  setMapStyleKey
 }: { 
   isOpen: boolean; 
   onClose: () => void;
   onOpenCookieConsent: () => void;
   onOpenPrivacy: () => void;
+  onOpenAbout: () => void;
+  language: 'tr' | 'en';
+  setLanguage: (lang: 'tr' | 'en') => void;
+  mapStyleKey: string;
+  setMapStyleKey: (key: any) => void;
 }) {
   const [activeMenu, setActiveMenu] = useState<'main'|'language'|'units'|'energy'|'appearance'>('main');
+  const t = translations[language];
 
-  const [language, setLanguage] = useState('Türkçe');
+  // Internal states for things that aren't global yet or just display values
   const [units, setUnits] = useState('Metrik');
   const [energyCons, setEnergyCons] = useState('Wh/km');
-  const [appearance, setAppearance] = useState('Sistem Cihazı (Otomatik)');
 
   const handleClose = () => {
     onClose();
-    // Menü kapandığında ufak bir gecikmeyle ana motora dönmesi için:
     setTimeout(() => setActiveMenu('main'), 300);
   };
 
   const menuSections = [
     {
-      title: "TERCİHLER",
+      title: t.preferences,
       items: [
-        { icon: <Moon size={18} />, label: "Görünüm", value: appearance, onClick: () => setActiveMenu('appearance') },
-        { icon: <Globe size={18} />, label: "Dil", value: language, onClick: () => setActiveMenu('language') },
-        { icon: <Ruler size={18} />, label: "Birim Sistemi", value: units, onClick: () => setActiveMenu('units') },
-        { icon: <Zap size={18} />, label: "Enerji Tüketimi", value: energyCons, onClick: () => setActiveMenu('energy') }
+        { icon: <Moon size={18} />, label: t.appearance, value: mapStyleKey === 'dark' ? t.dark : (mapStyleKey === 'light' ? t.light : t.system), onClick: () => setActiveMenu('appearance') },
+        { icon: <Globe size={18} />, label: t.language, value: language === 'tr' ? 'Türkçe' : 'English', onClick: () => setActiveMenu('language') },
+        { icon: <Ruler size={18} />, label: t.units, value: units, onClick: () => setActiveMenu('units') },
+        { icon: <Zap size={18} />, label: t.energyConsumption, value: energyCons, onClick: () => setActiveMenu('energy') }
       ]
     },
     {
-      title: "KEŞFET",
+      title: t.explore,
       items: [
-        { icon: <Cpu size={18} />, label: "Nasıl Çalışır?" },
-        { icon: <Sparkles size={18} />, label: "Neler Yeni?" },
-        { icon: <HelpCircle size={18} />, label: "Sıkça Sorulan Sorular" }
+        { icon: <Cpu size={18} />, label: t.howItWorks },
+        { icon: <Sparkles size={18} />, label: t.whatsNew },
+        { icon: <HelpCircle size={18} />, label: t.faq },
+        { icon: <Info size={18} />, label: t.aboutUs, onClick: onOpenAbout }
       ]
     },
     {
-      title: "DESTEK VE GERİ BİLDİRİM",
+      title: t.supportFeedback,
       items: [
-        { icon: <AlertTriangle size={18} />, label: "Hata Bildir" },
-        { icon: <Lightbulb size={18} />, label: "Öneriler" },
-        { icon: <PlusCircle size={18} />, label: "Yeni Araç Modeli Ekle" },
-        { icon: <MessageSquare size={18} />, label: "Bize Ulaşın" }
+        { icon: <AlertTriangle size={18} />, label: t.reportBug },
+        { icon: <Lightbulb size={18} />, label: t.suggestions },
+        { icon: <PlusCircle size={18} />, label: t.addVehicle },
+        { icon: <MessageSquare size={18} />, label: t.contactUs }
       ]
     },
     {
-      title: "YASAL",
+      title: t.legal,
       items: [
-        { icon: <FileText size={18} />, label: "Kullanım Koşulları" },
-        { icon: <Shield size={18} />, label: "Gizlilik Politikası", onClick: onOpenPrivacy },
-        { icon: <Cookie size={18} />, label: "Çerez Tercihlerini Yönet", onClick: onOpenCookieConsent }
+        { icon: <FileText size={18} />, label: t.terms },
+        { icon: <Shield size={18} />, label: t.privacy, onClick: onOpenPrivacy },
+        { icon: <Cookie size={18} />, label: t.manageCookies, onClick: onOpenCookieConsent }
       ]
     }
   ];
 
   const renderSubMenuContent = () => {
     let title = "";
-    let options: {id: string, label: string, sub: string}[] = [];
+    let options: {id: any, label: string, sub: string}[] = [];
     let currentState = "";
-    let setFn = (val: string) => {};
+    let setFn = (val: any) => {};
 
     if (activeMenu === 'appearance') {
-      title = "Görünüm";
+      title = t.appearance;
       options = [
-        { id: "Sistem Cihazı (Otomatik)", label: "Sistem Cihazı (Otomatik)", sub: "" },
-        { id: "Koyu", label: "Koyu", sub: "" },
-        { id: "Açık", label: "Açık", sub: "" }
+        { id: "system", label: t.system, sub: "" },
+        { id: "dark", label: t.dark, sub: "" },
+        { id: "light", label: t.light, sub: "" }
       ];
-      currentState = appearance;
-      setFn = setAppearance;
+      currentState = mapStyleKey;
+      setFn = (val) => setMapStyleKey(val);
     } else if (activeMenu === 'language') {
-      title = "Dil";
+      title = t.language;
       options = [
-        { id: "Türkçe", label: "Türkçe", sub: "" },
-        { id: "English", label: "English", sub: "" }
+        { id: "tr", label: "Türkçe", sub: "" },
+        { id: "en", label: "English", sub: "" }
       ];
       currentState = language;
       setFn = setLanguage;
     } else if (activeMenu === 'units') {
-      title = "Birimler";
+      title = t.units;
       options = [
-        { id: "Metrik", label: "Metrik", sub: "km, Wh/km, °C" },
-        { id: "US", label: "US", sub: "mi, mi/Wh, °F" },
-        { id: "UK", label: "UK", sub: "mi, mi/Wh, °C" }
+        { id: "Metrik", label: t.metric, sub: "km, Wh/km, °C" },
+        { id: "US", label: t.us, sub: "mi, mi/Wh, °F" },
+        { id: "UK", label: t.uk, sub: "mi, mi/Wh, °C" }
       ];
       currentState = units;
       setFn = setUnits;
     } else if (activeMenu === 'energy') {
-      title = "Enerji tüketimi";
+      title = t.energyConsumption;
       options = [
-        { id: "Wh/km", label: "Mesafe başına enerji", sub: "Wh/km" },
-        { id: "km/Wh", label: "Enerji başına mesafe", sub: "km/Wh" }
+        { id: "Wh/km", label: t.energyPerDist, sub: "Wh/km" },
+        { id: "km/Wh", label: t.distPerEnergy, sub: "km/Wh" }
       ];
       currentState = energyCons;
       setFn = setEnergyCons;
@@ -158,7 +170,6 @@ export default function GeneralMenu({
                       {opt.sub}
                     </span>
                   )}
-                  {/* Radio Icon */}
                   <div className={`w-[22px] h-[22px] rounded-full border-[2px] flex flex-shrink-0 items-center justify-center transition-colors ${
                     isSelected ? 'border-white' : 'border-white/30'
                   }`}>
@@ -274,3 +285,4 @@ export default function GeneralMenu({
     </AnimatePresence>
   );
 }
+

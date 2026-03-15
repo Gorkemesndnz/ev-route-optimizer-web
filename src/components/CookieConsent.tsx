@@ -2,20 +2,24 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Cookie, X, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { translations } from "../lib/translations";
 
 export default function CookieConsent({
   showBanner,
   showModal,
   onOpenPrivacy,
   onOpenSettings,
-  onSave
+  onSave,
+  language
 }: {
   showBanner: boolean;
   showModal: boolean;
   onOpenPrivacy: () => void;
   onOpenSettings: () => void;
   onSave: (prefs: any) => void;
+  language?: 'tr' | 'en';
 }) {
+  const t = translations[language || 'tr'];
   const [analytical, setAnalytical] = useState(true);
   const [crashReports, setCrashReports] = useState(true);
 
@@ -82,10 +86,10 @@ export default function CookieConsent({
           >
             <div className="glass-panel p-5 sm:p-6 flex flex-col gap-4 border border-white/10 shadow-2xl">
               <p className="text-[13px] sm:text-sm text-white/70 leading-relaxed font-medium">
-                İYONTREE web sitesi, gezinme deneyiminizi iyileştirmek, site trafiğini analiz etmek ve elektrikli araç rota planlama algoritmamızı optimize etmek için çerezler kullanır. 'Tümünü Kabul Et' seçeneğiyle analitik ve performans çerezlerine izin vermiş olursunuz. 'Özelleştir' kısmından tercihlerinizi yönetebilirsiniz.
+                {t.cookieDesc}
                 <br /><br />
                 <button onClick={onOpenPrivacy} className="text-white hover:text-emerald-400 font-medium underline decoration-white/30 hover:decoration-emerald-400/50 underline-offset-4 transition-all outline-none">
-                  Gizlilik Bildirimimizden daha fazla bilgi edinin
+                  {language === 'en' ? 'Learn more from our Privacy Policy' : 'Gizlilik Bildirimimizden daha fazla bilgi edinin'}
                 </button>
               </p>
 
@@ -94,19 +98,19 @@ export default function CookieConsent({
                   onClick={handleAcceptRequired}
                   className="py-2.5 px-4 rounded-xl border border-white/20 text-white/90 hover:text-white font-medium text-sm hover:bg-white/5 transition-all outline-none active:scale-[0.98]"
                 >
-                  Zorunlu Olanları Kabul Et
+                  {t.acceptMandatory}
                 </button>
                 <button 
                   onClick={onOpenSettings}
                   className="py-2.5 px-4 rounded-xl border border-white/20 text-white/90 hover:text-white font-medium text-sm hover:bg-white/5 transition-all outline-none active:scale-[0.98]"
                 >
-                  Özelleştir
+                  {t.customize}
                 </button>
                 <button 
                   onClick={handleAcceptAll}
                   className="py-2.5 px-6 rounded-xl bg-emerald-500 text-white font-bold text-sm hover:bg-emerald-400 transition-all outline-none active:scale-[0.98] shadow-[0_0_15px_rgba(16,185,129,0.3)]"
                 >
-                  Tümünü Kabul Et
+                  {t.acceptAll}
                 </button>
               </div>
             </div>
@@ -136,7 +140,7 @@ export default function CookieConsent({
             >
               {/* Header */}
               <div className="flex items-center justify-between p-6 border-b border-white/10 shrink-0">
-                <h2 className="text-xl font-bold text-white tracking-wide">Gizlilik Ayarları</h2>
+                <h2 className="text-xl font-bold text-white tracking-wide">{t.privacySettings}</h2>
                 <button 
                   onClick={() => onSave({
                     analytical,
@@ -157,7 +161,7 @@ export default function CookieConsent({
                 {/* 1. Gerekli (Necessary) */}
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-base font-bold text-white">Gerekli</h3>
+                    <h3 className="text-base font-bold text-white">{t.necessaryCookies}</h3>
                     <div className="w-12 h-6 bg-zinc-700/50 rounded-full relative cursor-not-allowed">
                       <div className="absolute right-1 top-1 w-4 h-4 bg-emerald-500/50 rounded-full flex items-center justify-center">
                         <Check size={10} className="text-white" />
@@ -165,7 +169,7 @@ export default function CookieConsent({
                     </div>
                   </div>
                   <p className="text-sm text-white/50 leading-relaxed font-medium pr-4">
-                    Uygulamanın temel işlevleri için gereklidir (ör. oturum açma, dil tercihleri, güvenlik öğeleri). Devredışı bırakılamazlar çünkü hizmetin sunulması doğrudan bu çerezlere bağlıdır.
+                    {t.necessaryCookiesDesc} {language === 'en' ? '(e.g., login, language preferences, security features).' : '(ör. oturum açma, dil tercihleri, güvenlik öğeleri).'}
                   </p>
                 </div>
 
@@ -174,7 +178,7 @@ export default function CookieConsent({
                 {/* 2. Analitik */}
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-base font-bold text-white">Analitik</h3>
+                    <h3 className="text-base font-bold text-white">{t.analyticalCookies}</h3>
                     <button 
                       onClick={() => setAnalytical(!analytical)}
                       className={cn(
@@ -194,7 +198,7 @@ export default function CookieConsent({
                     </button>
                   </div>
                   <p className="text-sm text-white/50 leading-relaxed font-medium pr-4">
-                    Kullanıcıların siteyle nasıl etkileşime girdiğini anlamamıza yardımcı olur. Bu veriler tamamen anonimleştirilir ve deneyiminizi iyileştirmek için kullanılır.
+                    {t.analyticalCookiesDesc}
                   </p>
                 </div>
 
@@ -203,7 +207,7 @@ export default function CookieConsent({
                 {/* 3. Çökme Raporları */}
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-base font-bold text-white">Çökme Raporları & Performans</h3>
+                    <h3 className="text-base font-bold text-white">{language === 'en' ? 'Crash Reports & Performance' : 'Çökme Raporları & Performans'}</h3>
                     <button 
                       onClick={() => setCrashReports(!crashReports)}
                       className={cn(
@@ -223,7 +227,7 @@ export default function CookieConsent({
                     </button>
                   </div>
                   <p className="text-sm text-white/50 leading-relaxed font-medium pr-4">
-                    Hataları tespit edip düzeltmek ve rota hesaplama algoritmamızdaki performans darboğazlarını incelemek için teknik raporları paylaşır.
+                    {language === 'en' ? 'Shares technical reports to identify and fix errors and examine performance bottlenecks in our route calculation algorithm.' : 'Hataları tespit edip düzeltmek ve rota hesaplama algoritmamızdaki performans darboğazlarını incelemek için teknik raporları paylaşır.'}
                   </p>
                 </div>
               </div>
@@ -234,13 +238,13 @@ export default function CookieConsent({
                   onClick={onOpenPrivacy}
                   className="text-[13px] text-white/40 hover:text-white/70 transition-colors text-left font-medium underline decoration-white/20 hover:decoration-white/50 underline-offset-2 outline-none"
                 >
-                  Kullandığımız çerezler hakkında daha fazla bilgiyi Gizlilik Bildiriminde bulabilirsiniz.
+                  {language === 'en' ? 'Find more information about the cookies we use in our Privacy Policy.' : 'Kullandığımız çerezler hakkında daha fazla bilgiyi Gizlilik Bildiriminde bulabilirsiniz.'}
                 </button>
                 <button 
                   onClick={handleSaveSettings}
                   className="w-full py-3.5 rounded-xl bg-emerald-500 text-white font-bold text-sm hover:bg-emerald-400 transition-all outline-none active:scale-[0.98] shadow-[0_0_15px_rgba(16,185,129,0.3)]"
                 >
-                  Seçimi Kaydet
+                  {t.saveSelection}
                 </button>
               </div>
 

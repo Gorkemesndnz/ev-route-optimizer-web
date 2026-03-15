@@ -1,5 +1,6 @@
 import { CarFront, Battery, ArrowLeftRight, Settings, Plus } from "lucide-react";
 import { Button } from "./ui/button";
+import { translations } from "../lib/translations";
 
 const NativeSlider = ({ value, min, max, onChange }: { value: number, min: number, max: number, onChange: (v: number) => void }) => {
   const percentage = ((value - min) / (max - min)) * 100;
@@ -30,26 +31,29 @@ export default function VehicleCard({
   onOpenGarage, 
   onOpenAddVehicle,
   onOpenVehicleSettings,
-  onUpdateSoC
+  onUpdateSoC,
+  language = 'tr'
 }: { 
   selectedVehicle: any, 
   onOpenGarage: () => void, 
   onOpenAddVehicle: () => void,
   onOpenVehicleSettings: () => void,
-  onUpdateSoC: (soc: number) => void
+  onUpdateSoC: (soc: number) => void,
+  language?: 'tr' | 'en'
 }) {
+  const t = translations[language];
   if (!selectedVehicle) {
     return (
       <div className="glass-panel w-full sm:w-[420px] p-6 pointer-events-auto flex flex-col items-center justify-center min-h-[160px] gap-4 mt-auto md:mt-2">
         <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-white/60 mb-1">
           <CarFront size={24} />
         </div>
-        <p className="text-white/70 text-sm text-center">Henüz araç seçilmedi. En iyi rota için bir araç seçin.</p>
+        <p className="text-white/70 text-sm text-center">{t.noVehicleSelected}</p>
         <Button 
           onClick={onOpenAddVehicle}
           className="bg-zinc-100 text-black hover:bg-white transition-all duration-200 active:scale-95 rounded-xl h-12 px-8 font-bold w-full max-w-[220px] shadow-lg"
         >
-          <Plus className="mr-2" size={20} /> Araç Ekle / Seç
+          <Plus className="mr-2" size={20} /> {t.addSelectVehicle}
         </Button>
       </div>
     );
@@ -76,7 +80,7 @@ export default function VehicleCard({
         <button 
           onClick={onOpenGarage}
           className="text-white/60 hover:text-white p-2.5 hover:bg-white/10 rounded-full transition-all duration-200 active:scale-90 bg-white/5 border border-white/5"
-          title="Farklı Araç Seç / Düzenle"
+          title={t.changeVehicle}
         >
           <ArrowLeftRight size={16} />
         </button>
@@ -84,7 +88,7 @@ export default function VehicleCard({
 
       <div className="bg-white/5 p-4 rounded-2xl border border-white/10 flex flex-col gap-4 shadow-inner">
         <div className="flex justify-between items-center font-medium">
-          <span className="text-sm text-white/80 flex items-center gap-2"><Battery size={16} className="text-cyan-400" /> Mevcut Şarj</span>
+          <span className="text-sm text-white/80 flex items-center gap-2"><Battery size={16} className="text-cyan-400" /> {t.currentCharge}</span>
           <span className="text-base text-cyan-400 font-bold tracking-tight">%{selectedVehicle.soc}</span>
         </div>
         <NativeSlider 
@@ -100,7 +104,7 @@ export default function VehicleCard({
         variant="outline" 
         className="w-full text-white bg-transparent border-white/20 hover:bg-white/10 hover:text-white transition-all duration-200 active:scale-[0.98] rounded-xl h-12 border-dashed font-medium"
       >
-        <Settings className="mr-2 text-white/70" size={18} /> Araç ve Sürücü Ayarları
+        <Settings className="mr-2 text-white/70" size={18} /> {t.vehicleDriverSettings}
       </Button>
     </div>
   );

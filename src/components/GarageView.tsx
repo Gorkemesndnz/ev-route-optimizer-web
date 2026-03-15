@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ArrowLeft, Plus, CheckCircle2, Circle, Trash2, CarFront, Edit2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { translations } from "../lib/translations";
 
 export default function GarageView({
   vehicles,
@@ -9,10 +10,21 @@ export default function GarageView({
   onRenameVehicle,
   onDeleteVehicle,
   onAddVehicle,
-  onBack
+  onBack,
+  language = 'tr'
+}: {
+  vehicles: any[];
+  selectedVehicleId: string | null;
+  onSelectVehicle: (id: string) => void;
+  onRenameVehicle: (id: string, newName: string) => void;
+  onDeleteVehicle: (id: string) => void;
+  onAddVehicle: () => void;
+  onBack: () => void;
+  language?: 'tr' | 'en';
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [tempName, setTempName] = useState("");
+  const t = translations[language];
 
   return (
     <div className="glass-panel w-full sm:w-[420px] px-4 py-5 pointer-events-auto flex flex-col gap-4 relative h-[calc(100svh-4rem)] sm:h-auto sm:max-h-[85vh] overflow-y-auto custom-scrollbar">
@@ -25,7 +37,7 @@ export default function GarageView({
         >
           <ArrowLeft size={20} />
         </button>
-        <h2 className="text-xl font-bold tracking-tight text-white/90">Araçlarım</h2>
+        <h2 className="text-xl font-bold tracking-tight text-white/90">{t.myVehicles}</h2>
       </div>
 
       {/* Vehicle List */}
@@ -81,7 +93,7 @@ export default function GarageView({
                           onRenameVehicle(vehicle.id, tempName);
                           setEditingId(null);
                         }}
-                        placeholder="Araç İsmi"
+                        placeholder={t.vehicleName}
                         onClick={(e) => e.stopPropagation()}
                       />
                     ) : (
@@ -101,7 +113,7 @@ export default function GarageView({
                       setTempName(vehicle.customName || `${vehicle.brand} ${vehicle.model}`);
                     }}
                     className="p-2 text-white/50 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-xl transition-all active:scale-90"
-                    title="İsmi Düzenle"
+                    title={language === 'tr' ? 'İsmi Düzenle' : 'Edit Name'}
                   >
                     <Edit2 size={16} />
                   </button>
@@ -112,7 +124,7 @@ export default function GarageView({
                       onDeleteVehicle(vehicle.id);
                     }}
                     className="p-2 text-white/50 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all active:scale-90"
-                    title="Aracı Sil"
+                    title={language === 'tr' ? 'Aracı Sil' : 'Delete Vehicle'}
                   >
                     <Trash2 size={16} />
                   </button>
@@ -125,7 +137,7 @@ export default function GarageView({
         {vehicles.length === 0 && (
           <div className="py-8 flex flex-col items-center justify-center text-center gap-3 opacity-50">
             <CarFront size={48} className="text-white/30" />
-            <p className="text-sm text-white/70">Henüz aracınız bulunmuyor.</p>
+            <p className="text-sm text-white/70">{t.noVehiclesInGarage}</p>
           </div>
         )}
       </div>
@@ -137,13 +149,13 @@ export default function GarageView({
           className="mt-2 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white font-medium transition-all active:scale-[0.98]"
         >
           <Plus size={18} />
-          Yeni Araç Ekle
+          {t.addVehicle}
         </button>
       )}
 
       {vehicles.length >= 3 && (
         <p className="text-xs text-center text-white/40 mt-2">
-          Maksimum 3 adet araç ekleyebilirsiniz.
+          {language === 'tr' ? 'Maksimum 3 adet araç ekleyebilirsiniz.' : 'You can add up to 3 vehicles.'}
         </p>
       )}
     </div>

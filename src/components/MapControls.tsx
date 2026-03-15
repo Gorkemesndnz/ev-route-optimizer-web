@@ -1,22 +1,25 @@
 import { Minus, Plus, LocateFixed, Layers, Car } from "lucide-react";
 import { useMap } from "@vis.gl/react-google-maps";
-import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { translations } from "../lib/translations";
 
 export default function MapControls({ 
   onLocateUser, 
   onStyleChange,
   currentStyle,
   showTraffic,
-  onToggleTraffic
+  onToggleTraffic,
+  language = 'tr'
 }: { 
   onLocateUser: (loc: {lat: number, lng: number}) => void,
-  onStyleChange: (style: 'default' | 'light' | 'dark' | 'satellite') => void,
-  currentStyle: 'default' | 'light' | 'dark' | 'satellite',
+  onStyleChange: (style: 'default' | 'light' | 'dark' | 'satellite' | 'system') => void,
+  currentStyle: 'default' | 'light' | 'dark' | 'satellite' | 'system',
   showTraffic: boolean,
-  onToggleTraffic: () => void
+  onToggleTraffic: () => void,
+  language?: 'tr' | 'en'
 }) {
   const map = useMap();
+  const t = translations[language];
 
   const handleZoomIn = () => {
     if (map) map.setZoom((map.getZoom() || 0) + 1);
@@ -49,12 +52,13 @@ export default function MapControls({
 
   const handleToggleLayers = () => {
     const styles: ('default' | 'light' | 'dark' | 'satellite')[] = ['default', 'light', 'dark', 'satellite'];
-    const currentIndex = styles.indexOf(currentStyle);
-    const nextIndex = (currentIndex + 1) % styles.length;
-    onStyleChange(styles[nextIndex]);
+    const currentIndex = styles.indexOf(currentStyle as any);
+    const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % styles.length;
+    const nextStyle = styles[nextIndex];
+    onStyleChange(nextStyle);
     
     if (map) {
-      map.setMapTypeId(styles[nextIndex] === 'satellite' ? 'hybrid' : 'roadmap');
+      map.setMapTypeId(nextStyle === 'satellite' ? 'hybrid' : 'roadmap');
     }
   };
 
@@ -64,7 +68,7 @@ export default function MapControls({
         <button 
           onClick={handleZoomOut}
           className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all cursor-pointer flex items-center justify-center"
-          title="Zoom Out"
+          title={t.zoomOut}
         >
           <Minus size={18} />
         </button>
@@ -74,7 +78,7 @@ export default function MapControls({
         <button 
           onClick={handleZoomIn}
           className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all cursor-pointer flex items-center justify-center"
-          title="Zoom In"
+          title={t.zoomIn}
         >
           <Plus size={18} />
         </button>
@@ -84,7 +88,7 @@ export default function MapControls({
         <button 
           onClick={handleLocateMe}
           className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all cursor-pointer flex items-center justify-center"
-          title="Locate Me"
+          title={t.locateMe}
         >
           <LocateFixed size={18} />
         </button>
@@ -97,7 +101,7 @@ export default function MapControls({
             "p-2 rounded-lg transition-all cursor-pointer flex items-center justify-center min-w-[38px]",
             showTraffic ? "text-cyan-400 bg-cyan-400/10" : "text-white/80 hover:text-white hover:bg-white/10"
           )}
-          title="Trafik Durumunu Göster"
+          title={t.showTraffic}
         >
           <Car size={18} />
         </button>
@@ -110,10 +114,10 @@ export default function MapControls({
             "p-2 rounded-lg transition-all cursor-pointer flex flex-col items-center justify-center gap-0 min-w-[44px]",
             currentStyle !== 'default' ? "text-cyan-400 bg-cyan-400/10" : "text-white/80 hover:text-white hover:bg-white/10"
           )}
-          title="Harita Stilini Değiştir"
+          title={t.changeMapStyle}
         >
           <Layers size={18} />
-          <span className="text-[8px] font-bold uppercase tracking-tighter leading-none">{currentStyle}</span>
+          <span className="text-[8px] font-bold uppercase tracking-tighter leading-none">{currentStyle === 'system' ? 'AUTO' : currentStyle}</span>
         </button>
       </div>
     </div>

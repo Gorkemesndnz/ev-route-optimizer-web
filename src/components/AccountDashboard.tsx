@@ -2,6 +2,7 @@ import { useState } from "react";
 import { X, User, Car, Map, Settings, Battery, Zap, Navigation } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { translations } from "../lib/translations";
 
 interface UserProfile {
   firstName: string;
@@ -26,19 +27,22 @@ export default function AccountDashboard({
   onClose,
   user,
   activeVehicle,
-  onChangeVehicle
+  onChangeVehicle,
+  language = 'tr'
 }: {
   onClose: () => void;
   user: UserProfile;
   activeVehicle: Vehicle | null;
   onChangeVehicle: () => void;
+  language?: 'tr' | 'en';
 }) {
   const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'prices'>('overview');
   const [searchQuery, setSearchQuery] = useState('');
+  const t = translations[language];
 
   const mockRoutes = [
-    { id: 1, route: "İstanbul -> Ankara", date: "12 Mar 2026", duration: "4s 15dk", energy: "45 kWh" },
-    { id: 2, route: "İzmir -> Bodrum", date: "05 Mar 2026", duration: "2s 40dk", energy: "28 kWh" },
+    { id: 1, route: language === 'tr' ? "İstanbul -> Ankara" : "Istanbul -> Ankara", date: "12 Mar 2026", duration: language === 'tr' ? "4s 15dk" : "4h 15m", energy: "45 kWh" },
+    { id: 2, route: language === 'tr' ? "İzmir -> Bodrum" : "Izmir -> Bodrum", date: "05 Mar 2026", duration: language === 'tr' ? "2s 40dk" : "2h 40m", energy: "28 kWh" },
   ];
 
   const mockPrices = [
@@ -68,7 +72,7 @@ export default function AccountDashboard({
         {/* Header */}
         <div className="flex items-center justify-between p-6 md:p-8 border-b border-white/10">
           <div>
-            <h2 className="text-3xl font-bold text-white tracking-wide">Hesabınız</h2>
+            <h2 className="text-3xl font-bold text-white tracking-wide">{t.yourAccount}</h2>
             <p className="text-cyan-400 font-medium mt-1 uppercase tracking-wider text-sm">
               {user.firstName} {user.lastName}
             </p>
@@ -84,9 +88,9 @@ export default function AccountDashboard({
         {/* Action Bar */}
         <div className="flex items-center gap-2 p-6 md:px-8 border-b border-white/5 bg-white/5 overflow-x-auto hide-scrollbar">
           {[
-            { id: 'overview', label: 'Genel Bakış' },
-            { id: 'profile', label: 'Kişisel Bilgileri Güncelle' },
-            { id: 'prices', label: 'Şarj İstasyonu Fiyatları' }
+            { id: 'overview', label: t.overview },
+            { id: 'profile', label: t.updateProfile },
+            { id: 'prices', label: t.chargingPrices }
           ].map((tab) => (
             <button
               key={tab.id}
@@ -124,7 +128,7 @@ export default function AccountDashboard({
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Car className="text-cyan-400" size={24} />
-                    <h3 className="text-xl font-bold text-white">Seçili Aracınız</h3>
+                    <h3 className="text-xl font-bold text-white">{t.selectedVehicle}</h3>
                   </div>
 
                   {activeVehicle ? (
@@ -137,7 +141,7 @@ export default function AccountDashboard({
                           <p className="text-white/60 font-medium">{activeVehicle.model} {activeVehicle.variant}</p>
                         </div>
                         <div className="px-3 py-1 bg-cyan-400/20 text-cyan-400 rounded-full text-xs font-bold border border-cyan-400/30">
-                          AKTiF
+                          {t.active}
                         </div>
                       </div>
 
@@ -145,28 +149,28 @@ export default function AccountDashboard({
                         <div className="flex items-center gap-2">
                           <Battery className="text-white/40" size={18} />
                           <div className="flex flex-col">
-                            <span className="text-xs text-white/50">Kapasite</span>
+                            <span className="text-xs text-white/50">{t.capacity}</span>
                             <span className="text-sm font-semibold text-white">{activeVehicle.batteryCapacity} kWh</span>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <Zap className="text-amber-400/70" size={18} />
                           <div className="flex flex-col">
-                            <span className="text-xs text-white/50">Max Güç</span>
+                            <span className="text-xs text-white/50">{t.maxPower}</span>
                             <span className="text-sm font-semibold text-white">{activeVehicle.maxChargingPower} kW</span>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <Navigation className="text-cyan-400/70" size={18} />
                           <div className="flex flex-col">
-                            <span className="text-xs text-white/50">WLTP Menzil</span>
+                            <span className="text-xs text-white/50">{t.wltpRange}</span>
                             <span className="text-sm font-semibold text-white">{activeVehicle.rangeWLTP} km</span>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <Map className="text-emerald-400/70" size={18} />
                           <div className="flex flex-col">
-                            <span className="text-xs text-white/50">Tahmini Menzil</span>
+                            <span className="text-xs text-white/50">{t.estRange}</span>
                             <span className="text-sm font-semibold text-white">{Math.round(activeVehicle.rangeWLTP * 0.85)} km</span>
                           </div>
                         </div>
@@ -176,7 +180,7 @@ export default function AccountDashboard({
                         onClick={onChangeVehicle}
                         className="w-full mt-2 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl font-semibold text-white transition-all active:scale-95"
                       >
-                        Aracı Değiştir
+                        {t.changeVehicleBtn}
                       </button>
                     </div>
                   ) : (
@@ -185,14 +189,14 @@ export default function AccountDashboard({
                         <Car size={32} />
                       </div>
                       <div>
-                        <p className="text-white font-medium">Garajınız Boş</p>
-                        <p className="text-sm text-white/50 mt-1">Rota planlamak için hemen yeni bir araç ekleyin.</p>
+                        <p className="text-white font-medium">{t.garageEmpty}</p>
+                        <p className="text-sm text-white/50 mt-1">{t.addVehiclePrompt}</p>
                       </div>
                       <button
                         onClick={onChangeVehicle}
                         className="px-6 py-2.5 bg-cyan-400 hover:bg-cyan-300 text-black font-bold rounded-xl transition-all active:scale-95 mt-2 shadow-[0_0_15px_rgba(34,211,238,0.2)]"
                       >
-                        Araç Ekle
+                        {t.addVehicle}
                       </button>
                     </div>
                   )}
@@ -202,7 +206,7 @@ export default function AccountDashboard({
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Map className="text-cyan-400" size={24} />
-                    <h3 className="text-xl font-bold text-white">Son Rotalar</h3>
+                    <h3 className="text-xl font-bold text-white">{t.recentRoutes}</h3>
                   </div>
 
                   <div className="flex flex-col gap-3">
@@ -221,7 +225,7 @@ export default function AccountDashboard({
                       ))
                     ) : (
                       <div className="bg-white/5 border border-white/10 rounded-2xl p-8 text-center text-white/50">
-                        Henüz kayıtlı rotanız bulunmuyor.
+                        {t.noRecentRoutes}
                       </div>
                     )}
                   </div>
@@ -239,36 +243,36 @@ export default function AccountDashboard({
               >
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-2">
-                    <label className="text-sm font-medium text-white/70">Ad</label>
+                    <label className="text-sm font-medium text-white/70">{t.firstNameLabel}</label>
                     <input type="text" defaultValue={user.firstName} className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all font-medium" />
                   </div>
                   <div className="flex flex-col gap-2">
-                    <label className="text-sm font-medium text-white/70">Soyad</label>
+                    <label className="text-sm font-medium text-white/70">{t.lastNameLabel}</label>
                     <input type="text" defaultValue={user.lastName} className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all font-medium" />
                   </div>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-white/70">E-posta</label>
+                  <label className="text-sm font-medium text-white/70">{t.emailLabel}</label>
                   <input type="email" defaultValue={user.email} disabled className="w-full bg-black/20 border border-white/5 rounded-xl py-3 px-4 text-white/50 cursor-not-allowed font-medium" />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-white/70">Telefon</label>
+                  <label className="text-sm font-medium text-white/70">{t.phoneLabel}</label>
                   <input type="tel" defaultValue={user.phone} className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all font-medium font-mono" />
                 </div>
 
-                <h4 className="text-lg font-bold text-white mt-4 border-t border-white/10 pt-6">Şifre Değiştir</h4>
+                <h4 className="text-lg font-bold text-white mt-4 border-t border-white/10 pt-6">{t.changePass}</h4>
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-white/70">Mevcut Şifre</label>
+                  <label className="text-sm font-medium text-white/70">{t.currentPass}</label>
                   <input type="password" placeholder="••••••••" className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all font-medium" />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-white/70">Yeni Şifre</label>
+                  <label className="text-sm font-medium text-white/70">{t.newPass}</label>
                   <input type="password" placeholder="••••••••" className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all font-medium" />
                 </div>
 
                 <div className="flex justify-end mt-4">
                   <button className="px-6 py-3 bg-cyan-400 hover:bg-cyan-300 text-black font-bold rounded-xl transition-all active:scale-[0.98] shadow-[0_0_15px_rgba(34,211,238,0.2)]">
-                    Değişiklikleri Kaydet
+                    {t.saveChanges}
                   </button>
                 </div>
               </motion.div>
@@ -285,7 +289,7 @@ export default function AccountDashboard({
                 <div className="flex gap-4 mb-2">
                   <input
                     type="text"
-                    placeholder="Marka Ara... (örn: ZES, Trugo)"
+                    placeholder={t.searchProvider}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full max-w-md bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all font-medium placeholder:text-white/40 shadow-inner"
@@ -293,9 +297,9 @@ export default function AccountDashboard({
                 </div>
                 <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
                   <div className="grid grid-cols-3 bg-black/40 p-4 border-b border-white/10">
-                    <div className="text-white/50 font-medium text-sm">Sağlayıcı</div>
-                    <div className="text-white/50 font-medium text-sm">AC Şarj (Mesken/İşyeri)</div>
-                    <div className="text-white/50 font-medium text-sm">DC Şarj (Hızlı)</div>
+                    <div className="text-white/50 font-medium text-sm">{t.provider}</div>
+                    <div className="text-white/50 font-medium text-sm">{t.acCharge}</div>
+                    <div className="text-white/50 font-medium text-sm">{t.dcCharge}</div>
                   </div>
                   {mockPrices.filter(p => p.provider.toLowerCase().includes(searchQuery.toLowerCase())).map((price, i) => (
                     <div key={i} className="grid grid-cols-3 p-4 border-b border-white/5 hover:bg-white/5 transition-colors items-center">
@@ -305,7 +309,7 @@ export default function AccountDashboard({
                     </div>
                   ))}
                   <div className="p-4 bg-white/5 text-xs text-white/40 text-center">
-                    * Veriler örnek amaçlıdır. Fiyatlar istasyon bazında değişiklik gösterebilir.
+                    {t.priceNotice}
                   </div>
                 </div>
               </motion.div>

@@ -1,6 +1,7 @@
 import { ArrowLeft, Search, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { translations } from "../lib/translations";
 
 const MOCK_BRANDS = [
   { id: "tesla", name: "Tesla", models: ["Model 3", "Model Y", "Model S", "Model X"] },
@@ -12,15 +13,24 @@ const MOCK_BRANDS = [
   { id: "kia", name: "Kia", models: ["EV6", "Niro EV"] },
 ];
 
-export default function AddVehicleView({ onBack, onVehicleAdded }) {
+export default function AddVehicleView({ 
+  onBack, 
+  onVehicleAdded,
+  language = 'tr'
+}: {
+  onBack: () => void;
+  onVehicleAdded: (vehicle: any) => void;
+  language?: 'tr' | 'en';
+}) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedBrand, setSelectedBrand] = useState(null);
+  const [selectedBrand, setSelectedBrand] = useState<any>(null);
+  const t = translations[language];
 
   const filteredBrands = MOCK_BRANDS.filter(b => 
     b.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleModelSelect = (brand, model) => {
+  const handleModelSelect = (brand: any, model: string) => {
     onVehicleAdded({
       id: Date.now().toString(),
       brand: brand.name,
@@ -45,7 +55,7 @@ export default function AddVehicleView({ onBack, onVehicleAdded }) {
           <ArrowLeft size={20} />
         </button>
         <h2 className="text-xl font-bold tracking-tight text-white/90">
-          {selectedBrand ? "Model Seçin" : "Araç Ekle"}
+          {selectedBrand ? t.selectModel : (language === 'tr' ? 'Araç Ekle' : 'Add Vehicle')}
         </h2>
       </div>
 
@@ -58,7 +68,7 @@ export default function AddVehicleView({ onBack, onVehicleAdded }) {
             </div>
             <input
               type="text"
-              placeholder="Marka arayın..."
+              placeholder={t.searchBrand}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-10 pr-4 text-[14px] text-white placeholder-white/50 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-all"
@@ -80,7 +90,7 @@ export default function AddVehicleView({ onBack, onVehicleAdded }) {
               
               {filteredBrands.length === 0 && (
                 <div className="col-span-2 py-8 text-center text-white/50 text-sm">
-                  Sonuç bulunamadı
+                  {language === 'tr' ? 'Sonuç bulunamadı' : 'No results found'}
                 </div>
               )}
             </div>
@@ -90,7 +100,7 @@ export default function AddVehicleView({ onBack, onVehicleAdded }) {
         /* Model List */
         <div className="overflow-y-auto custom-scrollbar flex-1 -mr-2 pr-2">
           <div className="flex flex-col gap-2 pb-4">
-            {selectedBrand.models.map((model) => (
+            {selectedBrand.models.map((model: string) => (
               <button
                 key={model}
                 onClick={() => handleModelSelect(selectedBrand, model)}
