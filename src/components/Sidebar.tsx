@@ -7,8 +7,8 @@ import {
   Bookmark,
 } from "lucide-react";
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { memo } from "react";
+import { motion } from "framer-motion";
+import { memo, useCallback } from "react";
 import {
   DndContext,
   closestCenter,
@@ -24,6 +24,13 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+
+interface Location {
+  id: string;
+  type: string;
+  value: string;
+  coords?: any;
+}
 
 import { LocationItem } from "./LocationItem";
 import { LocationSearchModal } from "./LocationSearchModal";
@@ -68,7 +75,15 @@ const Sidebar = memo(({
     // Logic for drag start if needed, but activeId was removed
   };
 
-  const handleDragEnd = (event) => {
+  const finalizeLocations = (items: Location[]) => {
+    return items.map((item, index) => {
+      if (index === 0) return { ...item, type: "start" };
+      if (index === items.length - 1) return { ...item, type: "destination" };
+      return { ...item, type: "waypoint" };
+    });
+  };
+
+  const handleDragEnd = useCallback((event: any) => {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
@@ -77,18 +92,12 @@ const Sidebar = memo(({
         const newIndex = items.findIndex((i) => i.id === over.id);
 
         const newItems = arrayMove(items, oldIndex, newIndex);
-
-        const finalizedItems = newItems.map((item, index) => {
-          if (index === 0) return { ...item, type: "start" };
-          if (index === newItems.length - 1) return { ...item, type: "destination" };
-          return { ...item, type: "waypoint" };
-        });
-        return finalizedItems;
+        return finalizeLocations(newItems);
       });
     }
-  };
+  }, []);
 
-  const handleSwap = () => {
+  const handleSwap = useCallback(() => {
     setLocations((prev) => {
       if (prev.length < 2) return prev;
       const newItems = [...prev];
@@ -98,50 +107,37 @@ const Sidebar = memo(({
       newItems[0] = end;
       newItems[newItems.length - 1] = start;
 
-      return newItems.map((item, index) => {
-        if (index === 0) return { ...item, type: "start" };
-        if (index === newItems.length - 1) return { ...item, type: "destination" };
-        return { ...item, type: "waypoint" };
-      });
+      return finalizeLocations(newItems);
     });
-  };
+  }, []);
 
-  const addWaypoint = () => {
+  const addWaypoint = useCallback(() => {
     setLocations((prev) => {
       const newItems = [...prev];
-      const newWaypoint = {
+      const newWaypoint: Location = {
         id: `waypoint-${crypto.randomUUID()}`,
         type: "waypoint",
         value: "",
       };
 
       newItems.splice(newItems.length - 1, 0, newWaypoint);
-
-      return newItems.map((item, index) => {
-        if (index === 0) return { ...item, type: "start" };
-        if (index === newItems.length - 1) return { ...item, type: "destination" };
-        return { ...item, type: "waypoint" };
-      });
+      return finalizeLocations(newItems);
     });
-  };
+  }, []);
 
-  const removeWaypoint = (id) => {
+  const removeWaypoint = useCallback((id: string) => {
     setLocations(prev => {
       const filtered = prev.filter(loc => loc.id !== id);
-      return filtered.map((item, index) => {
-        if (index === 0) return { ...item, type: "start" };
-        if (index === filtered.length - 1) return { ...item, type: "destination" };
-        return { ...item, type: "waypoint" };
-      });
+      return finalizeLocations(filtered);
     });
-  };
+  }, []);
 
-  const onSelectLocation = (id, address, coords) => {
+  const onSelectLocation = useCallback((id: string, address: string, coords: any) => {
     setLocations(prev => prev.map(loc =>
       loc.id === id ? { ...loc, value: address, coords } : loc
     ));
     setActiveSearchItem(null);
-  };
+  }, []);
 
 
   return (

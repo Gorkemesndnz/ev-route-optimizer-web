@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React from "react";
 import BasePageLayout, { useMarketing } from "./BasePageLayout";
 import { translations } from "../lib/translations";
 import { Shield, Eye, Database, Share2, Lock, Scale } from "lucide-react";

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React from "react";
 import BasePageLayout, { useMarketing } from "./BasePageLayout";
 import { translations } from "../lib/translations";
 import { Mail, MapPin, Send, Instagram, Linkedin, Twitter, CheckCircle2 } from "lucide-react";
@@ -8,31 +8,32 @@ import { z } from "zod";
 
 export default function Iletisim() {
   const { language: lang } = useMarketing();
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [subject, setSubject] = useState('');
-  const [message, setMessage] = useState('');
-  
-  const [nameError, setNameError] = useState('');
-  const [emailError, setEmailError] = useState('');
-  const [subjectError, setSubjectError] = useState('');
-  const [messageError, setMessageError] = useState('');
-  const [isSubmitted, setIsSubmitted] = useState(false);
-
-  useEffect(() => {
-    // Check local storage for user profile logic
+  const currentUser = (() => {
+    if (typeof window === 'undefined') return null;
     const userStr = localStorage.getItem('iyontree_user');
     if (userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        setCurrentUser(user);
-        setName(`${user.firstName} ${user.lastName}`);
-        setEmail(user.email);
-      } catch (e) {}
+      try { return JSON.parse(userStr); } catch (e) { return null; }
     }
-  }, []);
+    return null;
+  })();
+  
+  const [name, setName] = React.useState(() => {
+    if (currentUser) return `${currentUser.firstName} ${currentUser.lastName}`;
+    return '';
+  });
+  const [email, setEmail] = React.useState(() => {
+    if (currentUser) return currentUser.email;
+    return '';
+  });
+  
+  const [subject, setSubject] = React.useState('');
+  const [message, setMessage] = React.useState('');
+  
+  const [nameError, setNameError] = React.useState('');
+  const [emailError, setEmailError] = React.useState('');
+  const [subjectError, setSubjectError] = React.useState('');
+  const [messageError, setMessageError] = React.useState('');
+  const [isSubmitted, setIsSubmitted] = React.useState(false);
 
   const t = translations[lang];
 

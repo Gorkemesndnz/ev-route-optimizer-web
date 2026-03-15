@@ -31,7 +31,7 @@ export const BugReportForm: React.FC<BugReportFormProps> = ({ onSuccess }) => {
   const validateField = (field: keyof BugReportFormData, value: string) => {
     try {
       // Create a partial schema for single field validation
-      const fieldSchema = z.object({ [field]: (bugReportSchema.shape as any)[field] });
+      const fieldSchema = z.object({ [field]: (bugReportSchema.shape as Record<string, any>)[field] });
       fieldSchema.parse({ [field]: value });
       setErrors(prev => {
         const newErrors = { ...prev };

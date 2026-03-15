@@ -11,6 +11,11 @@ export function LocationSearchModal({
   onClose, 
   item,
   onSelectLocation
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  item: any;
+  onSelectLocation: (id: string, address: string, coords: { lat: number, lng: number }) => void;
 }) {
   const { language } = useSettings();
   const t = translations[language];
@@ -35,7 +40,9 @@ export function LocationSearchModal({
     if (saved) {
       try {
         setRecentSearches(JSON.parse(saved));
-      } catch (e) {}
+      } catch (error) {
+        // Silently ignore parsing errors
+      }
     }
   }, []);
 
@@ -96,11 +103,11 @@ export function LocationSearchModal({
     }
   }, [debouncedSearchValue]);
 
-  const handleSearch = (e) => {
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchValue(e.target.value);
   };
 
-  const handleSelectPrediction = (placeId, description) => {
+  const handleSelectPrediction = (placeId: string) => {
     if (!placesService.current) return;
     placesService.current.getDetails({ 
       placeId, 
@@ -231,7 +238,7 @@ export function LocationSearchModal({
                  {predictions.map(pred => (
                    <button 
                      key={pred.place_id} 
-                     onClick={() => handleSelectPrediction(pred.place_id, pred.description)}
+                     onClick={() => handleSelectPrediction(pred.place_id)}
                      className="w-full max-w-full overflow-hidden flex items-center gap-4 p-4 rounded-2xl hover:bg-white/5 text-left transition-all group"
                     >
                      <div className="w-11 h-11 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors shrink-0">

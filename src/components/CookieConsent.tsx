@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Cookie, X, Check } from "lucide-react";
+import { X, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { translations } from "../lib/translations";
 
@@ -19,23 +19,46 @@ export default function CookieConsent({
     handleSaveCookies: onSave 
   } = useSettings();
   const t = translations[language || 'tr'];
-  const [analytical, setAnalytical] = useState(true);
-  const [crashReports, setCrashReports] = useState(true);
+  const [analytical, setAnalytical] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('iyontree_cookies');
+      if (saved) {
+        try {
+          return Boolean(JSON.parse(saved).analytical ?? true);
+        } catch (error) {
+          return true;
+        }
+      }
+    }
+    return true;
+  });
+
+  const [crashReports, setCrashReports] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('iyontree_cookies');
+      if (saved) {
+        try {
+          return Boolean(JSON.parse(saved).crashReports ?? true);
+        } catch (error) {
+          return true;
+        }
+      }
+    }
+    return true;
+  });
 
   // When modal mounts or is opened, sync local states
   useEffect(() => {
-    if (showModal) {
-      if (typeof window !== 'undefined') {
-        const saved = localStorage.getItem('iyontree_cookies');
-        if (saved) {
-          try {
-            const parsed = JSON.parse(saved);
-            setAnalytical(Boolean(parsed.analytical ?? true));
-            setCrashReports(Boolean(parsed.crashReports ?? true));
-          } catch {
-            setAnalytical(true);
-            setCrashReports(true);
-          }
+    if (showModal && typeof window !== 'undefined') {
+      const saved = localStorage.getItem('iyontree_cookies');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          setAnalytical(Boolean(parsed.analytical ?? true));
+          setCrashReports(Boolean(parsed.crashReports ?? true));
+        } catch (error) {
+          setAnalytical(true);
+          setCrashReports(true);
         }
       }
     }

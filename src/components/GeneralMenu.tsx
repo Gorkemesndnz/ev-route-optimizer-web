@@ -25,10 +25,11 @@ import { translations } from "../lib/translations";
 import { cn } from "@/lib/utils";
 
 import { useSettings } from "../contexts/SettingsContext";
-import { useAuth } from "../contexts/AuthContext";
 import { BugReportForm } from "./menu-forms/BugReportForm";
 import { SuggestionForm } from "./menu-forms/SuggestionForm";
 import { VehicleRequestForm } from "./menu-forms/VehicleRequestForm";
+
+type MenuID = 'main'|'language'|'units'|'energy'|'appearance'|'suggestions'|'add_vehicle'|'contact'|'how_it_works'|'whats_new'|'faq'|'about'|'terms'|'privacy';
 
 export default function GeneralMenu({ 
   isOpen, 
@@ -40,7 +41,7 @@ export default function GeneralMenu({
   onOpenCookieConsent: () => void;
 }) {
   const { language, setLanguage, mapStyleKey, setMapStyleKey } = useSettings();
-  const [activeMenu, setActiveMenu] = useState<'main'|'language'|'units'|'energy'|'appearance'|'suggestions'|'add_vehicle'|'contact'|'how_it_works'|'whats_new'|'faq'|'about'|'terms'|'privacy'>('main');
+  const [activeMenu, setActiveMenu] = useState<MenuID>('main');
   const t = translations[language];
 
   // Internal states
@@ -52,11 +53,25 @@ export default function GeneralMenu({
     onClose();
   };
 
-  const handleMenuClick = (id: string) => {
-    setActiveMenu(id as any);
+  const handleMenuClick = (id: MenuID) => {
+    setActiveMenu(id);
   };
 
-  const menuSections = [
+  interface MenuItem {
+    id: MenuID | 'cookie_consent' | 'aboutUs' | 'contactUs';
+    icon: React.ReactNode;
+    label: string;
+    value?: string;
+    onClick?: () => void;
+    href?: string;
+  }
+
+  interface MenuSection {
+    title: string;
+    items: MenuItem[];
+  }
+
+  const menuSections: MenuSection[] = [
     {
       title: t.preferences,
       items: [
@@ -94,134 +109,101 @@ export default function GeneralMenu({
     }
   ];
 
-  const renderSubMenuContent = () => {
-    if (activeMenu === 'how_it_works' || activeMenu === 'whats_new') {
-       const titles = {
-         'how_it_works': t.howItWorks,
-         'whats_new': t.whatsNew
-       };
-       const contents = {
-         'how_it_works': t.howItWorksText,
-         'whats_new': t.whatsNewText
-       };
+  const InfoSubMenu = ({ type }: { type: 'how_it_works' | 'whats_new' }) => {
+    const titles = { 'how_it_works': t.howItWorks, 'whats_new': t.whatsNew };
+    const contents = { 'how_it_works': t.howItWorksText, 'whats_new': t.whatsNewText };
 
-       return (
-         <div className="flex-1 flex flex-col w-full h-full p-6">
-           <div className="flex items-center mb-8">
-             <button onClick={() => setActiveMenu('main')} className="p-2 -ml-2 text-white/50 hover:text-white transition-colors">
-               <ChevronLeft size={24} />
-             </button>
-             <h2 className="text-xl font-bold text-white flex-1 text-center mr-6">{titles[activeMenu]}</h2>
-           </div>
-           <div className="flex-1 overflow-y-auto custom-scrollbar">
-             <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-white/80 leading-relaxed whitespace-pre-wrap">
-               {contents[activeMenu]}
-             </div>
-           </div>
-         </div>
-       );
-    }
-
-    if (activeMenu === 'faq') {
-      return (
-        <div className="flex-1 flex flex-col w-full h-full">
-          <div className="flex items-center p-6 mb-2">
-            <button onClick={() => setActiveMenu('main')} className="p-2 -ml-2 text-white/50 hover:text-white transition-colors outline-none">
-              <ChevronLeft size={24} />
-            </button>
-            <h2 className="text-xl font-bold text-white flex-1 text-center mr-6">{t.faq}</h2>
+    return (
+      <div className="flex-1 flex flex-col w-full h-full p-6">
+        <div className="flex items-center mb-8">
+          <button onClick={() => setActiveMenu('main')} className="p-2 -ml-2 text-white/50 hover:text-white transition-colors">
+            <ChevronLeft size={24} />
+          </button>
+          <h2 className="text-xl font-bold text-white flex-1 text-center mr-6">{titles[type]}</h2>
+        </div>
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
+          <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-white/80 leading-relaxed whitespace-pre-wrap">
+            {contents[type]}
           </div>
-          <div className="flex-1 overflow-y-auto custom-scrollbar px-6 pb-6">
-            <div className="flex flex-col border border-white/10 rounded-3xl overflow-hidden bg-white/5">
-              {(t.faqList as any[]).map((faq, index) => {
-                const isOpen = openFaqIndex === index;
-                return (
-                  <div key={index} className={cn("border-b border-white/10 last:border-0", isOpen && "bg-white/[0.03]")}>
-                    <button 
-                      onClick={() => setOpenFaqIndex(isOpen ? null : index)}
-                      className="w-full flex items-center justify-between p-5 text-left outline-none transition-colors hover:bg-white/5"
+        </div>
+      </div>
+    );
+  };
+
+  const FAQSubMenu = () => (
+    <div className="flex-1 flex flex-col w-full h-full">
+      <div className="flex items-center p-6 mb-2">
+        <button onClick={() => setActiveMenu('main')} className="p-2 -ml-2 text-white/50 hover:text-white transition-colors outline-none">
+          <ChevronLeft size={24} />
+        </button>
+        <h2 className="text-xl font-bold text-white flex-1 text-center mr-6">{t.faq}</h2>
+      </div>
+      <div className="flex-1 overflow-y-auto custom-scrollbar px-6 pb-6">
+        <div className="flex flex-col border border-white/10 rounded-3xl overflow-hidden bg-white/5">
+          {t.faqList.map((faq: { q: string, a: string }, index: number) => {
+            const isFaqOpen = openFaqIndex === index;
+            return (
+              <div key={index} className={cn("border-b border-white/10 last:border-0", isFaqOpen && "bg-white/[0.03]")}>
+                <button 
+                  onClick={() => setOpenFaqIndex(isFaqOpen ? null : index)}
+                  className="w-full flex items-center justify-between p-5 text-left outline-none transition-colors hover:bg-white/5"
+                >
+                  <span className={cn("text-sm font-semibold transition-colors pr-4", isFaqOpen ? "text-cyan-400" : "text-white/80")}>
+                    {faq.q}
+                  </span>
+                  <ChevronDown size={18} className={cn("text-white/30 shrink-0 transition-transform duration-300", isFaqOpen && "rotate-180 text-cyan-400")} />
+                </button>
+                <AnimatePresence>
+                  {isFaqOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                      className="overflow-hidden"
                     >
-                      <span className={cn("text-sm font-semibold transition-colors pr-4", isOpen ? "text-cyan-400" : "text-white/80")}>
-                        {faq.q}
-                      </span>
-                      <ChevronDown size={18} className={cn("text-white/30 shrink-0 transition-transform duration-300", isOpen && "rotate-180 text-cyan-400")} />
-                    </button>
-                    <AnimatePresence>
-                      {isOpen && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.3, ease: "easeInOut" }}
-                          className="overflow-hidden"
-                        >
-                          <div className="px-5 pb-5 pt-1 text-xs leading-relaxed text-white/60">
-                            {faq.a}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+                      <div className="px-5 pb-5 pt-1 text-xs leading-relaxed text-white/60">
+                        {faq.a}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })}
         </div>
-      );
-    }
-    if (activeMenu === 'add_vehicle') {
-      return (
-        <div className="flex-1 flex flex-col w-full h-full p-6 relative">
-          <div className="flex items-center mb-8">
-            <button onClick={() => setActiveMenu('main')} className="p-2 -ml-2 text-white/50 hover:text-white transition-colors outline-none cursor-pointer">
-              <ChevronLeft size={24} />
-            </button>
-            <h2 className="text-xl font-bold text-white flex-1 text-center mr-6">{t.vehicleRequestTitle}</h2>
-          </div>
-          <div className="flex-1 overflow-hidden">
-            <VehicleRequestForm onSuccess={handleClose} />
-          </div>
-        </div>
-      );
-    }
+      </div>
+    </div>
+  );
 
-    if (activeMenu === 'suggestions') {
-      return (
-        <div className="flex-1 flex flex-col w-full h-full p-6">
-          <div className="flex items-center mb-8">
-            <button onClick={() => setActiveMenu('main')} className="p-2 -ml-2 text-white/50 hover:text-white transition-colors outline-none cursor-pointer">
-              <ChevronLeft size={24} />
-            </button>
-            <h2 className="text-xl font-bold text-white flex-1 text-center mr-6">{t.suggestionTitle}</h2>
-          </div>
-          <div className="flex-1 overflow-hidden">
-            <SuggestionForm onSuccess={handleClose} />
-          </div>
-        </div>
-      );
-    }
+  const FormSubMenu = ({ type }: { type: 'add_vehicle' | 'suggestions' | 'contact' }) => {
+    const config = {
+      add_vehicle: { title: t.vehicleRequestTitle, Form: VehicleRequestForm },
+      suggestions: { title: t.suggestionTitle, Form: SuggestionForm },
+      contact: { title: t.bugReportTitle, Form: BugReportForm }
+    };
+    const { title, Form } = config[type];
 
-    if (activeMenu === 'contact') {
-      return (
-        <div className="flex-1 flex flex-col w-full h-full p-6">
-          <div className="flex items-center mb-8">
-            <button onClick={() => setActiveMenu('main')} className="p-2 -ml-2 text-white/50 hover:text-white transition-colors outline-none cursor-pointer">
-              <ChevronLeft size={24} />
-            </button>
-            <h2 className="text-xl font-bold text-white flex-1 text-center mr-6">{t.bugReportTitle}</h2>
-          </div>
-          <div className="flex-1 overflow-hidden">
-            <BugReportForm onSuccess={handleClose} />
-          </div>
+    return (
+      <div className="flex-1 flex flex-col w-full h-full p-6 relative">
+        <div className="flex items-center mb-8">
+          <button onClick={() => setActiveMenu('main')} className="p-2 -ml-2 text-white/50 hover:text-white transition-colors outline-none cursor-pointer">
+            <ChevronLeft size={24} />
+          </button>
+          <h2 className="text-xl font-bold text-white flex-1 text-center mr-6">{title}</h2>
         </div>
-      );
-    }
+        <div className="flex-1 overflow-hidden">
+          <Form onSuccess={handleClose} />
+        </div>
+      </div>
+    );
+  };
 
-    // Default Submenus (Language, Units, etc)
+  const SelectionSubMenu = () => {
     let title = "";
-    let options: {id: any, label: string, sub: string}[] = [];
+    let options: { id: string, label: string, sub: string }[] = [];
     let currentState = "";
-    let setFn = (val: any) => {};
+    let setFn = (_val: any) => { };
 
     if (activeMenu === 'appearance') {
       title = t.appearance;
@@ -262,7 +244,7 @@ export default function GeneralMenu({
     return (
       <div className="flex-1 flex flex-col w-full h-full relative">
         <div className="flex items-center p-6 shrink-0 relative">
-          <button 
+          <button
             onClick={() => setActiveMenu('main')}
             className="w-10 h-10 -ml-2 rounded-full flex items-center justify-center text-white/50 hover:text-white transition-colors outline-none z-10"
           >
@@ -280,11 +262,10 @@ export default function GeneralMenu({
               <button
                 key={opt.id}
                 onClick={() => setFn(opt.id)}
-                className={`w-full text-left p-[18px] rounded-xl border flex items-center justify-between transition-all outline-none ${
-                  isSelected 
-                    ? 'border-white bg-white/5 shadow-[0_0_15px_rgba(255,255,255,0.03)]' 
+                className={`w-full text-left p-[18px] rounded-xl border flex items-center justify-between transition-all outline-none ${isSelected
+                    ? 'border-white bg-white/5 shadow-[0_0_15px_rgba(255,255,255,0.03)]'
                     : 'border-white/10 hover:border-white/30 hover:bg-white/[0.02]'
-                }`}
+                  }`}
               >
                 <span className={`text-[15px] font-medium ${isSelected ? 'text-white' : 'text-white/80'}`}>
                   {opt.label}
@@ -295,9 +276,8 @@ export default function GeneralMenu({
                       {opt.sub}
                     </span>
                   )}
-                  <div className={`w-[22px] h-[22px] rounded-full border-[2px] flex flex-shrink-0 items-center justify-center transition-colors ${
-                    isSelected ? 'border-white' : 'border-white/30'
-                  }`}>
+                  <div className={`w-[22px] h-[22px] rounded-full border-[2px] flex flex-shrink-0 items-center justify-center transition-colors ${isSelected ? 'border-white' : 'border-white/30'
+                    }`}>
                     {isSelected && <div className="w-[10px] h-[10px] rounded-full bg-white transition-all scale-100" />}
                   </div>
                 </div>
@@ -307,6 +287,27 @@ export default function GeneralMenu({
         </div>
       </div>
     );
+  };
+
+  const renderSubMenuContent = () => {
+    switch (activeMenu) {
+      case 'how_it_works':
+      case 'whats_new':
+        return <InfoSubMenu type={activeMenu} />;
+      case 'faq':
+        return <FAQSubMenu />;
+      case 'add_vehicle':
+      case 'suggestions':
+      case 'contact':
+        return <FormSubMenu type={activeMenu} />;
+      case 'appearance':
+      case 'language':
+      case 'units':
+      case 'energy':
+        return <SelectionSubMenu />;
+      default:
+        return null;
+    }
   };
 
   return (
@@ -359,7 +360,7 @@ export default function GeneralMenu({
                       <div key={idx} className="flex flex-col gap-3">
                         <h4 className="text-[11px] font-bold text-white/40 uppercase tracking-widest pl-1">{section.title}</h4>
                         <div className="flex flex-col gap-1">
-                          {section.items.map((item: any, itemIdx: number) => {
+                          {section.items.map((item, itemIdx: number) => {
                             const content = (
                               <>
                                 <div className="flex items-center gap-3">

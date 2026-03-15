@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, Mail, Instagram, Linkedin, Github, Twitter, CheckCircle, Send, MapPin, Phone } from "lucide-react";
+import { ChevronLeft, Mail, Instagram, Linkedin, Github, Twitter, CheckCircle, Send, MapPin } from "lucide-react";
 import { translations } from "../lib/translations";
 import { cn } from "@/lib/utils";
 import GlobalFooter from "./GlobalFooter";
@@ -16,7 +16,7 @@ export default function ContactView({
   language: 'tr' | 'en';
   currentUser?: { firstName: string; lastName: string; email: string } | null;
   onBack: () => void;
-  onNavigate: (page: any) => void;
+  onNavigate: (page: string) => void;
 }) {
   const t = translations[language];
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -154,7 +154,10 @@ export default function ContactView({
                     <input 
                       type="email" 
                       value={email}
-                      onChange={(e) => { !currentUser && setEmail(e.target.value); setEmailError(''); }}
+                      onChange={(e) => { 
+                        if (!currentUser) setEmail(e.target.value); 
+                        setEmailError(''); 
+                      }}
                       readOnly={!!currentUser}
                       placeholder={t.email}
                       className={cn(

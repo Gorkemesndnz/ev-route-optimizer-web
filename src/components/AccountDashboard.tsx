@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Car, Map, Settings, Battery, Zap, Navigation } from "lucide-react";
+import { X, Car, Map, Battery, Zap, Navigation } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { translations } from "../lib/translations";

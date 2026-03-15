@@ -58,7 +58,7 @@ export const VehicleRequestForm: React.FC<VehicleRequestFormProps> = ({ onSucces
         }
         return newErrors;
       });
-    } catch (err) {
+    } catch {
       // Fallback
     }
   };
