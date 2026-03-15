@@ -106,10 +106,10 @@ export const translations = {
       invalidEmail: "Lütfen geçerli bir e-posta adresi girin.",
       required: "Bu alan zorunludur."
     },
-    howItWorksText: `IYONTREE: Yeni Nesil Elektrikli Araç Rota Optimizasyonu\n\nGeleneksel navigasyon uygulamaları rotanızı yalnızca "en kısa mesafe" veya "en hızlı süre" odaklı hesaplar. Ancak elektrikli araç (EV) ekosisteminde asıl önemli olan metrik mesafenin kendisi değil, o mesafenin ne kadar enerji tüketeceğidir. IYONTREE, standart harita algoritmalarının ötesine geçerek arka planda gelişmiş bir Fizik Tabanlı Tüketim Motoru (Physics-Based Consumption Engine) çalıştırır. Rotanızı planlarken aracınızın şarjını etkileyecek gerçek dünya koşullarını anlık olarak analiz eder.\n\nAlgoritmamız Hangi Verileri İşler?\n\n• Topografya ve Eğim Analizi: Gideceğiniz yolun düz bir otoban mı yoksa dik bir dağ geçidi mi olduğu tüketimi doğrudan etkiler. IYONTREE, rota üzerindeki rakım değişikliklerini hesaplayarak harcanacak veya rejeneratif frenleme ile geri kazanılacak enerjiyi tahmin eder.\n• Araç Dinamikleri: Sistemimizde kayıtlı olan her aracın batarya kapasitesi (kWh), sürtünme katsayısı (Cd), ağırlığı ve şarj hızı veritabanımızda tanımlıdır. Seçtiğiniz araca özel, kişiselleştirilmiş bir tüketim eğrisi oluşturulur.\n• Çevresel Faktörler ve Hız: Hava sıcaklığı, klima kullanımı, ekstra yük ve seyir hızınız gibi değişkenler algoritmaya dahil edilerek "Gerçek Dünya Menzili" elde edilir.\n\nAkıllı Şarj İstasyonu Optimizasyonu\nTüketim analizi tamamlandıktan sonra, IYONTREE sizi yolda bırakmamak için güzergah üzerindeki en uygun AC/DC şarj istasyonlarını tarar. Hedefinize en kısa sürede ulaşmanız için nerede, hangi hızda ve tam olarak yüzde kaç şarja kadar beklemeniz gerektiğini matematiksel olarak planlar. Menzil endişesi biter, kesintisiz sürüş başlar.`,
+    howItWorksText: `IYONTREE: Yeni Nesil Elektrikli Araç Rota Optimizasyonu\n\nGeleneksel navigasyon uygulamaları rotanızı yalnızca "en kısa mesafe" veya "en hızlı süre" odaklı hesaplar. Ancak elektrikli araç (EV) ekosisteminde asıl önemli olan metrik mesafenin kendisi değil, o mesafenin ne kadar enerji tüketeceğidir. IYONTREE, standart harita algoritmalarının ötesine geçerek arka planda gelişmiş bir Fizik Tabanlı Tüketim Motoru (Physics-Based Consumption Engine) çalıştırır. Rotanızı planlarken aracınızın şarjını etkileyecek gerçek world koşullarını anlık olarak analiz eder.\n\nAlgoritmamız Hangi Verileri İşler?\n\n• Topografya ve Eğim Analizi: Gideceğiniz yolun düz bir otoban mı yoksa dik bir dağ geçidi mi olduğu tüketimi doğrudan etkiler. IYONTREE, rota üzerindeki rakım değişikliklerini hesaplayarak harcanacak veya rejeneratif frenleme ile geri kazanılacak enerjiyi tahmin eder.\n• Araç Dinamikleri: Sistemimizde kayıtlı olan her aracın batarya kapasitesi (kWh), sürtünme katsayısı (Cd), ağırlığı ve şarj hızı veritabanımızda tanımlıdır. Seçtiğiniz araca özel, kişiselleştirilmiş bir tüketim eğrisi oluşturulur.\n• Çevresel Faktörler ve Hız: Hava sıcaklığı, klima kullanımı, ekstra yük ve seyir hızınız gibi değişkenler algoritmaya dahil edilerek "Gerçek Dünya Menzili" elde edilir.\n\nAkıllı Şarj İstasyonu Optimizasyonu\nTüketim analizi tamamlandıktan sonra, IYONTREE sizi yolda bırakmamak için güzergah üzerindeki en uygun AC/DC şarj istasyonlarını tarar. Hedefinize en kısa sürede ulaşmanız için nerede, hangi hızda ve tam olarak yüzde kaç şarja kadar beklemeniz gerektiğini matematiksel olarak planlar. Menzil endişesi biter, kesintisiz sürüş başlar.`,
     whatsNewText: `Sürüm 1.0.0 Beta – Büyük Lansman!\n\nElektrikli araç sürücüleri için akıllı rota planlama dönemini başlatan ilk kapsamlı sürümümüz yayında! Bu güncelleme ile uygulamanın temel mühendislik mimarisini ve kullanıcı arayüzünü tamamen hayata geçirdik.\n\n🚀 Öne Çıkan Yenilikler:\n\n• Fizik Tabanlı Motor Devrede: Yol eğimi, araç ağırlığı ve hız gibi parametreleri hesaplayan gelişmiş enerji tüketim algoritmamız aktif edildi. Şarj durumunuzu artık çok daha yüksek bir hassasiyetle öngörebiliyoruz.\n• Genişletilmiş İstasyon Ağı: Türkiye genelindeki güncel AC ve yüksek hızlı DC şarj istasyonları veritabanımıza eklendi.\n• Kişiselleştirilmiş Garaj Sistemi: Kullanıcılarımız artık kendi araç modellerini kaydedebiliyor ve başlangıç şarj durumlarını belirleyebiliyorlar.\n• Modern ve Akıcı Arayüz: Kesintisiz, tam ekran harita deneyimi sunan yepyeni cam efekti (Glassmorphism) tasarım mimarisine geçiş yapıldı.\n• Akıllı Destek Merkezi: Hata bildirebileceğiniz ve yeni araç ekleme taleplerinde bulunabileceğiniz dinamik iletişim formları entegre edildi.\n\nSürekli gelişmeye devam ediyoruz. Yoldaki yenilikler için takipte kalın!`,
     faqText: "IYONTREE platformunu kullanarak hizmet şartlarımızı kabul etmiş sayılırsınız.",
-    termsText: "1. Kapsam ve Kabul\nBu Kullanım Koşulları, IYONTREE platformunun (web sitesi, mobil uygulama ve ilgili API hizmetleri) kullanımına ilişkin yasal şartları belirler. Uygulamaya erişerek veya hizmetleri kullanarak, bu koşulları bütünüyle okuduğunuzu, anladığınızı ve yasal olarak bağlandığınızı kabul etmiş sayılırsınız.\n\n2. Hizmetin Doğası ve Sorumluluk Reddi (Kritik Uyarı)\nIYONTREE, elektrikli araçlar (EV) için yapay zeka ve fizik tabanlı tüketim algoritmaları kullanarak rota, menzil ve şarj tahminleri sunan bir destek aracıdır. Tahmini Veriler: Algoritmalarımız; topografik eğim, hava durumu, araç ağırlığı ve aerodinamik özellikler gibi değişkenleri hesaplayarak en yüksek doğruluğu hedeflese de, sunulan tüm veriler tahminidir. Sorumluluk Sınırı: Anlık trafik değişimleri, beklenmedik hava muhalefetleri, kullanıcının agresif sürüş tarzı (aşırı hız, sert ivmelenme), araç donanımındaki arızalar veya batarya degradasyonu nedeniyle tahminlerde sapmalar yaşanabilir. Yolda Kalma Durumu: IYONTREE, sağlanan rotanın izlenmesi sonucunda aracın şarjının bitmesi, yolda kalma, çekici masrafları, gecikmeler veya bunlardan doğabilecek hiçbir doğrudan/dolaylı maddi veya manevi zarardan yasal olarak sorumlu tutulamaz. Seyahat planlamasında ve batarya seviyesinin takibinde nihai sorumluluk tamamen sürücüye aittir.\n\n3. Üçüncü Taraf Verileri (Şarj İstasyonları ve Fiyatlandırma)\nUygulama içerisinde gösterilen şarj istasyonu konumları, soket tipleri, anlık uygunluk durumları, maksimum şarj güçleri (kW) ve kW/h birim fiyatlandırmaları üçüncü taraf ağ sağlayıcılarından (CPO) derlenmektedir. IYONTREE, şarj istasyonlarının fiziksel olarak çalışır durumda olduğunu veya belirtilen fiyatların birebir aynı olacağını garanti etmez.\n\n4. Sürüş Güvenliği ve Kullanıcı Yükümlülükleri\nSürüş Esnasında Kullanım: Sürücünün seyir halindeyken uygulamayı aktif olarak kullanması, veri girmesi veya ekranla etkileşime girmesi tehlikeli ve yasaktır. IYONTREE, sürüş güvenliğinin ihlal edilmesinden kaynaklanan kazalardan sorumlu tutulamaz.\n\n5. Fikri Mülkiyet Hakları\nIYONTREE platformunda yer alan tüm kaynak kodlar, tüketim algoritmaları, yapay zeka modelleri, arayüz tasarımları ve veritabanı mimarisi ulusal ve uluslararası telif hakları yasalarıyla korunmaktadır. İzinsiz kopyalanması veya ticari amaçla kullanılması kesinlikle yasaktır.\n\n6. Hizmet Kesintileri ve Güncellemeler\nIYONTREE şu anda 'Beta' aşamasındadır. Sistemin kesintisiz ve hatasız çalışacağı garanti edilmez. IYONTREE, uygulamayı veya bu koşulları dilediği zaman değiştirme hakkını saklı tutar.\n\n7. Uyuşmazlıkların Çözümü\nBu kullanım koşullarından doğabilecek her türlü hukuki uyuşmazlıkta Türkiye Cumhuriyeti yasaları esastır.",
+    termsText: "1. Kapsam ve Kabul\nBu Kullanım Koşulları, IYONTREE platformunun (web sitesi, mobil uygulama ve ilgili API hizmetleri) kullanımına ilişkin yasal şartları belirler. Uygulamaya erişerek veya hizmetleri kullanarak, bu koşulları bütünüyle okuduğunuzu, anladığınızı ve yasal olarak bağlandığınızı kabul etmiş sayılırsınız.\n\n2. Hizmetin Doğası ve Sorumluluk Reddi (Kritik Uyarı)\nIYONTREE, elektrikli araçlar (EV) için yapay zeka ve fizik tabanlı tüketim algoritmaları kullanarak rota, menzil ve şarj tahminleri sunan bir destek aracıdır. Tahmini Veriler: Algoritmalarımız; topografik eğim, hava durumu, araç ağırlığı ve aerodinamik özellikler gibi değişkenleri hesaplayarak en yüksek doğruluğu hedeflese de, sunulan tüm veriler tahminidir. Sorumluluk Sınırı: Anlık trafik değişimleri, beklenmedik hava muhalefetleri, kullanıcının agresif sürüş tarzı (aşırı hız, sert ivmelenme), araç donanımındaki arızalar veya batarya degradasyonu nedeniyle tahminlerde sapmalar yaşanabilir. Yolda Kalma Durumu: IYONTREE, sağlanan rotanın izlenmesi sonucunda aracın şarjının bitmesi, yolda kalma, çekici masrafları, gecikmeler veya bunlardan doğabilecek hiçbir doğrudan/dolaylı maddi veya manevi zarardan yasal olarak sorumlu tutulamaz. Seyahat planlamasında ve batarya seviyesinin takibinde nihai sorumluluk tamamen sürücüye aittir.\n\n3. Üçüncü Taraf Verileri (Şarj İstasyonları ve Fiyatlandırma)\nUygulama içerisinde gösterilen şarj istasyonu konumları, soket tipleri, anlık uygunluk durumları, maksimum şarj güçleri (kW) ve kW/h birim fiyatlandırmaları üçüncü taraf ağ sağlayıcılarından (CPO) derlenmektedir. IYONTREE, şarj istasyonlarının fiziksel olarak çalışır durumda olduğunu veya belirtilen fiyatların birebir aynı olacağını garanti etmez.\n\n4. Sürüş Güvenliği ve Kullanıcı Yükümlülükleri\nSürüş Esnasında Kullanım: Sürücünün seyir halindeyken uygulamayı aktif olarak kullanması, veri girmesi veya ekranla etkileşime girmesi tehkelidir ve yasaktır. IYONTREE, sürüş güvenliğinin ihlal edilmesinden kaynaklanan kazalardan sorumlu tutulamaz.\n\n5. Fikri Mülkiyet Hakları\nIYONTREE platformunda yer alan tüm kaynak kodlar, tüketim algoritmaları, yapay zeka modelleri, arayüz tasarımları ve veritabanı mimarisi ulusal ve uluslararası telif hakları yasalarıyla korunmaktadır. İzinsiz kopyalanması veya ticari amaçla kullanılması kesinlikle yasaktır.\n\n6. Hizmet Kesintileri ve Güncellemeler\nIYONTREE şu anda 'Beta' aşamasındadır. Sistemin kesintisiz ve hatasız çalışacağı garanti edilmez. IYONTREE, uygulamayı veya bu koşulları dilediği zaman değiştirme hakkını saklı tutar.\n\n7. Uyuşmazlıkların Çözümü\nBu kullanım koşullarından doğabilecek her türlü hukuki uyuşmazlıkta Türkiye Cumhuriyeti yasaları esastır.",
     faqList: [
       { q: "IYONTREE nedir ve standart harita uygulamalarından farkı nedir?", a: "IYONTREE, elektrikli araçlar (EV) için özel olarak geliştirilmiş akıllı rota optimizasyon platformudur. Sadece mesafeyi değil, aracınızın bataryasını etkileyen yol eğimi, hava durumu, araç ağırlığı ve hız gibi fiziksel değişkenleri hesaplar." },
       { q: "Uygulama şarj rotasını nasıl hesaplıyor?", a: "Gelişmiş algoritmamız; seçtiğiniz aracın batarya kapasitesi, sürtünme katsayısı ve ağırlığı ile güzergahın topografik yapısını birleştirerek sizi yolda bırakmayacak en optimum AC/DC şarj duraklarını belirler." },
@@ -128,14 +128,10 @@ export const translations = {
       { q: "IYONTREE uygulamasını kullanmak ücretli mi?", a: "Platformumuz şu an Beta aşamasında olup, temel rota planlama ve tüketim optimizasyonu özelliklerini tüm EV sürücülerine ücretsiz olarak sunmaktadır." }
     ],
     
-    // Auth Modal
+    // UI Keys
     energyPerDist: "Mesafe başına enerji",
     distPerEnergy: "Enerji başına mesafe",
     savedRoutesPrompt: "Kayıtlı Rotalar İçin\nGiriş Yap veya Kayıt Ol",
-    noVehicleSelected: "Henüz araç seçilmedi. En iyi rota için bir araç seçin.",
-    addSelectVehicle: "Araç Ekle / Seç",
-    currentCharge: "Mevcut Şarj",
-    vehicleDriverSettings: "Araç ve Sürücü Ayarları",
     changeVehicle: "Farklı Araç Seç / Düzenle",
     vehicleSettings: "Araç Ayarları",
     driverSettings: "Sürücü Ayarları",
@@ -256,6 +252,10 @@ export const translations = {
     addNewVehicle: "Yeni Araç Ekle",
     searchBrandModel: "Marka, Model ara...",
     add: "Ekle",
+    currentCharge: "Mevcut Şarj",
+    noVehicleSelected: "Henüz araç seçilmedi. En iyi rota için bir araç seçin.",
+    addSelectVehicle: "Araç Ekle / Seç",
+    vehicleDriverSettings: "Araç ve Sürücü Ayarları",
     noVehiclesInGarage: "Garajınızda henüz araç bulunmuyor.",
     myGarageFull: "Maksimum 3 adet araç ekleyebilirsiniz.",
     vehicleName: "Araç Takma Adı",
@@ -310,7 +310,7 @@ export const translations = {
     locateMe: "Locate Me",
     showTraffic: "Show Traffic Status",
     changeMapStyle: "Change Map Style",
-
+    
     // New Forms
     vehicleRequestTitle: "Add New Vehicle Model",
     suggestionTitle: "Give Us a Suggestion",
@@ -373,7 +373,7 @@ export const translations = {
     faqText: "By using the IYONTREE platform, you are deemed to have accepted our terms of service.",
     termsText: "1. Scope and Acceptance\nThese Terms of Use govern the legal terms for the use of the IYONTREE platform. By accessing or using the services, you acknowledge that you have read, understood, and agreed to be legally bound by these terms.\n\n2. Nature of Service and Disclaimer (Critical Warning)\nIYONTREE is a support tool providing route, range, and charging estimates for EVs using AI and physics-based consumption algorithms. Estimated Data: Although our algorithms aim for highest accuracy by calculating variables like slope, weather, and vehicle physics, all data provided is an estimate. Limit of Liability: Deviations may occur due to traffic, weather, aggressive driving, or battery degradation. Being Stranded: IYONTREE cannot be held legally responsible for any direct/indirect damages arising from following the provided routes. Final responsibility in travel planning belongs to the driver.\n\n3. Third Party Data (Stations and Pricing)\nStation locations, availability, and pricing are compiled from third-party providers. IYONTREE does not guarantee that stations are physically operational or that prices will be identical upon arrival.\n\n4. Driving Safety and User Obligations\nUse During Driving: Actively using the app or interacting with the screen while driving is dangerous and prohibited. IYONTREE cannot be held responsible for accidents resulting from safety violations.\n\n5. Intellectual Property Rights\nAll source code, algorithms, AI models, designs, and database architecture on IYONTREE are protected by copyright laws. Unauthorized copying or commercial use is strictly prohibited.\n\n6. Service Interruptions and Updates\nIYONTREE is currently in 'Beta'. Uninterrupted or error-free operation is not guaranteed. IYONTREE reserves the right to change the app or these terms at any time.\n\n7. Resolution of Disputes\nThe laws of the Republic of Turkey shall apply to any legal disputes arising from these terms of use.",
     faqList: [
-      { q: "What is IYONTREE and how does it differ from standard map apps?", a: "IYONTREE is a smart route optimization platform specifically developed for electric vehicles (EVs). It calculates not just distance, but physical variables like road slope, weather, vehicle weight, and speed that affect your battery." },
+      { q: "What is IYONTREE and how does it differ from standard map apps?", a: "IYONTREE is a smart route optimization platform specifically developed for electric vehicles (DCs). It calculates not just distance, but physical variables like road slope, weather, vehicle weight, and speed that affect your battery." },
       { q: "How does the app calculate the charging route?", a: "Our advanced algorithm combines your chosen vehicle's battery capacity, drag coefficient, and weight with the topographical structure of the route to determine the most optimum AC/DC charging stops that won't leave you stranded." },
       { q: "What is Initial Charge (SoC) and why do I need to enter it?", a: "SoC (State of Charge) is the current fill level of your vehicle's battery when you set off (e.g., 80%). Entering this data allows the system to precisely calculate where you need to take your first charging break." },
       { q: "How does it find suitable charging stations for my vehicle?", a: "Stations across Turkey in our database are automatically added to your route, filtered by your vehicle's socket type and the maximum charging power (kW) it supports." },
@@ -389,15 +389,11 @@ export const translations = {
       { q: "What should I do if I see an incorrect route or a closed station?", a: "You can quickly report the situation using the 'Report Bug' option in the menu. Community feedback is very valuable for increasing the accuracy of our algorithm." },
       { q: "Is using the IYONTREE app paid?", a: "Our platform is currently in the Beta stage and offers basic route planning and consumption optimization features to all EV drivers free of charge." }
     ],
-
-    // Auth Modal
+    
+    // UI Keys
     energyPerDist: "Energy per distance",
     distPerEnergy: "Distance per energy",
     savedRoutesPrompt: "For Saved Routes\nPlease Login or Register",
-    noVehicleSelected: "No vehicle selected. Select a vehicle for best routing.",
-    addSelectVehicle: "Add / Select Vehicle",
-    currentCharge: "Current SoC",
-    vehicleDriverSettings: "Vehicle & Driver Settings",
     changeVehicle: "Change / Edit Vehicle",
     vehicleSettings: "Vehicle Settings",
     driverSettings: "Driver Settings",
@@ -414,7 +410,7 @@ export const translations = {
     refConsumption: "Ref. Consumption",
     refConsumptionDesc: "Average consumption",
     applySettings: "Apply Settings",
-
+    
     // Account Dashboard
     yourAccount: "Your Account",
     overview: "Overview",
@@ -444,7 +440,7 @@ export const translations = {
     acCharge: "AC Charge",
     dcCharge: "DC Charge",
     priceNotice: "* Data is for illustrative purposes. Prices may vary by station.",
-
+    
     // Route Settings
     routeSettingsTitle: "Route Settings",
     avoidTolls: "Avoid Tolls",
@@ -452,10 +448,10 @@ export const translations = {
     minStations: "Minimum Charge Stations",
     departureSoC: "Departure SoC",
     arrivalSoC: "Arrival SoC Target",
-
+    
     // Garage/Add Vehicle
     myVehicles: "My Vehicles",
-
+    
     // Auth Modal
     welcomeBack: "Welcome Back",
     registerNow: "Register Now",
@@ -466,7 +462,7 @@ export const translations = {
     alreadyHaveAccount: "Already have an account?",
     noAccount: "Don't have an account?",
     register: "Register",
-
+    
     aboutUsTitle: "Optimizing the Future of Energy: IYONTREE",
     aboutText: "IYONTREE is an AI-powered platform developed to eliminate range anxiety for electric vehicle (EV) users and optimize charging planning according to physical world conditions.\n\nThis project was designed and implemented by Görkem Esendeniz, a senior Computer Engineering student at Düzce University, as part of his graduation thesis. Our goal is to provide an innovative and reliable solution to the sustainable e-mobility ecosystem with advanced consumption algorithms that go beyond simple distance measurement.",
     aboutUsSub: "We are here to end range anxiety in the EV world and build a sustainable future.",
@@ -491,7 +487,7 @@ export const translations = {
     analyticalCookies: "Analytical Cookies",
     analyticalCookiesDesc: "Helps us analyze site traffic and performance.",
     saveSelection: "Save Selection",
-
+    
     // Privacy Policy
     privacyTitle: "IYONTREE Privacy Policy and KVKK Notice",
     privacyText: "1. Data Controller and Our Purpose\nAt IYONTREE, we aim to make the EV ecosystem more efficient and provide you with the most accurate physics-based route optimization. This Privacy Policy has been prepared to inform you transparently about how your personal data is collected, processed, and protected in accordance with KVKK.\n\n2. What Data Do We Collect?\nTo provide our services, we process the following data categories: Identity and Contact Data (Name, email), Location and Route Data (GPS, waypoints), Vehicle and Telemetry Data (Model, SoC, energy usage), and Device and Analytical Data (Browser, IP, preferences).\n\n3. Why Do We Use Your Data? (Processing Purposes)\nThe data we collect is used to: Perform precise consumption and charging planning based on vehicle physics and weather. Detect systemic errors, update the application, and provide support. Fulfill legal obligations.\n\n4. Data Sharing, Collaborations, and Algorithm Training (Important)\nIYONTREE never sells personal identity information for advertising or marketing. However, to strengthen our AI infrastructure and improve e-mobility, fully anonymized technical data (route habits, consumption curves) may be shared for algorithm training and strategic collaborations.\n\n5. Data Security and Retention Period\nYour data is protected with industry-standard encryption. If you delete your account, your personal data is permanently deleted. Legal logs are kept for the period required by law.\n\n6. Your Rights Under KVKK\nUnder Article 11 of the KVKK, you have the right to learn if your data is processed and request deletion (Right to be Forgotten). You can contact us at contact@iyontree.com for all requests.",
@@ -518,6 +514,10 @@ export const translations = {
     addNewVehicle: "Add New Vehicle",
     searchBrandModel: "Search brand, model...",
     add: "Add",
+    currentCharge: "Current SoC",
+    noVehicleSelected: "No vehicle selected. Select a vehicle for best routing.",
+    addSelectVehicle: "Add / Select Vehicle",
+    vehicleDriverSettings: "Vehicle & Driver Settings",
     noVehiclesInGarage: "No vehicles in your garage yet.",
     myGarageFull: "You can add up to 3 vehicles.",
     vehicleName: "Vehicle Nickname",
