@@ -9,13 +9,16 @@ import VehicleSettingsView from "./components/VehicleSettingsView";
 import MapControls from "./components/MapControls";
 import AuthModal from "./components/AuthModal";
 import AccountDashboard from "./components/AccountDashboard";
+import CookieConsent from "./components/CookieConsent";
+import GeneralMenu from "./components/GeneralMenu";
+import PrivacyPolicyView from "./components/PrivacyPolicyView";
 import { User, LogOut } from "lucide-react";
 import { lightMapStyle, darkMapStyle } from "./lib/mapStyles";
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 function App() {
-  const [activeView, setActiveView] = useState<'main' | 'settings' | 'garage' | 'add_vehicle' | 'vehicle_settings' | 'account'>('main');
+  const [activeView, setActiveView] = useState<'main' | 'settings' | 'garage' | 'add_vehicle' | 'vehicle_settings' | 'account' | 'privacy'>('main');
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
@@ -25,12 +28,39 @@ function App() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [previousView, setPreviousView] = useState<'main' | 'account'>('main');
   const [authMessage, setAuthMessage] = useState<string>('');
+  const [isRightMenuOpen, setIsRightMenuOpen] = useState(false);
+  const [showCookieBanner, setShowCookieBanner] = useState(false);
+  const [showCookieModal, setShowCookieModal] = useState(false);
 
   // Sync with system theme on mount
   useEffect(() => {
     const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     setMapStyleKey(isDark ? 'dark' : 'light');
+
+    // Cookie Check Logic
+    const saved = localStorage.getItem('iyontree_cookies');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        const is30DaysOld = (Date.now() - parsed.timestamp) > 30 * 24 * 60 * 60 * 1000;
+        if (!parsed.allAccepted && is30DaysOld) {
+          setShowCookieBanner(true);
+        }
+      } catch {
+        setShowCookieBanner(true);
+      }
+    } else {
+      setShowCookieBanner(true);
+    }
   }, []);
+
+  const handleSaveCookies = (prefs: any) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('iyontree_cookies', JSON.stringify(prefs));
+    }
+    setShowCookieBanner(false);
+    setShowCookieModal(false);
+  };
 
   const getMapStyle = () => {
     if (mapStyleKey === 'light') return lightMapStyle;
@@ -233,6 +263,7 @@ function App() {
           )}
 
           <button 
+            onClick={() => setIsRightMenuOpen(true)}
             className="glass-panel shadow-none p-2 flex flex-col items-center justify-center gap-[4px] w-10 h-10 hover:bg-white/10 transition-all border-white/20 active:scale-95"
           >
             <div className="w-4 h-px bg-white rounded-full" />
@@ -248,6 +279,34 @@ function App() {
           onLogin={(user) => { setCurrentUser(user); setActiveView('account'); }}
           customMessage={authMessage}
         />
+
+        {/* Right General Menu */}
+        <GeneralMenu 
+          isOpen={isRightMenuOpen} 
+          onClose={() => setIsRightMenuOpen(false)} 
+          onOpenCookieConsent={() => { setShowCookieModal(true); setIsRightMenuOpen(false); }}
+          onOpenPrivacy={() => { setPreviousView(activeView === 'account' ? 'account' : 'main'); setActiveView('privacy'); setIsRightMenuOpen(false); }}
+        />
+
+        {/* Global Floating Elements */}
+        <CookieConsent 
+          showBanner={showCookieBanner}
+          showModal={showCookieModal}
+          onOpenPrivacy={() => { 
+            setPreviousView(activeView === 'account' ? 'account' : 'main'); 
+            setActiveView('privacy');
+            setShowCookieModal(false); 
+          }}
+          onOpenSettings={() => setShowCookieModal(true)}
+          onSave={handleSaveCookies}
+        />
+        
+        {/* Full Screen Modals without map background constraints */}
+        <AnimatePresence>
+          {activeView === 'privacy' && (
+            <PrivacyPolicyView onBack={() => setActiveView(previousView)} />
+          )}
+        </AnimatePresence>
       </div>
     </APIProvider>
   );
