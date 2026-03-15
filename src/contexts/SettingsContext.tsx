@@ -31,7 +31,18 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   });
 
   const [showTraffic, setShowTraffic] = useState(false);
-  const [showCookieBanner, setShowCookieBanner] = useState(false);
+  const [showCookieBanner, setShowCookieBanner] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const saved = localStorage.getItem('iyontree_cookies');
+    if (!saved) return true;
+    try {
+      const parsed = JSON.parse(saved);
+      const is30DaysOld = (Date.now() - parsed.timestamp) > 30 * 24 * 60 * 60 * 1000;
+      return !parsed.allAccepted && is30DaysOld;
+    } catch (error) {
+      return true;
+    }
+  });
   const [showCookieModal, setShowCookieModal] = useState(false);
 
   useEffect(() => {
@@ -43,23 +54,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem('iyontree_map_style', mapStyleKey);
   }, [mapStyleKey]);
-
-  useEffect(() => {
-    const saved = localStorage.getItem('iyontree_cookies');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        const is30DaysOld = (Date.now() - parsed.timestamp) > 30 * 24 * 60 * 60 * 1000;
-        if (!parsed.allAccepted && is30DaysOld) {
-          setShowCookieBanner(true);
-        }
-      } catch {
-        setShowCookieBanner(true);
-      }
-    } else {
-      setShowCookieBanner(true);
-    }
-  }, []);
 
   const handleSaveCookies = (prefs: any) => {
     if (typeof window !== 'undefined') {
