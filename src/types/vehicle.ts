@@ -9,4 +9,12 @@ export interface Vehicle {
   maxChargingPower?: number;
   rangeWLTP?: number;
   plugType?: string;
+  // Persistent Settings
+  passengers?: number;
+  extraWeight?: number;
+  climateControl?: boolean;
+  drivingStyle?: 'eco' | 'normal' | 'sport';
+  maxSpeed?: number;
+  refConsumption?: number;
+  preferredPlugTypes?: string[];
 }

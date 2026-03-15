@@ -1,6 +1,6 @@
 import { CarFront, Battery, ArrowLeftRight, Settings, Plus } from "lucide-react";
 import { Button } from "./ui/button";
-import { memo } from "react";
+import { memo, useCallback } from "react";
 import { translations } from "../lib/translations";
 
 const NativeSlider = ({ value, min, max, onChange }: { value: number, min: number, max: number, onChange: (v: number) => void }) => {
@@ -43,9 +43,9 @@ const VehicleCard = memo(({
   const { selectedVehicle, setVehicles, selectedVehicleId } = useVehicle();
   const t = translations[language];
 
-  const handleUpdateSoC = (soc: number) => {
+  const handleUpdateSoC = useCallback((soc: number) => {
     setVehicles(prev => prev.map(v => v.id === selectedVehicleId ? { ...v, soc } : v));
-  };
+  }, [setVehicles, selectedVehicleId]);
   if (!selectedVehicle) {
     return (
       <div className="glass-panel w-full sm:w-[420px] p-6 pointer-events-auto flex flex-col items-center justify-center min-h-[160px] gap-4 mt-auto md:mt-2">

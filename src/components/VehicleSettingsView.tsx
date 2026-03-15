@@ -23,6 +23,7 @@ const CustomSwitch = ({ checked, onChange }: { checked: boolean, onChange: (val:
 };
 
 import { useSettings } from "../contexts/SettingsContext";
+import { useVehicle } from "../contexts/VehicleContext";
 
 export default function VehicleSettingsView({ 
   onBack,
@@ -30,16 +31,37 @@ export default function VehicleSettingsView({
   onBack: () => void,
 }) {
   const { language } = useSettings();
-  const [passengers, setPassengers] = useState(1);
-  const [extraWeight, setExtraWeight] = useState(0);
-  const [climateControl, setClimateControl] = useState(true);
-  const [plugTypes, setPlugTypes] = useState<string[]>(['ccs']);
-
-  const [maxSpeed, setMaxSpeed] = useState(130);
-  const [refConsumption, setRefConsumption] = useState(16.5);
-  const [drivingStyle, setDrivingStyle] = useState('normal');
-
+  const { selectedVehicle, setVehicles } = useVehicle();
   const t = translations[language];
+
+  // Initialize state from selectedVehicle or defaults
+  const [passengers, setPassengers] = useState(selectedVehicle?.passengers ?? 1);
+  const [extraWeight, setExtraWeight] = useState(selectedVehicle?.extraWeight ?? 0);
+  const [climateControl, setClimateControl] = useState(selectedVehicle?.climateControl ?? true);
+  const [plugTypes, setPlugTypes] = useState<string[]>(selectedVehicle?.preferredPlugTypes ?? ['ccs']);
+  const [maxSpeed, setMaxSpeed] = useState(selectedVehicle?.maxSpeed ?? 130);
+  const [refConsumption, setRefConsumption] = useState(selectedVehicle?.refConsumption ?? 16.5);
+  const [drivingStyle, setDrivingStyle] = useState(selectedVehicle?.drivingStyle ?? 'normal');
+
+  const handleApplySettings = () => {
+    if (!selectedVehicle) {
+      onBack();
+      return;
+    }
+
+    setVehicles(prev => prev.map(v => v.id === selectedVehicle.id ? {
+      ...v,
+      passengers,
+      extraWeight,
+      climateControl,
+      preferredPlugTypes: plugTypes,
+      maxSpeed,
+      refConsumption,
+      drivingStyle: drivingStyle as any
+    } : v));
+
+    onBack();
+  };
 
   return (
     <div className="glass-panel w-full sm:w-[420px] px-4 py-5 pointer-events-auto flex flex-col gap-4 relative h-[calc(100svh-4rem)] sm:h-[650px] overflow-hidden custom-scrollbar">
@@ -161,7 +183,7 @@ export default function VehicleSettingsView({
                   ].map(tip => (
                     <button
                       key={tip.id}
-                      onClick={() => setDrivingStyle(tip.id)}
+                      onClick={() => setDrivingStyle(tip.id as 'eco' | 'normal' | 'sport')}
                       className={cn(
                         "py-2.5 rounded-xl text-sm font-semibold border transition-all duration-300",
                         drivingStyle === tip.id
@@ -221,7 +243,7 @@ export default function VehicleSettingsView({
       </div>
       {/* Footer */}
       <div className="shrink-0 bg-transparent border-t border-white/10 z-50 pt-3">
-         <button onClick={onBack} className="w-full bg-cyan-400 hover:bg-cyan-300 text-black font-bold py-4 rounded-2xl transition-all duration-200 active:scale-[0.98] shadow-[0_0_15px_rgba(34,211,238,0.3)]">
+         <button onClick={handleApplySettings} className="w-full bg-cyan-400 hover:bg-cyan-300 text-black font-bold py-4 rounded-2xl transition-all duration-200 active:scale-[0.98] shadow-[0_0_15px_rgba(34,211,238,0.3)]">
            {t.applySettings}
          </button>
       </div>

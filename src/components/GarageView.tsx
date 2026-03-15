@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { ArrowLeft, Plus, CheckCircle2, Circle, Trash2, CarFront, Edit2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { translations } from "../lib/translations";
@@ -20,17 +20,21 @@ export default function GarageView({
   const [tempName, setTempName] = useState("");
   const t = translations[language];
 
-  const handleSelectVehicle = (id: string) => setSelectedVehicleId(id);
-  const handleRenameVehicle = (id: string, newName: string) => {
+  const handleSelectVehicle = useCallback((id: string) => setSelectedVehicleId(id), [setSelectedVehicleId]);
+  
+  const handleRenameVehicle = useCallback((id: string, newName: string) => {
     setVehicles(prev => prev.map(v => v.id === id ? { ...v, customName: newName } : v));
-  };
-  const handleDeleteVehicle = (id: string) => {
-    const newVehicles = vehicles.filter(v => v.id !== id);
-    setVehicles(newVehicles);
-    if (selectedVehicleId === id) {
-      setSelectedVehicleId(newVehicles.length > 0 ? newVehicles[0].id : null);
-    }
-  };
+  }, [setVehicles]);
+
+  const handleDeleteVehicle = useCallback((id: string) => {
+    setVehicles(prev => {
+      const newVehicles = prev.filter(v => v.id !== id);
+      if (selectedVehicleId === id) {
+        setSelectedVehicleId(newVehicles.length > 0 ? newVehicles[0].id : null);
+      }
+      return newVehicles;
+    });
+  }, [setVehicles, selectedVehicleId, setSelectedVehicleId]);
 
   return (
     <div className="glass-panel w-full sm:w-[420px] px-4 py-5 pointer-events-auto flex flex-col gap-4 relative h-[calc(100svh-4rem)] sm:h-auto sm:max-h-[85vh] overflow-y-auto custom-scrollbar">
