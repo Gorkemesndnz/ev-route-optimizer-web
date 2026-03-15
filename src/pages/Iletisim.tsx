@@ -3,6 +3,8 @@ import BasePageLayout, { useMarketing } from "./BasePageLayout";
 import { translations } from "../lib/translations";
 import { Mail, MapPin, Send, Instagram, Linkedin, Twitter, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { contactSchema } from "../lib/validation";
+import { z } from "zod";
 
 export default function Iletisim() {
   const { language: lang } = useMarketing();
@@ -15,6 +17,8 @@ export default function Iletisim() {
   
   const [nameError, setNameError] = useState('');
   const [emailError, setEmailError] = useState('');
+  const [subjectError, setSubjectError] = useState('');
+  const [messageError, setMessageError] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   useEffect(() => {
@@ -32,35 +36,37 @@ export default function Iletisim() {
 
   const t = translations[lang];
 
-  const validateEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
-  const validateName = (n: string) => /^[A-Za-zÇŞĞÜÖİçşğüöı\s]+$/.test(n);
-
   const handleSubmit = (e: any) => {
     e.preventDefault();
-    let valid = true;
+    
+    // Reset errors
+    setNameError('');
+    setEmailError('');
+    setSubjectError('');
+    setMessageError('');
 
-    if (!currentUser) {
-      if (!validateName(name)) {
-        setNameError(lang === 'tr' ? 'Lütfen geçerli bir ad soyad girin (sadece harf).' : 'Invalid name (letters only).');
-        valid = false;
-      } else {
-        setNameError('');
-      }
+    const formData = {
+      name,
+      email,
+      subject,
+      message
+    };
 
-      if (!validateEmail(email)) {
-        setEmailError(lang === 'tr' ? 'Lütfen geçerli bir e-posta adresi girin.' : 'Invalid email address.');
-        valid = false;
-      } else {
-        setEmailError('');
-      }
-    }
-
-    if (!subject || subject === 'select' || !message) {
-      valid = false;
-    }
-
-    if (valid) {
+    try {
+      contactSchema.parse(formData);
+      // Valid data
       setIsSubmitted(true);
+      console.log("Form validated successfully", formData);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        err.issues.forEach((issue) => {
+          const path = issue.path[0];
+          if (path === 'name') setNameError(issue.message);
+          if (path === 'email') setEmailError(issue.message);
+          if (path === 'subject') setSubjectError(issue.message);
+          if (path === 'message') setMessageError(issue.message);
+        });
+      }
     }
   };
 
@@ -154,29 +160,35 @@ export default function Iletisim() {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-2 mt-2">
+              <div className="flex flex-col gap-2 mt-2 relative">
                 <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider pl-1 transition-colors">{lang === 'tr' ? 'Konu' : 'Subject'}</label>
                 <div className="relative">
                   <select 
                     value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                    className="h-12 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 outline-none hover:border-cyan-300 dark:hover:border-cyan-500 focus:border-cyan-500 transition-all font-medium text-slate-800 dark:text-slate-200 appearance-none cursor-pointer"
+                    onChange={(e) => { setSubject(e.target.value); setSubjectError(''); }}
+                    className={`h-12 w-full bg-white dark:bg-slate-800 border rounded-2xl px-4 outline-none transition-all font-medium text-slate-800 dark:text-slate-200 appearance-none cursor-pointer ${
+                      subjectError ? 'border-red-400 dark:border-red-500 focus:border-red-500 bg-red-50 dark:bg-red-900/20' : 'border-slate-200 dark:border-slate-700 hover:border-cyan-300 dark:hover:border-cyan-500 focus:border-cyan-500'
+                    }`}
                   >
                     {subjectOptions.map(opt => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
                     ))}
                   </select>
                 </div>
+                {subjectError && <span className="absolute -bottom-5 left-1 text-[10px] text-red-500 font-bold">{subjectError}</span>}
               </div>
 
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2 relative">
                 <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider pl-1 transition-colors">{lang === 'tr' ? 'Mesajınız' : 'Your Message'}</label>
                 <textarea
                   value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  className="w-full h-32 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-4 outline-none hover:border-cyan-300 dark:hover:border-cyan-500 focus:border-cyan-500 transition-all resize-none font-medium custom-scrollbar text-slate-800 dark:text-slate-200 placeholder-slate-300 dark:placeholder-slate-500"
+                  onChange={(e) => { setMessage(e.target.value); setMessageError(''); }}
+                  className={`w-full h-32 bg-white dark:bg-slate-800 border rounded-3xl p-4 outline-none transition-all resize-none font-medium custom-scrollbar text-slate-800 dark:text-slate-200 placeholder-slate-300 dark:placeholder-slate-500 ${
+                    messageError ? 'border-red-400 dark:border-red-500 focus:border-red-500 bg-red-50 dark:bg-red-900/20' : 'border-slate-200 dark:border-slate-700 hover:border-cyan-300 dark:hover:border-cyan-500 focus:border-cyan-500'
+                  }`}
                   placeholder={lang === 'tr' ? "Bize nasıl yardımcı olabileceğinizi detaylıca anlatın..." : "Tell us in detail how we can help..."}
                 />
+                {messageError && <span className="absolute -bottom-5 left-1 text-[10px] text-red-500 font-bold">{messageError}</span>}
               </div>
 
               <div className="mt-4 pt-4 border-t border-slate-200/60 flex justify-end">

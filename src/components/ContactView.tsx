@@ -4,6 +4,8 @@ import { ChevronLeft, Mail, Instagram, Linkedin, Github, Twitter, CheckCircle, S
 import { translations } from "../lib/translations";
 import { cn } from "@/lib/utils";
 import GlobalFooter from "./GlobalFooter";
+import { contactSchema } from "../lib/validation";
+import { z } from "zod";
 
 export default function ContactView({ 
   language, 
@@ -24,38 +26,43 @@ export default function ContactView({
   const [email, setEmail] = useState(currentUser?.email || '');
   const [subject, setSubject] = useState('select');
   const [message, setMessage] = useState('');
+  const [nameError, setNameError] = useState('');
   const [emailError, setEmailError] = useState('');
-
-  const isFormValid = 
-    name.trim() !== '' && 
-    email.trim() !== '' && 
-    subject !== 'select' && 
-    message.trim() !== '' && 
-    emailError === '';
+  const [subjectError, setSubjectError] = useState('');
+  const [messageError, setMessageError] = useState('');
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (currentUser) return;
     const val = e.target.value;
-    const regex = /^[a-zA-ZğüşıöçĞÜŞİÖÇ\s]*$/;
-    if (regex.test(val)) {
-      setName(val);
-    }
-  };
-
-  const validateEmail = () => {
-    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (email.trim() !== '' && !regex.test(email)) {
-      setEmailError(t.validation.invalidEmail);
-    } else {
-      setEmailError('');
-    }
+    setName(val);
+    setNameError('');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (isFormValid) {
+    
+    // Reset errors
+    setNameError('');
+    setEmailError('');
+    setSubjectError('');
+    setMessageError('');
+
+    const formData = { name, email, subject, message };
+
+    try {
+      contactSchema.parse(formData);
       setIsSubmitted(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        err.issues.forEach((issue) => {
+          const path = issue.path[0];
+          if (path === 'name') setNameError(issue.message);
+          if (path === 'email') setEmailError(issue.message);
+          if (path === 'subject') setSubjectError(issue.message);
+          if (path === 'message') setMessageError(issue.message);
+        });
+      }
     }
   };
 
@@ -134,10 +141,12 @@ export default function ContactView({
                       readOnly={!!currentUser}
                       placeholder={t.fullname}
                       className={cn(
-                        "w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all",
+                        "w-full bg-white/5 border rounded-2xl py-4 px-6 text-white focus:outline-none transition-all",
+                        nameError ? "border-red-500/50 focus:border-red-500 bg-red-500/5" : "border-white/10 focus:border-cyan-400/50 focus:bg-white/10",
                         currentUser && "opacity-60 cursor-not-allowed bg-black/20"
                       )} 
                     />
+                    {nameError && <p className="text-red-400 text-xs px-1 font-medium">{nameError}</p>}
                   </div>
 
                   <div className="flex flex-col gap-2">
@@ -145,13 +154,12 @@ export default function ContactView({
                     <input 
                       type="email" 
                       value={email}
-                      onChange={(e) => !currentUser && setEmail(e.target.value)}
-                      onBlur={validateEmail}
+                      onChange={(e) => { !currentUser && setEmail(e.target.value); setEmailError(''); }}
                       readOnly={!!currentUser}
                       placeholder={t.email}
                       className={cn(
-                        "w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white focus:outline-none transition-all",
-                        emailError ? "border-red-500/50 focus:border-red-500" : "focus:border-cyan-400/50",
+                        "w-full bg-white/5 border rounded-2xl py-4 px-6 text-white focus:outline-none transition-all",
+                        emailError ? "border-red-500/50 focus:border-red-500 bg-red-500/5" : "border-white/10 focus:border-cyan-400/50",
                         currentUser && "opacity-60 cursor-not-allowed bg-black/20"
                       )} 
                     />
@@ -163,8 +171,11 @@ export default function ContactView({
                     <div className="relative">
                       <select 
                         value={subject}
-                        onChange={(e) => setSubject(e.target.value)}
-                        className="w-full bg-zinc-900/50 border border-white/10 rounded-2xl py-4 px-6 text-white focus:outline-none focus:border-cyan-400/50 appearance-none cursor-pointer outline-none transition-all"
+                        onChange={(e) => { setSubject(e.target.value); setSubjectError(''); }}
+                        className={cn(
+                          "w-full bg-zinc-900/50 border rounded-2xl py-4 px-6 text-white focus:outline-none appearance-none cursor-pointer outline-none transition-all",
+                          subjectError ? "border-red-500/50 focus:border-red-500 bg-red-500/5" : "border-white/10 focus:border-cyan-400/50"
+                        )}
                       >
                         <option value="select" disabled>{t.contactSubjects.select}</option>
                         <option value="investment">{t.contactSubjects.investment}</option>
@@ -175,6 +186,7 @@ export default function ContactView({
                       </select>
                       <ChevronLeft size={20} className="absolute right-6 top-1/2 -translate-y-1/2 -rotate-90 text-white/30 pointer-events-none" />
                     </div>
+                    {subjectError && <p className="text-red-400 text-xs px-1 font-medium">{subjectError}</p>}
                   </div>
 
                   <div className="flex flex-col gap-2">
@@ -182,19 +194,19 @@ export default function ContactView({
                     <textarea 
                       rows={6}
                       value={message}
-                      onChange={(e) => setMessage(e.target.value)}
+                      onChange={(e) => { setMessage(e.target.value); setMessageError(''); }}
                       placeholder={t.messagePlaceholder}
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all resize-none outline-none"
+                      className={cn(
+                        "w-full bg-white/5 border rounded-2xl py-4 px-6 text-white focus:outline-none focus:bg-white/10 transition-all resize-none outline-none",
+                        messageError ? "border-red-500/50 focus:border-red-500 bg-red-500/5" : "border-white/10 focus:border-cyan-400/50"
+                      )}
                     />
+                    {messageError && <p className="text-red-400 text-xs px-1 font-medium">{messageError}</p>}
                   </div>
 
                   <button 
                     type="submit"
-                    disabled={!isFormValid}
-                    className={cn(
-                      "w-full py-5 font-black text-lg rounded-2xl transition-all active:scale-[0.98] mt-4 flex items-center justify-center gap-3 shadow-2xl uppercase tracking-widest",
-                      isFormValid ? "bg-cyan-400 hover:bg-cyan-300 text-zinc-950 shadow-cyan-500/20" : "bg-white/5 text-white/20 cursor-not-allowed border border-white/5"
-                    )}
+                    className="w-full py-5 font-black text-lg rounded-2xl transition-all active:scale-[0.98] mt-4 flex items-center justify-center gap-3 shadow-2xl uppercase tracking-widest bg-cyan-400 hover:bg-cyan-300 text-zinc-950 shadow-cyan-500/20"
                   >
                     <Send size={20} />
                     {t.send}

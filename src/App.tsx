@@ -47,8 +47,18 @@ function App() {
     selectedVehicle
   } = useVehicle();
 
-  // Hardcoded for demo
-  const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "AIzaSy_demo";
+  const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
+  if (!API_KEY) {
+    return (
+      <div className="w-screen h-screen bg-zinc-950 flex flex-col items-center justify-center p-8 text-center">
+        <h1 className="text-2xl font-bold text-red-500 mb-4">Configuration Error</h1>
+        <p className="text-white/70 max-w-md">
+          Google Maps API Key is missing. Please set <code className="bg-white/10 px-2 py-1 rounded text-cyan-400">VITE_GOOGLE_MAPS_API_KEY</code> in your environment variables.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <APIProvider apiKey={API_KEY}>
