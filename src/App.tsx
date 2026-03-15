@@ -36,7 +36,7 @@ function App() {
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
-  const [showTraffic, setShowTraffic] = useState(true);
+  const [showTraffic, setShowTraffic] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [previousView, setPreviousView] = useState<'main' | 'account' | 'settings' | 'garage' | 'add_vehicle' | 'vehicle_settings' | 'privacy' | 'about' | 'terms'>('main');
@@ -334,7 +334,7 @@ function App() {
           showBanner={showCookieBanner}
           showModal={showCookieModal}
           onOpenPrivacy={() => { 
-            window.open('/gizlilik', '_blank');
+            window.open('/home/gizlilik', '_blank');
             setShowCookieModal(false); 
           }}
           onOpenSettings={() => setShowCookieModal(true)}

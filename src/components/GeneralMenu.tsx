@@ -35,8 +35,7 @@ export default function GeneralMenu({
   setLanguage,
   mapStyleKey,
   setMapStyleKey,
-  currentUser,
-  onOpenFullScreen
+  currentUser
 }: { 
   isOpen: boolean; 
   onClose: () => void;
@@ -46,7 +45,6 @@ export default function GeneralMenu({
   mapStyleKey: string;
   setMapStyleKey: (key: any) => void;
   currentUser?: { firstName: string; lastName: string; email: string } | null;
-  onOpenFullScreen: (page: 'contact' | 'about' | 'terms' | 'privacy') => void;
 }) {
   const [activeMenu, setActiveMenu] = useState<'main'|'language'|'units'|'energy'|'appearance'|'suggestions'|'add_vehicle'|'contact'|'how_it_works'|'whats_new'|'faq'|'about'|'terms'|'privacy'>('main');
   const t = translations[language];
@@ -156,7 +154,7 @@ export default function GeneralMenu({
         { id: 'how_it_works', icon: <Cpu size={18} />, label: t.howItWorks, onClick: () => handleMenuClick('how_it_works') },
         { id: 'whats_new', icon: <Sparkles size={18} />, label: t.whatsNew, onClick: () => handleMenuClick('whats_new') },
         { id: 'faq', icon: <HelpCircle size={18} />, label: t.faq, onClick: () => handleMenuClick('faq') },
-        { id: 'about', icon: <Info size={18} />, label: t.aboutUs, href: '/hakkimizda' }
+        { id: 'about', icon: <Info size={18} />, label: t.aboutUs, href: '/home/hakkimizda' }
       ]
     },
     {
@@ -165,14 +163,14 @@ export default function GeneralMenu({
         { id: 'contact', icon: <AlertTriangle size={18} />, label: t.reportBug, onClick: () => handleMenuClick('contact') },
         { id: 'suggestions', icon: <Lightbulb size={18} />, label: t.suggestions, onClick: () => handleMenuClick('suggestions') },
         { id: 'add_vehicle', icon: <PlusCircle size={18} />, label: t.addVehicle, onClick: () => handleMenuClick('add_vehicle') },
-        { id: 'contactUs', icon: <MessageSquare size={18} />, label: t.contactUs, href: '/iletisim' }
+        { id: 'contactUs', icon: <MessageSquare size={18} />, label: t.contactUs, href: '/home/iletisim' }
       ]
     },
     {
       title: t.legal,
       items: [
-        { id: 'terms', icon: <FileText size={18} />, label: t.terms, href: '/kullanim-kosullari' },
-        { id: 'privacy', icon: <Shield size={18} />, label: t.privacy, href: '/gizlilik' },
+        { id: 'terms', icon: <FileText size={18} />, label: t.terms, href: '/home/kullanim-kosullari' },
+        { id: 'privacy', icon: <Shield size={18} />, label: t.privacy, href: '/home/gizlilik' },
         { id: 'cookie_consent', icon: <Cookie size={18} />, label: t.manageCookies, onClick: onOpenCookieConsent }
       ]
     }

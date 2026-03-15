@@ -8,17 +8,22 @@ import Hakkimizda from './pages/Hakkimizda.tsx'
 import Iletisim from './pages/Iletisim.tsx'
 import KullanimKosullari from './pages/KullanimKosullari.tsx'
 import GizlilikPolitikasi from './pages/GizlilikPolitikasi.tsx'
+import Home from './pages/Home.tsx'
+import { MarketingProvider } from './pages/BasePageLayout.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<App />} />
-        <Route path="/hakkimizda" element={<Hakkimizda />} />
-        <Route path="/iletisim" element={<Iletisim />} />
-        <Route path="/kullanim-kosullari" element={<KullanimKosullari />} />
-        <Route path="/gizlilik" element={<GizlilikPolitikasi />} />
+    <MarketingProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<App />} />
+        <Route path="/home" element={<Home />} />
+        <Route path="/home/hakkimizda" element={<Hakkimizda />} />
+        <Route path="/home/iletisim" element={<Iletisim />} />
+        <Route path="/home/kullanim-kosullari" element={<KullanimKosullari />} />
+        <Route path="/home/gizlilik" element={<GizlilikPolitikasi />} />
       </Routes>
-    </BrowserRouter>
+      </BrowserRouter>
+    </MarketingProvider>
   </StrictMode>,
 )
