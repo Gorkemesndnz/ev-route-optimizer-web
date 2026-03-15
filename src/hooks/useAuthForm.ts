@@ -9,9 +9,9 @@ const MOCK_USER = {
   phone: '(111) 111-11-11'
 };
 
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 import { useSettings } from "../contexts/SettingsContext";
+import { loginSchema, registerSchema } from "../lib/validation";
+import { z } from "zod";
 
 export type AuthStep = 'email' | 'password' | 'register' | 'verify_email' | 'reset_password';
 
@@ -28,6 +28,7 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
   const [otp, setOtp] = useState('');
   const [timeLeft, setTimeLeft] = useState(120);
   const [otpError, setOtpError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
     if (authStep !== 'verify_email' || timeLeft <= 0) return;
@@ -55,29 +56,63 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
 
   const handleEmailSubmit = () => {
     setAuthError('');
+    setFieldErrors({});
     if (!email) return;
 
-    if (!emailRegex.test(email)) {
+    try {
+      z.object({ email: z.string().email() }).parse({ email });
+      if (email.toLowerCase() === MOCK_USER.email) {
+        setAuthStep('password');
+      } else {
+        setAuthStep('register');
+      }
+    } catch (err) {
       setAuthError(language === 'tr' ? 'Lütfen geçerli bir e-posta girin.' : 'Please enter a valid email.');
-      return;
-    }
-
-    if (email.toLowerCase() === MOCK_USER.email) {
-      setAuthStep('password');
-    } else {
-      setAuthStep('register');
     }
   };
 
   const handlePasswordSubmit = () => {
+    setAuthError('');
+    setFieldErrors({});
+    
+    const result = loginSchema.safeParse({ email, password });
+    if (!result.success) {
+      setAuthError(result.error.issues[0].message);
+      return;
+    }
+
     if (password === MOCK_USER.password) {
-      setAuthError('');
-      alert(language === 'tr' ? "Başarılı Giriş Yapıldı: " + email : "Successful Login: " + email);
       if (onLogin) onLogin(MOCK_USER);
       if (onClose) onClose();
     } else {
       setAuthError(language === 'tr' ? "Girdiğiniz şifre hatalı." : "Incorrect password.");
     }
+  };
+
+  const handleRegisterSubmit = () => {
+    setFieldErrors({});
+    setAuthError('');
+    
+    const result = registerSchema.safeParse({
+      email, firstName, lastName, phone, password, confirmPassword
+    });
+
+    if (!result.success) {
+      const newErrors: { [key: string]: string } = {};
+      result.error.issues.forEach(issue => {
+        if (issue.path[0]) newErrors[issue.path[0] as string] = issue.message;
+      });
+      setFieldErrors(newErrors);
+      return;
+    }
+
+    if (onLogin) onLogin({ email, firstName, lastName, phone });
+    handleCloseToModal();
+  };
+
+  const handleCloseToModal = () => {
+    if (onClose) onClose();
+    resetForm();
   };
 
   const handleOtpChange = (val: string) => {
@@ -140,6 +175,8 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
     handleOtpChange,
     handleResend,
     handleGoToVerify,
-    isPasswordsMatch
+    isPasswordsMatch,
+    fieldErrors,
+    handleRegisterSubmit
   };
 }

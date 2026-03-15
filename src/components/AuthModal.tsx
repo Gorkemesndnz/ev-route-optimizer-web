@@ -57,7 +57,9 @@ export default function AuthModal({
     handleOtpChange,
     handleResend,
     handleGoToVerify,
-    isPasswordsMatch
+    isPasswordsMatch,
+    fieldErrors,
+    handleRegisterSubmit
   } = useAuthForm(onLogin, onClose);
 
   const handleClose = () => {
@@ -106,8 +108,8 @@ export default function AuthModal({
             confirmPassword={confirmPassword}
             setConfirmPassword={setConfirmPassword}
             isPasswordsMatch={isPasswordsMatch}
-            onLogin={onLogin}
-            handleClose={handleClose}
+            fieldErrors={fieldErrors}
+            handleRegisterSubmit={handleRegisterSubmit}
           />
         );
       case 'verify_email':

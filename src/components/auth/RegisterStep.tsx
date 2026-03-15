@@ -17,8 +17,8 @@ interface RegisterStepProps {
   confirmPassword: string;
   setConfirmPassword: (val: string) => void;
   isPasswordsMatch: boolean;
-  onLogin?: (user: any) => void;
-  handleClose: () => void;
+  fieldErrors: { [key: string]: string };
+  handleRegisterSubmit: () => void;
 }
 
 const nameRegexObj = /[^a-zA-ZğüşıöçĞÜŞİÖÇ ]/g;
@@ -36,8 +36,8 @@ export default function RegisterStep({
   confirmPassword,
   setConfirmPassword,
   isPasswordsMatch,
-  onLogin,
-  handleClose,
+  fieldErrors,
+  handleRegisterSubmit
 }: RegisterStepProps) {
   const { language } = useSettings();
   const t = translations[language];
@@ -84,6 +84,7 @@ export default function RegisterStep({
               placeholder={t.firstName}
               className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all font-medium placeholder:text-white/30 shadow-inner" 
             />
+            {fieldErrors.firstName && <span className="text-red-400 text-[10px] px-1 font-medium">{fieldErrors.firstName}</span>}
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-white/70">{t.lastName}</label>
@@ -96,6 +97,7 @@ export default function RegisterStep({
               placeholder={t.lastName}
               className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all font-medium placeholder:text-white/30 shadow-inner" 
             />
+            {fieldErrors.lastName && <span className="text-red-400 text-[10px] px-1 font-medium">{fieldErrors.lastName}</span>}
           </div>
         </div>
 
@@ -111,6 +113,7 @@ export default function RegisterStep({
             maxLength={15}
             className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all font-medium placeholder:text-white/30 shadow-inner font-mono tracking-wide" 
           />
+          {fieldErrors.phone && <span className="text-red-400 text-[10px] px-1 font-medium">{fieldErrors.phone}</span>}
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -124,6 +127,7 @@ export default function RegisterStep({
             placeholder="••••••••"
             className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all font-medium placeholder:text-white/30 shadow-inner" 
           />
+          {fieldErrors.password && <span className="text-red-400 text-[10px] px-1 font-medium">{fieldErrors.password}</span>}
         </div>
         
         <div className="flex flex-col gap-1.5">
@@ -134,9 +138,8 @@ export default function RegisterStep({
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && password && isPasswordsMatch && firstName && phone && phone.length >= 14) {
-                 alert("Yeni Kayıt İşlemi: Mock Tarafından Kaydedildi");
-                 handleClose();
+              if (e.key === 'Enter') {
+                 handleRegisterSubmit();
               }
             }}
             placeholder="••••••••"
@@ -145,25 +148,16 @@ export default function RegisterStep({
               (!isPasswordsMatch && confirmPassword) ? "border-red-500/50 focus:border-red-500/50 focus:bg-red-500/5" : "border-white/10 focus:border-cyan-400/50 focus:bg-white/10"
             )} 
           />
-          <AnimatePresence>
-            {(!isPasswordsMatch && confirmPassword) && (
-              <motion.span 
-                initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }}
-                className="text-red-400 text-sm font-medium mt-0.5"
-              >
-                Şifreler uyuşmuyor.
-              </motion.span>
-            )}
-          </AnimatePresence>
+          {fieldErrors.confirmPassword && (
+            <span className="text-red-400 text-[10px] px-1 font-medium mt-0.5">
+              {fieldErrors.confirmPassword}
+            </span>
+          )}
         </div>
 
-        <button 
-          onClick={() => {
-             if (onLogin) onLogin({ email, firstName, lastName, phone });
-             handleClose();
-          }}
-          disabled={!password || !isPasswordsMatch || !firstName || !phone || phone.length < 14}
-          className="w-full bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 disabled:hover:bg-cyan-400 text-black font-bold py-3.5 rounded-xl transition-all duration-200 active:scale-[0.98] mt-2 shadow-[0_0_15px_rgba(34,211,238,0.2)]"
+         <button 
+          onClick={handleRegisterSubmit}
+          className="w-full bg-cyan-400 hover:bg-cyan-300 text-black font-bold py-3.5 rounded-xl transition-all duration-200 active:scale-[0.98] mt-2 shadow-[0_0_15px_rgba(34,211,238,0.2)]"
         >
           {language === 'tr' ? 'Kayıt Ol ve Doğrula' : 'Register and Verify'}
         </button>
