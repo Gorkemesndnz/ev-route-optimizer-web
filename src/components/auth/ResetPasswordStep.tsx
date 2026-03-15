@@ -1,6 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
+import { useSettings } from "../../contexts/SettingsContext";
+
 interface ResetPasswordStepProps {
   password: string;
   setPassword: (val: string) => void;
@@ -8,7 +10,6 @@ interface ResetPasswordStepProps {
   setConfirmPassword: (val: string) => void;
   isPasswordsMatch: boolean;
   handleClose: () => void;
-  language: 'tr' | 'en';
 }
 
 export default function ResetPasswordStep({
@@ -18,8 +19,8 @@ export default function ResetPasswordStep({
   setConfirmPassword,
   isPasswordsMatch,
   handleClose,
-  language
 }: ResetPasswordStepProps) {
+  const { language } = useSettings();
   return (
     <motion.div
       key="reset_password"

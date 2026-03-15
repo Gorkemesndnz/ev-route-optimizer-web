@@ -11,9 +11,12 @@ const MOCK_USER = {
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+import { useSettings } from "../contexts/SettingsContext";
+
 export type AuthStep = 'email' | 'password' | 'register' | 'verify_email' | 'reset_password';
 
-export function useAuthForm(language: 'tr' | 'en' = 'tr', onLogin?: (user: any) => void, onClose?: () => void) {
+export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void) {
+  const { language } = useSettings();
   const [authStep, setAuthStep] = useState<AuthStep>('email');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

@@ -46,13 +46,14 @@ const NativeSlider = ({ value, min, max, onChange }: { value: number, min: numbe
   );
 };
 
+import { useSettings } from "../contexts/SettingsContext";
+
 export default function RouteSettingsView({ 
   onBack, 
-  language = 'tr' 
 }: { 
   onBack: () => void,
-  language?: 'tr' | 'en'
 }) {
+  const { language } = useSettings();
   const t = translations[language];
   const [sarjSikligi, setSarjSikligi] = useState<"optimal" | "az" | "sik">("optimal");
   const [varisSarj, setVarisSarj] = useState(20);

@@ -39,17 +39,16 @@ import { LocationItem } from "./LocationItem";
 import { LocationSearchModal } from "./LocationSearchModal";
 import { translations } from "../lib/translations";
 
+import { useAuth } from "../contexts/AuthContext";
+import { useSettings } from "../contexts/SettingsContext";
+
 export default function Sidebar({
   onOpenRouteSettings,
-  currentUser,
-  onRequireAuth,
-  language = 'tr'
 }: {
   onOpenRouteSettings: () => void;
-  currentUser: any;
-  onRequireAuth: (msg: string) => void;
-  language?: 'tr' | 'en';
 }) {
+  const { language } = useSettings();
+  const { currentUser, requireAuth } = useAuth();
   const t = translations[language];
   const [locations, setLocations] = useState([
     { id: "start", type: "start", value: "" },
@@ -275,7 +274,7 @@ export default function Sidebar({
         <button
           onClick={() => {
             if (!currentUser) {
-              onRequireAuth(t.savedRoutesPrompt);
+              requireAuth(t.savedRoutesPrompt);
             } else {
               // Gelecekte eklenecek "Kayıtlı Rotalar" ekranı
               alert(language === 'tr' ? "Kayıtlı Rotalar: Modül Yapım Aşamasında" : "Saved Routes: Module Under Construction");

@@ -3,28 +3,33 @@ import { ArrowLeft, Plus, CheckCircle2, Circle, Trash2, CarFront, Edit2 } from "
 import { cn } from "@/lib/utils";
 import { translations } from "../lib/translations";
 
+import { useVehicle } from "../contexts/VehicleContext";
+import { useSettings } from "../contexts/SettingsContext";
+
 export default function GarageView({
-  vehicles,
-  selectedVehicleId,
-  onSelectVehicle,
-  onRenameVehicle,
-  onDeleteVehicle,
   onAddVehicle,
   onBack,
-  language = 'tr'
 }: {
-  vehicles: any[];
-  selectedVehicleId: string | null;
-  onSelectVehicle: (id: string) => void;
-  onRenameVehicle: (id: string, newName: string) => void;
-  onDeleteVehicle: (id: string) => void;
   onAddVehicle: () => void;
   onBack: () => void;
-  language?: 'tr' | 'en';
 }) {
+  const { language } = useSettings();
+  const { vehicles, setVehicles, selectedVehicleId, setSelectedVehicleId } = useVehicle();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [tempName, setTempName] = useState("");
   const t = translations[language];
+
+  const handleSelectVehicle = (id: string) => setSelectedVehicleId(id);
+  const handleRenameVehicle = (id: string, newName: string) => {
+    setVehicles(prev => prev.map(v => v.id === id ? { ...v, customName: newName } : v));
+  };
+  const handleDeleteVehicle = (id: string) => {
+    const newVehicles = vehicles.filter(v => v.id !== id);
+    setVehicles(newVehicles);
+    if (selectedVehicleId === id) {
+      setSelectedVehicleId(newVehicles.length > 0 ? newVehicles[0].id : null);
+    }
+  };
 
   return (
     <div className="glass-panel w-full sm:w-[420px] px-4 py-5 pointer-events-auto flex flex-col gap-4 relative h-[calc(100svh-4rem)] sm:h-auto sm:max-h-[85vh] overflow-y-auto custom-scrollbar">
@@ -60,7 +65,7 @@ export default function GarageView({
               <div className="flex items-start justify-between gap-3">
                 <div 
                   className="flex-1 flex gap-3 items-center cursor-pointer group"
-                  onClick={() => onSelectVehicle(vehicle.id)}
+                  onClick={() => handleSelectVehicle(vehicle.id)}
                 >
                   <div className={cn(
                     "flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-colors",
@@ -83,14 +88,14 @@ export default function GarageView({
                         onChange={(e) => setTempName(e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
-                            onRenameVehicle(vehicle.id, tempName);
+                            handleRenameVehicle(vehicle.id, tempName);
                             setEditingId(null);
                           } else if (e.key === 'Escape') {
                             setEditingId(null);
                           }
                         }}
                         onBlur={() => {
-                          onRenameVehicle(vehicle.id, tempName);
+                          handleRenameVehicle(vehicle.id, tempName);
                           setEditingId(null);
                         }}
                         placeholder={t.vehicleName}
@@ -121,7 +126,7 @@ export default function GarageView({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      onDeleteVehicle(vehicle.id);
+                      handleDeleteVehicle(vehicle.id);
                     }}
                     className="p-2 text-white/50 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all active:scale-90"
                     title={language === 'tr' ? 'Aracı Sil' : 'Delete Vehicle'}

@@ -4,21 +4,20 @@ import { Cookie, X, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { translations } from "../lib/translations";
 
+import { useSettings } from "../contexts/SettingsContext";
+
 export default function CookieConsent({
-  showBanner,
-  showModal,
   onOpenPrivacy,
-  onOpenSettings,
-  onSave,
-  language
 }: {
-  showBanner: boolean;
-  showModal: boolean;
   onOpenPrivacy: () => void;
-  onOpenSettings: () => void;
-  onSave: (prefs: any) => void;
-  language?: 'tr' | 'en';
 }) {
+  const { 
+    language, 
+    showCookieBanner: showBanner, 
+    showCookieModal: showModal, 
+    setShowCookieModal: onOpenSettings, 
+    handleSaveCookies: onSave 
+  } = useSettings();
   const t = translations[language || 'tr'];
   const [analytical, setAnalytical] = useState(true);
   const [crashReports, setCrashReports] = useState(true);
@@ -101,7 +100,7 @@ export default function CookieConsent({
                   {t.acceptMandatory}
                 </button>
                 <button 
-                  onClick={onOpenSettings}
+                  onClick={() => onOpenSettings(true)}
                   className="py-2.5 px-4 rounded-xl border border-white/20 text-white/90 hover:text-white font-medium text-sm hover:bg-white/5 transition-all outline-none active:scale-[0.98]"
                 >
                   {t.customize}

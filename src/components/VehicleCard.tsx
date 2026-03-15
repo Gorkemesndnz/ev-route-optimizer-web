@@ -26,22 +26,25 @@ const NativeSlider = ({ value, min, max, onChange }: { value: number, min: numbe
   );
 };
 
+import { useVehicle } from "../contexts/VehicleContext";
+import { useSettings } from "../contexts/SettingsContext";
+
 export default function VehicleCard({ 
-  selectedVehicle, 
   onOpenGarage, 
   onOpenAddVehicle,
-  onOpenVehicleSettings,
-  onUpdateSoC,
-  language = 'tr'
+  onOpenVehicleSettings
 }: { 
-  selectedVehicle: any, 
   onOpenGarage: () => void, 
   onOpenAddVehicle: () => void,
-  onOpenVehicleSettings: () => void,
-  onUpdateSoC: (soc: number) => void,
-  language?: 'tr' | 'en'
+  onOpenVehicleSettings: () => void
 }) {
+  const { language } = useSettings();
+  const { selectedVehicle, setVehicles, selectedVehicleId } = useVehicle();
   const t = translations[language];
+
+  const handleUpdateSoC = (soc: number) => {
+    setVehicles(prev => prev.map(v => v.id === selectedVehicleId ? { ...v, soc } : v));
+  };
   if (!selectedVehicle) {
     return (
       <div className="glass-panel w-full sm:w-[420px] p-6 pointer-events-auto flex flex-col items-center justify-center min-h-[160px] gap-4 mt-auto md:mt-2">
@@ -95,7 +98,7 @@ export default function VehicleCard({
           value={selectedVehicle.soc} 
           min={0}
           max={100}
-          onChange={(val) => onUpdateSoC(val)}
+          onChange={handleUpdateSoC}
         />
       </div>
 

@@ -3,23 +3,24 @@ import { useMap } from "@vis.gl/react-google-maps";
 import { cn } from "@/lib/utils";
 import { translations } from "../lib/translations";
 
+import { useSettings } from "../contexts/SettingsContext";
+
 export default function MapControls({ 
   onLocateUser, 
-  onStyleChange,
-  currentStyle,
-  showTraffic,
-  onToggleTraffic,
-  language = 'tr'
 }: { 
   onLocateUser: (loc: {lat: number, lng: number}) => void,
-  onStyleChange: (style: 'default' | 'light' | 'dark' | 'satellite' | 'system') => void,
-  currentStyle: 'default' | 'light' | 'dark' | 'satellite' | 'system',
-  showTraffic: boolean,
-  onToggleTraffic: () => void,
-  language?: 'tr' | 'en'
 }) {
+  const { 
+    language, 
+    mapStyleKey: currentStyle, 
+    setMapStyleKey: onStyleChange,
+    showTraffic,
+    setShowTraffic
+  } = useSettings();
   const map = useMap();
   const t = translations[language];
+
+  const onToggleTraffic = () => setShowTraffic(!showTraffic);
 
   const handleZoomIn = () => {
     if (map) map.setZoom((map.getZoom() || 0) + 1);

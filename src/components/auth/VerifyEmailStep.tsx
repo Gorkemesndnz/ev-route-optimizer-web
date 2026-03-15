@@ -1,6 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
+import { useSettings } from "../../contexts/SettingsContext";
+
 interface VerifyEmailStepProps {
   email: string;
   otp: string;
@@ -8,7 +10,6 @@ interface VerifyEmailStepProps {
   otpError: string;
   timeLeft: number;
   handleResend: () => void;
-  language: 'tr' | 'en';
 }
 
 export default function VerifyEmailStep({
@@ -18,8 +19,8 @@ export default function VerifyEmailStep({
   otpError,
   timeLeft,
   handleResend,
-  language
 }: VerifyEmailStepProps) {
+  const { language } = useSettings();
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60).toString().padStart(2, '0');
     const s = (seconds % 60).toString().padStart(2, '0');

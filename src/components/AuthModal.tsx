@@ -9,19 +9,27 @@ import RegisterStep from "./auth/RegisterStep";
 import VerifyEmailStep from "./auth/VerifyEmailStep";
 import ResetPasswordStep from "./auth/ResetPasswordStep";
 
+import { useAuth } from "../contexts/AuthContext";
+import { useSettings } from "../contexts/SettingsContext";
+
 export default function AuthModal({ 
-  isOpen, 
-  onClose, 
   onLogin,
-  customMessage,
-  language = 'tr'
 }: { 
-  isOpen: boolean;
-  onClose: () => void;
   onLogin?: (user: any) => void; 
-  customMessage?: string;
-  language?: 'tr' | 'en';
 }) {
+  const { 
+    isAuthModalOpen: isOpen, 
+    setIsAuthModalOpen, 
+    authMessage: customMessage,
+    setAuthMessage 
+  } = useAuth();
+  const { language } = useSettings();
+
+  const onClose = () => {
+    setIsAuthModalOpen(false);
+    setAuthMessage('');
+  };
+
   const t = translations[language];
   const {
     authStep,
@@ -50,7 +58,7 @@ export default function AuthModal({
     handleResend,
     handleGoToVerify,
     isPasswordsMatch
-  } = useAuthForm(language, onLogin, onClose);
+  } = useAuthForm(onLogin, onClose);
 
   const handleClose = () => {
     resetForm();
@@ -68,7 +76,6 @@ export default function AuthModal({
             setAuthError={setAuthError}
             handleEmailSubmit={handleEmailSubmit}
             customMessage={customMessage}
-            language={language}
           />
         );
       case 'password':
@@ -82,7 +89,6 @@ export default function AuthModal({
             handlePasswordSubmit={handlePasswordSubmit}
             handleGoToVerify={handleGoToVerify}
             setAuthStep={setAuthStep}
-            language={language}
           />
         );
       case 'register':
@@ -102,7 +108,6 @@ export default function AuthModal({
             isPasswordsMatch={isPasswordsMatch}
             onLogin={onLogin}
             handleClose={handleClose}
-            language={language}
           />
         );
       case 'verify_email':
@@ -114,7 +119,6 @@ export default function AuthModal({
             otpError={otpError}
             timeLeft={timeLeft}
             handleResend={handleResend}
-            language={language}
           />
         );
       case 'reset_password':
@@ -126,7 +130,6 @@ export default function AuthModal({
             setConfirmPassword={setConfirmPassword}
             isPasswordsMatch={isPasswordsMatch}
             handleClose={handleClose}
-            language={language}
           />
         );
       default:

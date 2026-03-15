@@ -25,27 +25,22 @@ import {
 import { translations } from "../lib/translations";
 import { cn } from "@/lib/utils";
 
+import { useSettings } from "../contexts/SettingsContext";
+import { useAuth } from "../contexts/AuthContext";
+
 const evBrands = ["Tesla", "Togg", "BMW", "Mercedes-Benz", "Audi", "Porsche", "Hyundai", "Kia", "BYD", "MG", "Ford", "Volvo", "Renault", "Peugeot", "Diğer"];
 
 export default function GeneralMenu({ 
   isOpen, 
   onClose,
   onOpenCookieConsent,
-  language,
-  setLanguage,
-  mapStyleKey,
-  setMapStyleKey,
-  currentUser
 }: { 
   isOpen: boolean; 
   onClose: () => void;
   onOpenCookieConsent: () => void;
-  language: 'tr' | 'en';
-  setLanguage: (lang: 'tr' | 'en') => void;
-  mapStyleKey: string;
-  setMapStyleKey: (key: any) => void;
-  currentUser?: { firstName: string; lastName: string; email: string } | null;
 }) {
+  const { language, setLanguage, mapStyleKey, setMapStyleKey } = useSettings();
+  const { currentUser } = useAuth();
   const [activeMenu, setActiveMenu] = useState<'main'|'language'|'units'|'energy'|'appearance'|'suggestions'|'add_vehicle'|'contact'|'how_it_works'|'whats_new'|'faq'|'about'|'terms'|'privacy'>('main');
   const t = translations[language];
 

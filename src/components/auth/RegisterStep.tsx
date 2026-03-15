@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useSettings } from "../../contexts/SettingsContext";
 import { translations } from "../../lib/translations";
 
 interface RegisterStepProps {
@@ -18,7 +19,6 @@ interface RegisterStepProps {
   isPasswordsMatch: boolean;
   onLogin?: (user: any) => void;
   handleClose: () => void;
-  language: 'tr' | 'en';
 }
 
 const nameRegexObj = /[^a-zA-ZğüşıöçĞÜŞİÖÇ ]/g;
@@ -38,8 +38,8 @@ export default function RegisterStep({
   isPasswordsMatch,
   onLogin,
   handleClose,
-  language
 }: RegisterStepProps) {
+  const { language } = useSettings();
   const t = translations[language];
   const lastNameRef = useRef<HTMLInputElement>(null);
   const phoneRef = useRef<HTMLInputElement>(null);

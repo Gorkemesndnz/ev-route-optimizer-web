@@ -11,19 +11,29 @@ import GizlilikPolitikasi from './pages/GizlilikPolitikasi.tsx'
 import Home from './pages/Home.tsx'
 import { MarketingProvider } from './pages/BasePageLayout.tsx'
 
+import { SettingsProvider } from './contexts/SettingsContext'
+import { AuthProvider } from './contexts/AuthContext'
+import { VehicleProvider } from './contexts/VehicleContext'
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <MarketingProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<App />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/home/hakkimizda" element={<Hakkimizda />} />
-        <Route path="/home/iletisim" element={<Iletisim />} />
-        <Route path="/home/kullanim-kosullari" element={<KullanimKosullari />} />
-        <Route path="/home/gizlilik" element={<GizlilikPolitikasi />} />
-      </Routes>
-      </BrowserRouter>
+      <SettingsProvider>
+        <AuthProvider>
+          <VehicleProvider>
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<App />} />
+                <Route path="/home" element={<Home />} />
+                <Route path="/home/hakkimizda" element={<Hakkimizda />} />
+                <Route path="/home/iletisim" element={<Iletisim />} />
+                <Route path="/home/kullanim-kosullari" element={<KullanimKosullari />} />
+                <Route path="/home/gizlilik" element={<GizlilikPolitikasi />} />
+              </Routes>
+            </BrowserRouter>
+          </VehicleProvider>
+        </AuthProvider>
+      </SettingsProvider>
     </MarketingProvider>
   </StrictMode>,
 )

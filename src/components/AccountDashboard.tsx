@@ -23,22 +23,25 @@ interface Vehicle {
   soc?: number;
 }
 
+import { useAuth } from "../contexts/AuthContext";
+import { useVehicle } from "../contexts/VehicleContext";
+import { useSettings } from "../contexts/SettingsContext";
+
 export default function AccountDashboard({
   onClose,
-  user,
-  activeVehicle,
   onChangeVehicle,
-  language = 'tr'
 }: {
   onClose: () => void;
-  user: UserProfile;
-  activeVehicle: Vehicle | null;
   onChangeVehicle: () => void;
-  language?: 'tr' | 'en';
 }) {
+  const { language } = useSettings();
+  const { currentUser: user } = useAuth();
+  const { selectedVehicle: activeVehicle } = useVehicle();
   const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'prices'>('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const t = translations[language];
+
+  if (!user) return null; // Safe guard for missing user
 
   const mockRoutes = [
     { id: 1, route: language === 'tr' ? "İstanbul -> Ankara" : "Istanbul -> Ankara", date: "12 Mar 2026", duration: language === 'tr' ? "4s 15dk" : "4h 15m", energy: "45 kWh" },

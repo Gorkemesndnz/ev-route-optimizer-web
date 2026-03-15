@@ -22,13 +22,14 @@ const CustomSwitch = ({ checked, onChange }: { checked: boolean, onChange: (val:
   );
 };
 
+import { useSettings } from "../contexts/SettingsContext";
+
 export default function VehicleSettingsView({ 
   onBack,
-  language = 'tr' 
 }: { 
   onBack: () => void,
-  language?: 'tr' | 'en'
 }) {
+  const { language } = useSettings();
   const [passengers, setPassengers] = useState(1);
   const [extraWeight, setExtraWeight] = useState(0);
   const [climateControl, setClimateControl] = useState(true);

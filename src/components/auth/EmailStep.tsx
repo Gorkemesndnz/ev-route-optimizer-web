@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useSettings } from "../../contexts/SettingsContext";
 import { translations } from "../../lib/translations";
 
 interface EmailStepProps {
@@ -9,7 +10,6 @@ interface EmailStepProps {
   setAuthError: (val: string) => void;
   handleEmailSubmit: () => void;
   customMessage?: string;
-  language: 'tr' | 'en';
 }
 
 export default function EmailStep({
@@ -19,8 +19,8 @@ export default function EmailStep({
   setAuthError,
   handleEmailSubmit,
   customMessage,
-  language
 }: EmailStepProps) {
+  const { language } = useSettings();
   const t = translations[language];
 
   return (

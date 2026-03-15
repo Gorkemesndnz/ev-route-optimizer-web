@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useSettings } from "../../contexts/SettingsContext";
 import { translations } from "../../lib/translations";
 
 interface PasswordStepProps {
@@ -11,7 +12,6 @@ interface PasswordStepProps {
   handlePasswordSubmit: () => void;
   handleGoToVerify: () => void;
   setAuthStep: (step: any) => void;
-  language: 'tr' | 'en';
 }
 
 export default function PasswordStep({
@@ -23,8 +23,8 @@ export default function PasswordStep({
   handlePasswordSubmit,
   handleGoToVerify,
   setAuthStep,
-  language
 }: PasswordStepProps) {
+  const { language } = useSettings();
   const t = translations[language];
 
   return (

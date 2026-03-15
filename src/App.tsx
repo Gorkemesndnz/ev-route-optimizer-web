@@ -14,90 +14,38 @@ import GeneralMenu from "./components/GeneralMenu";
 import { User, LogOut } from "lucide-react";
 import { lightMapStyle, darkMapStyle } from "./lib/mapStyles";
 import { translations } from "./lib/translations";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useSettings } from "./contexts/SettingsContext";
+import { useAuth } from "./contexts/AuthContext";
+import { useVehicle } from "./contexts/VehicleContext";
 
 function App() {
   const [activeView, setActiveView] = useState<'main' | 'settings' | 'garage' | 'add_vehicle' | 'vehicle_settings' | 'account' | 'privacy' | 'about' | 'terms'>('main');
-  
-  // Persistent Settings
-  const [language, setLanguage] = useState<'tr' | 'en'>(() => {
-    const saved = localStorage.getItem('iyontree_language');
-    return (saved === 'en' || saved === 'tr') ? saved : 'tr';
-  });
-  
-  const [mapStyleKey, setMapStyleKey] = useState<'default' | 'light' | 'dark' | 'satellite' | 'system'>(() => {
-    const saved = localStorage.getItem('iyontree_map_style');
-    const valid = ['default', 'light', 'dark', 'satellite', 'system'];
-    return (saved && valid.includes(saved)) ? (saved as any) : 'system';
-  });
+  const [previousView, setPreviousView] = useState<'main' | 'account' | 'settings' | 'garage' | 'add_vehicle' | 'vehicle_settings' | 'privacy' | 'about' | 'terms'>('main');
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [isRightMenuOpen, setIsRightMenuOpen] = useState(false);
+
+  const {
+    language, getMapStyle, showTraffic, setShowTraffic, 
+    showCookieBanner, showCookieModal, setShowCookieModal, handleSaveCookies,
+    mapStyleKey, setLanguage, setMapStyleKey
+  } = useSettings();
 
   const t = translations[language];
-  const [vehicles, setVehicles] = useState<any[]>([]);
-  const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
-  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
-  const [showTraffic, setShowTraffic] = useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [previousView, setPreviousView] = useState<'main' | 'account' | 'settings' | 'garage' | 'add_vehicle' | 'vehicle_settings' | 'privacy' | 'about' | 'terms'>('main');
-  const [authMessage, setAuthMessage] = useState<string>('');
-  const [isRightMenuOpen, setIsRightMenuOpen] = useState(false);
-  const [showCookieBanner, setShowCookieBanner] = useState(false);
-  const [showCookieModal, setShowCookieModal] = useState(false);
 
-  // Sync with system theme and save changes
-  useEffect(() => {
-    localStorage.setItem('iyontree_language', language);
-    document.documentElement.lang = language;
-    document.documentElement.className = "notranslate";
-  }, [language]);
+  const {
+    currentUser, setCurrentUser,
+    isAuthModalOpen, setIsAuthModalOpen,
+    authMessage, setAuthMessage,
+    requireAuth
+  } = useAuth();
 
-  useEffect(() => {
-    localStorage.setItem('iyontree_map_style', mapStyleKey);
-  }, [mapStyleKey]);
-
-  useEffect(() => {
-    // Initial Cookie Check
-    const saved = localStorage.getItem('iyontree_cookies');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        const is30DaysOld = (Date.now() - parsed.timestamp) > 30 * 24 * 60 * 60 * 1000;
-        if (!parsed.allAccepted && is30DaysOld) {
-          setShowCookieBanner(true);
-        }
-      } catch {
-        setShowCookieBanner(true);
-      }
-    } else {
-      setShowCookieBanner(true);
-    }
-  }, []);
-
-  const handleSaveCookies = (prefs: any) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('iyontree_cookies', JSON.stringify(prefs));
-    }
-    setShowCookieBanner(false);
-    setShowCookieModal(false);
-  };
-
-  const getMapStyle = () => {
-    let effective: 'light' | 'dark' | 'default' | 'satellite' = 'light';
-    
-    if (mapStyleKey === 'system') {
-      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      effective = isDark ? 'dark' : 'light';
-    } else {
-      effective = mapStyleKey as any;
-    }
-    
-    if (effective === 'light') return lightMapStyle;
-    if (effective === 'dark') return darkMapStyle;
-    return [];
-  };
-
-  const selectedVehicle = vehicles.find(v => v.id === selectedVehicleId) || null;
+  const {
+    vehicles, setVehicles,
+    selectedVehicleId, setSelectedVehicleId,
+    selectedVehicle
+  } = useVehicle();
 
   // Hardcoded for demo
   const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "AIzaSy_demo";
@@ -115,11 +63,6 @@ function App() {
         {/* 2. Map Controls (Bottom Right) */}
         <MapControls 
           onLocateUser={setUserLocation} 
-          currentStyle={mapStyleKey}
-          onStyleChange={setMapStyleKey}
-          showTraffic={showTraffic}
-          onToggleTraffic={() => setShowTraffic(!showTraffic)}
-          language={language}
         />
 
         {/* Map Blur Overlay */}
@@ -151,20 +94,12 @@ function App() {
               >
                 <Sidebar 
                   onOpenRouteSettings={() => setActiveView('settings')} 
-                  currentUser={currentUser}
-                  onRequireAuth={(msg) => { setAuthMessage(msg || t.savedRoutesPrompt); setIsAuthModalOpen(true); }}
-                  language={language}
                 />
 
                 <VehicleCard
-                  selectedVehicle={selectedVehicle}
                   onOpenGarage={() => { setPreviousView('main'); setActiveView('garage'); }}
                   onOpenAddVehicle={() => { setPreviousView('main'); setActiveView('add_vehicle'); }}
                   onOpenVehicleSettings={() => { setPreviousView('main'); setActiveView('vehicle_settings'); }}
-                  onUpdateSoC={(soc) => {
-                    setVehicles(prev => prev.map(v => v.id === selectedVehicleId ? { ...v, soc } : v));
-                  }}
-                  language={language}
                 />
               </motion.div>
             )}
@@ -180,7 +115,6 @@ function App() {
               >
                 <RouteSettingsView 
                   onBack={() => setActiveView('main')} 
-                  language={language}
                 />
               </motion.div>
             )}
@@ -195,22 +129,8 @@ function App() {
                 className="relative z-40 pointer-events-none"
               >
                 <GarageView 
-                  vehicles={vehicles}
-                  selectedVehicleId={selectedVehicleId}
-                  onSelectVehicle={(id) => setSelectedVehicleId(id)}
-                  onRenameVehicle={(id, newName) => {
-                    setVehicles(prev => prev.map(v => v.id === id ? { ...v, customName: newName } : v));
-                  }}
-                  onDeleteVehicle={(id) => {
-                    const newVehicles = vehicles.filter(v => v.id !== id);
-                    setVehicles(newVehicles);
-                    if (selectedVehicleId === id) {
-                      setSelectedVehicleId(newVehicles.length > 0 ? newVehicles[0].id : null);
-                    }
-                  }}
                   onAddVehicle={() => setActiveView('add_vehicle')}
                   onBack={() => setActiveView(previousView === 'account' ? 'account' : 'main')}
-                  language={language}
                 />
               </motion.div>
             )}
@@ -226,12 +146,9 @@ function App() {
               >
                 <AddVehicleView 
                   onBack={() => setActiveView(vehicles.length > 0 ? 'garage' : (previousView === 'account' ? 'account' : 'main'))}
-                  onVehicleAdded={(vehicle) => {
-                    setVehicles(prev => [...prev, vehicle]);
-                    setSelectedVehicleId(vehicle.id);
+                  onVehicleAdded={() => {
                     setActiveView(previousView === 'account' ? 'account' : 'main');
                   }}
-                  language={language}
                 />
               </motion.div>
             )}
@@ -244,7 +161,7 @@ function App() {
                 transition={{ type: "tween", ease: "easeInOut", duration: 0.3 }}
                 className="relative z-40 pointer-events-none"
               >
-                <VehicleSettingsView onBack={() => setActiveView('main')} language={language} />
+                <VehicleSettingsView onBack={() => setActiveView('main')} />
               </motion.div>
             )}
             {activeView === 'account' && currentUser && (
@@ -257,11 +174,8 @@ function App() {
                 className="relative z-50 pointer-events-none"
               >
                 <AccountDashboard 
-                  user={currentUser}
-                  activeVehicle={selectedVehicle}
                   onChangeVehicle={() => { setPreviousView('account'); setActiveView('garage'); }}
                   onClose={() => setActiveView('main')}
-                  language={language}
                 />
               </motion.div>
             )}
@@ -310,11 +224,7 @@ function App() {
 
         {/* Modals */}
         <AuthModal 
-          isOpen={isAuthModalOpen} 
-          onClose={() => { setIsAuthModalOpen(false); setAuthMessage(''); }} 
           onLogin={(user) => { setCurrentUser(user); setActiveView('account'); }}
-          customMessage={authMessage}
-          language={language}
         />
 
         {/* Right General Menu */}
@@ -322,24 +232,14 @@ function App() {
           isOpen={isRightMenuOpen} 
           onClose={() => setIsRightMenuOpen(false)} 
           onOpenCookieConsent={() => { setShowCookieModal(true); setIsRightMenuOpen(false); }}
-          language={language}
-          setLanguage={setLanguage}
-          mapStyleKey={mapStyleKey}
-          setMapStyleKey={setMapStyleKey}
-          currentUser={currentUser}
         />
 
         {/* Global Floating Elements */}
         <CookieConsent 
-          showBanner={showCookieBanner}
-          showModal={showCookieModal}
           onOpenPrivacy={() => { 
             window.open('/home/gizlilik', '_blank');
             setShowCookieModal(false); 
           }}
-          onOpenSettings={() => setShowCookieModal(true)}
-          onSave={handleSaveCookies}
-          language={language}
         />
       </div>
     </APIProvider>

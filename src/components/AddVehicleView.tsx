@@ -13,15 +13,18 @@ const MOCK_BRANDS = [
   { id: "kia", name: "Kia", models: ["EV6", "Niro EV"] },
 ];
 
+import { useSettings } from "../contexts/SettingsContext";
+import { useVehicle } from "../contexts/VehicleContext";
+
 export default function AddVehicleView({ 
   onBack, 
   onVehicleAdded,
-  language = 'tr'
 }: {
   onBack: () => void;
-  onVehicleAdded: (vehicle: any) => void;
-  language?: 'tr' | 'en';
+  onVehicleAdded: () => void;
 }) {
+  const { language } = useSettings();
+  const { setVehicles, setSelectedVehicleId } = useVehicle();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedBrand, setSelectedBrand] = useState<any>(null);
   const t = translations[language];
@@ -31,13 +34,16 @@ export default function AddVehicleView({
   );
 
   const handleModelSelect = (brand: any, model: string) => {
-    onVehicleAdded({
+    const newVehicle = {
       id: Date.now().toString(),
       brand: brand.name,
       model: model,
       customName: `${brand.name} ${model}`,
       soc: 80 // Default to 80% charge
-    });
+    };
+    setVehicles(prev => [...prev, newVehicle]);
+    setSelectedVehicleId(newVehicle.id);
+    onVehicleAdded();
   };
 
   return (
