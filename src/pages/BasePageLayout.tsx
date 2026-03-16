@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 import { ChevronLeft, Moon, Sun, Globe, ArrowRight } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import GlobalFooterLight from "../components/GlobalFooterLight";
+import CookieConsent from "../components/CookieConsent";
+import { useSettings } from "../contexts/SettingsContext";
 
 interface MarketingContextType {
   language: 'tr' | 'en';
@@ -61,6 +63,7 @@ export default function BasePageLayout({
   const isHome = location.pathname === '/home' || location.pathname === '/home/';
   
   const { language, toggleLanguage } = useMarketing();
+  const { setShowCookieModal } = useSettings();
 
   return (
     <div className={`min-h-screen bg-slate-50 flex flex-col relative overflow-hidden text-slate-900 font-sans transition-colors duration-300`}>
@@ -144,6 +147,17 @@ export default function BasePageLayout({
         </main>
 
         <GlobalFooterLight />
+
+        <CookieConsent 
+          onOpenPrivacy={() => { 
+            if (location.pathname === '/home/gizlilik') {
+              setShowCookieModal(false);
+            } else {
+              window.open('/home/gizlilik', '_blank');
+              setShowCookieModal(false); 
+            }
+          }}
+        />
       </div>
   );
 }
