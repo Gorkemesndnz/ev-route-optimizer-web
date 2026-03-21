@@ -61,9 +61,11 @@ export const registerSchema = z.object({
   phone: z.string()
     .min(14, { message: "Geçersiz telefon formatı / Invalid phone format" }),
   password: z.string()
-    .min(6, { message: "Şifre en az 6 karakter olmalıdır / Password must be at least 6 characters" })
+    .min(8, { message: "Şifre en az 8 karakter olmalıdır / Password must be at least 8 characters" })
     .regex(/[A-Z]/, { message: "En az bir büyük harf gereklidir / At least one uppercase letter is required" })
-    .regex(/[0-9]/, { message: "En az bir rakam gereklidir / At least one number is required" }),
+    .regex(/[a-z]/, { message: "En az bir küçük harf gereklidir / At least one lowercase letter is required" })
+    .regex(/[0-9]/, { message: "En az bir rakam gereklidir / At least one number is required" })
+    .regex(/[^A-Za-z0-9]/, { message: "En az bir noktalama/özel işaret gereklidir / At least one special character is required" }),
   confirmPassword: z.string()
 }).refine(data => data.password === data.confirmPassword, {
   message: "Şifreler eşleşmiyor / Passwords do not match",
@@ -76,3 +78,17 @@ export type SuggestionFormData = z.infer<typeof suggestionSchema>;
 export type VehicleRequestFormData = z.infer<typeof vehicleRequestSchema>;
 export type LoginFormData = z.infer<typeof loginSchema>;
 export type RegisterFormData = z.infer<typeof registerSchema>;
+
+export const resetPasswordSchema = z.object({
+  password: z.string()
+    .min(8, { message: "Şifre en az 8 karakter olmalıdır / Password must be at least 8 characters" })
+    .regex(/[A-Z]/, { message: "En az bir büyük harf gereklidir / At least one uppercase letter is required" })
+    .regex(/[a-z]/, { message: "En az bir küçük harf gereklidir / At least one lowercase letter is required" })
+    .regex(/[0-9]/, { message: "En az bir rakam gereklidir / At least one number is required" })
+    .regex(/[^A-Za-z0-9]/, { message: "En az bir noktalama/özel işaret gereklidir / At least one special character is required" }),
+  confirmPassword: z.string()
+}).refine(data => data.password === data.confirmPassword, {
+  message: "Şifreler eşleşmiyor / Passwords do not match",
+  path: ["confirmPassword"]
+});
+export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;

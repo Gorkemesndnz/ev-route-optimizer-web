@@ -13,6 +13,7 @@
 
 $API_DIR = "C:\Ev-Route-Optimizer-Api"
 $WEB_DIR = "C:\Ev_Route_Optimizer_Web"
+$DOTNET_API_DIR = "C:\ev_route_optimizer_web_backend\EvOptimizer.Net\src\EvOptimizer.Api"
 
 Write-Host ""
 Write-Host "============================================" -ForegroundColor Cyan
@@ -48,14 +49,28 @@ $webProcess = Start-Process powershell -ArgumentList @(
 
 Start-Sleep -Seconds 2
 
+# --- 3. .NET Auth & Garage API ---
+Write-Host "[3/3] .NET API baslatiliyor..." -ForegroundColor Yellow
+Write-Host "      Dizin : $DOTNET_API_DIR" -ForegroundColor DarkGray
+Write-Host "      URL   : http://localhost:5146" -ForegroundColor DarkGray
+Write-Host ""
+
+$dotnetProcess = Start-Process powershell -ArgumentList @(
+    "-NoExit",
+    "-Command",
+    "Set-Location '$DOTNET_API_DIR'; dotnet run"
+) -PassThru
+
+Start-Sleep -Seconds 2
+
 # --- Özet ---
 Write-Host ""
 Write-Host "============================================" -ForegroundColor Green
 Write-Host "  Tum servisler baslatildi!" -ForegroundColor Green
 Write-Host "============================================" -ForegroundColor Green
 Write-Host ""
-Write-Host "  Backend API  : http://localhost:8000" -ForegroundColor White
-Write-Host "  Swagger Docs : http://localhost:8000/docs" -ForegroundColor White
+Write-Host "  Python API   : http://localhost:8000" -ForegroundColor White
+Write-Host "  .NET API     : http://localhost:5146" -ForegroundColor White
 Write-Host "  Frontend Web : http://localhost:5173" -ForegroundColor White
 Write-Host ""
 Write-Host "  Durdurmak icin acilan PowerShell pencerelerini kapatin." -ForegroundColor DarkGray

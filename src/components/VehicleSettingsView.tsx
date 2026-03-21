@@ -135,7 +135,7 @@ export default function VehicleSettingsView({
               <div className="flex flex-col gap-3">
                 <span className="text-white/80 font-medium text-[15px] flex items-center gap-2"><PlugZap size={16} className="text-cyan-400"/> {t.plugTypes}</span>
                 <div className="grid grid-cols-3 gap-2">
-                  {(['CCS', 'NACS', 'Type2']).map(tip => {
+                  {(['CCS', 'CHAdeMO', 'Type2']).map(tip => {
                     const val = tip.toLowerCase();
                     const isSelected = plugTypes.includes(val);
                     return (

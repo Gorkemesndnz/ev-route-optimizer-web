@@ -59,7 +59,8 @@ export default function AuthModal({
     handleGoToVerify,
     isPasswordsMatch,
     fieldErrors,
-    handleRegisterSubmit
+    handleRegisterSubmit,
+    handleResetPasswordSubmit
   } = useAuthForm(onLogin, onClose);
 
   const handleClose = () => {
@@ -131,7 +132,8 @@ export default function AuthModal({
             confirmPassword={confirmPassword}
             setConfirmPassword={setConfirmPassword}
             isPasswordsMatch={isPasswordsMatch}
-            handleClose={handleClose}
+            onSubmit={handleResetPasswordSubmit}
+            authError={authError}
           />
         );
       default:

@@ -179,6 +179,7 @@ export const translations = {
     dcCharge: "DC Şarj",
     priceNotice: "* Veriler örnek amaçlıdır. Fiyatlar istasyon bazında değişiklik gösterebilir.",
     profileUpdated: "Profil bilgileriniz başarıyla güncellendi.",
+    edit: "Düzenle",
     
     // Route Settings
     routeSettingsTitle: "Rota Ayarları",
@@ -446,6 +447,7 @@ export const translations = {
     dcCharge: "DC Charge",
     priceNotice: "* Data is for illustrative purposes. Prices may vary by station.",
     profileUpdated: "Your profile information has been successfully updated.",
+    edit: "Edit",
     
     // Route Settings
     routeSettingsTitle: "Route Settings",

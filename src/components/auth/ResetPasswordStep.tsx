@@ -9,7 +9,8 @@ interface ResetPasswordStepProps {
   confirmPassword: string;
   setConfirmPassword: (val: string) => void;
   isPasswordsMatch: boolean;
-  handleClose: () => void;
+  onSubmit: () => Promise<boolean>;
+  authError?: string;
 }
 
 export default function ResetPasswordStep({
@@ -18,7 +19,8 @@ export default function ResetPasswordStep({
   confirmPassword,
   setConfirmPassword,
   isPasswordsMatch,
-  handleClose,
+  onSubmit,
+  authError
 }: ResetPasswordStepProps) {
   const { language } = useSettings();
   return (
@@ -55,10 +57,9 @@ export default function ResetPasswordStep({
             type="password" 
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            onKeyDown={(e) => {
+            onKeyDown={async (e) => {
               if (e.key === 'Enter' && password && isPasswordsMatch) {
-                alert("Yeni Parola Kaydedildi. Oturum Açılıyor...");
-                handleClose();
+                await onSubmit();
               }
             }}
             placeholder="••••••••"
@@ -79,14 +80,22 @@ export default function ResetPasswordStep({
           </AnimatePresence>
         </div>
 
+        <AnimatePresence>
+          {authError && (
+             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+             className="text-red-400 text-sm bg-red-500/10 py-2 px-3 rounded-lg mt-2 text-center"
+             >
+               {authError}
+             </motion.div>
+          )}
+        </AnimatePresence>
+
         <button 
-          onClick={() => {
-            handleClose();
-          }}
+          onClick={onSubmit}
           disabled={!password || !isPasswordsMatch}
           className="w-full bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 disabled:hover:bg-cyan-400 text-black font-bold py-3.5 rounded-xl transition-all duration-200 active:scale-[0.98] mt-4 shadow-[0_0_15px_rgba(34,211,238,0.2)]"
         >
-          {language === 'tr' ? 'Şifreyi Yenile (Mock)' : 'Reset Password (Mock)'}
+          {language === 'tr' ? 'Şifreyi Yenile' : 'Reset Password'}
         </button>
       </div>
     </motion.div>
