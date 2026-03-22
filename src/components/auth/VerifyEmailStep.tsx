@@ -10,6 +10,8 @@ interface VerifyEmailStepProps {
   otpError: string;
   timeLeft: number;
   handleResend: () => void;
+  handleVerifySubmit: () => void;
+  isLoading: boolean;
 }
 
 export default function VerifyEmailStep({
@@ -19,6 +21,8 @@ export default function VerifyEmailStep({
   otpError,
   timeLeft,
   handleResend,
+  handleVerifySubmit,
+  isLoading,
 }: VerifyEmailStepProps) {
   const { language } = useSettings();
   const formatTime = (seconds: number) => {
@@ -49,8 +53,9 @@ export default function VerifyEmailStep({
             autoFocus
             maxLength={6}
             value={otp}
-            disabled={timeLeft === 0}
+            disabled={timeLeft === 0 || isLoading}
             onChange={(e) => handleOtpChange(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && otp.length === 6 && handleVerifySubmit()}
             placeholder="••••••"
             className={cn(
               "w-full max-w-[200px] text-center text-3xl tracking-[0.5em] bg-white/5 border rounded-xl py-3 px-4 text-white focus:outline-none transition-all font-black placeholder:text-white/10 shadow-inner",
@@ -68,6 +73,14 @@ export default function VerifyEmailStep({
             )}
           </AnimatePresence>
         </div>
+
+        <button 
+          onClick={handleVerifySubmit}
+          disabled={otp.length !== 6 || timeLeft === 0 || isLoading}
+          className="w-full max-w-[200px] mx-auto py-3 bg-cyan-400 hover:bg-cyan-300 text-black font-semibold rounded-xl transition-all shadow-lg shadow-cyan-400/20 active:scale-95 disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
+        >
+          {isLoading ? (language === 'tr' ? 'Doğrulanıyor...' : 'Verifying...') : (language === 'tr' ? 'Doğrula' : 'Verify')}
+        </button>
 
         <div className="flex justify-center mt-2">
           {timeLeft > 0 ? (

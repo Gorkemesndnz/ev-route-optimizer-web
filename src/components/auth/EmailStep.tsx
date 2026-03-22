@@ -9,6 +9,7 @@ interface EmailStepProps {
   authError: string;
   setAuthError: (val: string) => void;
   handleEmailSubmit: () => void;
+  isLoading: boolean;
   customMessage?: string;
 }
 
@@ -18,6 +19,7 @@ export default function EmailStep({
   authError,
   setAuthError,
   handleEmailSubmit,
+  isLoading,
   customMessage,
 }: EmailStepProps) {
   const { language } = useSettings();
@@ -67,10 +69,10 @@ export default function EmailStep({
 
         <button 
           onClick={handleEmailSubmit}
-          disabled={!email}
-          className="w-full bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 disabled:hover:bg-cyan-400 text-black font-bold py-3.5 rounded-xl transition-all duration-200 active:scale-[0.98] mt-2 shadow-[0_0_15px_rgba(34,211,238,0.2)]"
+          disabled={!email || isLoading}
+          className="w-full bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 disabled:hover:bg-cyan-400 text-black font-bold py-3.5 rounded-xl transition-all duration-200 active:scale-[0.98] mt-2 shadow-[0_0_15px_rgba(34,211,238,0.2)] flex items-center justify-center gap-2"
         >
-          {t.continue}
+          {isLoading ? (language === 'tr' ? 'Kontrol ediliyor...' : 'Checking...') : t.continue}
         </button>
       </div>
 

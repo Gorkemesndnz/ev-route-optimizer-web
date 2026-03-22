@@ -60,7 +60,10 @@ export default function AuthModal({
     isPasswordsMatch,
     fieldErrors,
     handleRegisterSubmit,
-    handleResetPasswordSubmit
+    handleResetPasswordSubmit,
+    handleVerifySubmit,
+    verificationType,
+    isLoading
   } = useAuthForm(onLogin, onClose);
 
   const handleClose = () => {
@@ -79,6 +82,7 @@ export default function AuthModal({
             setAuthError={setAuthError}
             handleEmailSubmit={handleEmailSubmit}
             customMessage={customMessage}
+            isLoading={isLoading}
           />
         );
       case 'password':
@@ -92,6 +96,7 @@ export default function AuthModal({
             handlePasswordSubmit={handlePasswordSubmit}
             handleGoToVerify={handleGoToVerify}
             setAuthStep={setAuthStep}
+            isLoading={isLoading}
           />
         );
       case 'register':
@@ -110,7 +115,9 @@ export default function AuthModal({
             setConfirmPassword={setConfirmPassword}
             isPasswordsMatch={isPasswordsMatch}
             fieldErrors={fieldErrors}
+            authError={authError}
             handleRegisterSubmit={handleRegisterSubmit}
+            isLoading={isLoading}
           />
         );
       case 'verify_email':
@@ -122,6 +129,8 @@ export default function AuthModal({
             otpError={otpError}
             timeLeft={timeLeft}
             handleResend={handleResend}
+            handleVerifySubmit={handleVerifySubmit}
+            isLoading={isLoading}
           />
         );
       case 'reset_password':
@@ -134,6 +143,7 @@ export default function AuthModal({
             isPasswordsMatch={isPasswordsMatch}
             onSubmit={handleResetPasswordSubmit}
             authError={authError}
+            isLoading={isLoading}
           />
         );
       default:
@@ -169,8 +179,11 @@ export default function AuthModal({
                 onClick={() => {
                   if (authStep === 'register') { setAuthStep('email'); setPassword(''); setConfirmPassword(''); setAuthError(''); }
                   else if (authStep === 'password') { setAuthStep('email'); setAuthError(''); setPassword(''); }
-                  else if (authStep === 'verify_email') { setAuthStep('password'); setAuthError(''); }
-                  else if (authStep === 'reset_password') { setAuthStep('password'); setAuthError(''); }
+                  else if (authStep === 'verify_email') { 
+                    setAuthStep(verificationType === 'register' ? 'register' : 'password'); 
+                    setAuthError(''); 
+                  }
+                  else if (authStep === 'reset_password') { setAuthStep('verify_email'); setAuthError(''); }
                 }}
                 className="absolute top-6 left-6 h-8 flex items-center justify-center gap-1 text-white/50 hover:text-white transition-all transform hover:scale-105 active:scale-95 bg-transparent text-sm font-medium z-10"
               >

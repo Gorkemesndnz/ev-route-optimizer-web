@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useSettings } from "../../contexts/SettingsContext";
 import { translations } from "../../lib/translations";
+import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 interface RegisterStepProps {
   email: string;
@@ -18,7 +20,9 @@ interface RegisterStepProps {
   setConfirmPassword: (val: string) => void;
   isPasswordsMatch: boolean;
   fieldErrors: { [key: string]: string };
+  authError: string;
   handleRegisterSubmit: () => void;
+  isLoading: boolean;
 }
 
 const nameRegexObj = /[^a-zA-ZğüşıöçĞÜŞİÖÇ ]/g;
@@ -37,10 +41,14 @@ export default function RegisterStep({
   setConfirmPassword,
   isPasswordsMatch,
   fieldErrors,
-  handleRegisterSubmit
+  authError,
+  handleRegisterSubmit,
+  isLoading
 }: RegisterStepProps) {
   const { language } = useSettings();
   const t = translations[language];
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const lastNameRef = useRef<HTMLInputElement>(null);
   const phoneRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
@@ -118,36 +126,54 @@ export default function RegisterStep({
 
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-white/70">{language === 'tr' ? 'Şifre Belirle' : 'Set Password'}</label>
-          <input 
-            type="password" 
-            ref={passwordRef}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && confirmPasswordRef.current?.focus()}
-            placeholder="••••••••"
-            className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all font-medium placeholder:text-white/30 shadow-inner" 
-          />
+          <div className="relative">
+            <input 
+              type={showPassword ? "text" : "password"} 
+              ref={passwordRef}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && confirmPasswordRef.current?.focus()}
+              placeholder="••••••••"
+              className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 pr-11 text-white focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all font-medium placeholder:text-white/30 shadow-inner" 
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors p-1"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
           {fieldErrors.password && <span className="text-red-400 text-[10px] px-1 font-medium">{fieldErrors.password}</span>}
         </div>
         
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-white/70">{language === 'tr' ? 'Şifre Tekrar' : 'Confirm Password'}</label>
-          <input 
-            type="password"
-            ref={confirmPasswordRef} 
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                 handleRegisterSubmit();
-              }
-            }}
-            placeholder="••••••••"
-            className={cn(
-              "w-full bg-white/5 border rounded-xl py-3 px-4 text-white focus:outline-none transition-all font-medium placeholder:text-white/30 shadow-inner",
-              (!isPasswordsMatch && confirmPassword) ? "border-red-500/50 focus:border-red-500/50 focus:bg-red-500/5" : "border-white/10 focus:border-cyan-400/50 focus:bg-white/10"
-            )} 
-          />
+          <div className="relative">
+            <input 
+              type={showConfirmPassword ? "text" : "password"}
+              ref={confirmPasswordRef} 
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                   handleRegisterSubmit();
+                }
+              }}
+              placeholder="••••••••"
+              className={cn(
+                "w-full bg-white/5 border rounded-xl py-3 px-4 pr-11 text-white focus:outline-none transition-all font-medium placeholder:text-white/30 shadow-inner",
+                (!isPasswordsMatch && confirmPassword) ? "border-red-500/50 focus:border-red-500/50 focus:bg-red-500/5" : "border-white/10 focus:border-cyan-400/50 focus:bg-white/10"
+              )} 
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors p-1"
+            >
+              {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
           {fieldErrors.confirmPassword && (
             <span className="text-red-400 text-[10px] px-1 font-medium mt-0.5">
               {fieldErrors.confirmPassword}
@@ -155,11 +181,23 @@ export default function RegisterStep({
           )}
         </div>
 
+        <AnimatePresence>
+          {authError && (
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+              className="mt-1 bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-xl text-sm font-medium text-center"
+            >
+              {authError}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
          <button 
           onClick={handleRegisterSubmit}
-          className="w-full bg-cyan-400 hover:bg-cyan-300 text-black font-bold py-3.5 rounded-xl transition-all duration-200 active:scale-[0.98] mt-2 shadow-[0_0_15px_rgba(34,211,238,0.2)]"
+          disabled={isLoading}
+          className="w-full bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 disabled:hover:bg-cyan-400 text-black font-bold py-3.5 rounded-xl transition-all duration-200 active:scale-[0.98] mt-2 shadow-[0_0_15px_rgba(34,211,238,0.2)] flex items-center justify-center gap-2"
         >
-          {language === 'tr' ? 'Kayıt Ol ve Doğrula' : 'Register and Verify'}
+          {isLoading ? (language === 'tr' ? 'Kaydediliyor...' : 'Registering...') : (language === 'tr' ? 'Kayıt Ol ve Doğrula' : 'Register and Verify')}
         </button>
       </div>
     </motion.div>

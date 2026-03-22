@@ -22,6 +22,8 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
   const [timeLeft, setTimeLeft] = useState(120);
   const [otpError, setOtpError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
+  const [verificationType, setVerificationType] = useState<'register' | 'reset'>('reset');
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (authStep !== 'verify_email' || timeLeft <= 0) return;
@@ -48,6 +50,7 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
   };
 
   const handleEmailSubmit = async () => {
+    if (isLoading) return;
     setAuthError('');
     setFieldErrors({});
     if (!email) return;
@@ -59,6 +62,7 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
       return;
     }
       
+    setIsLoading(true);
     try {
       const response = await fetch(`${API_URL}/check-email`, {
         method: 'POST',
@@ -67,18 +71,25 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
       });
       const data = await response.json();
 
-      if (data.success && data.data.exists) {
-        setAuthStep('password');
+      if (data.success) {
+        if (data.data.exists) {
+          setAuthStep('password');
+        } else {
+          setAuthStep('register');
+        }
       } else {
-        setAuthStep('register');
+        setAuthError(data.error || (language === 'tr' ? 'Lütfen geçerli bir e-posta adresi giriniz.' : 'Please enter a valid email address.'));
       }
     } catch (err) {
       console.error("API Error in check-email:", err);
       setAuthError(language === 'tr' ? 'Sunucuya bağlanılamadı. Lütfen API nin çalıştığından emin olun.' : 'Cannot connect to server.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handlePasswordSubmit = async () => {
+    if (isLoading) return;
     setAuthError('');
     setFieldErrors({});
     
@@ -105,10 +116,13 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
       }
     } catch (error) {
       setAuthError(language === 'tr' ? "Sunucuya bağlanılamadı." : "Cannot connect to server.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleRegisterSubmit = async () => {
+    if (isLoading) return;
     setFieldErrors({});
     setAuthError('');
     
@@ -125,6 +139,7 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
       return;
     }
 
+    setIsLoading(true);
     try {
       const response = await fetch(`${API_URL}/register`, {
         method: 'POST',
@@ -134,57 +149,84 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
       const data = await response.json();
 
       if (data.success) {
-        // Log user in automatically after registration
-        handlePasswordSubmit();
+        setVerificationType('register');
+        setAuthStep('verify_email');
+        setTimeLeft(120);
+        setOtp('');
       } else {
         setAuthError(data.error || (language === 'tr' ? "Kayıt olurken bir hata oluştu." : "Registration error."));
       }
     } catch (error) {
       setAuthError(language === 'tr' ? "Sunucu hatası." : "Server error.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleOtpChange = async (val: string) => {
-    const cleanVal = val.replace(/[^0-9]/g, '');
-    if (cleanVal.length > 6) return;
-    
+  const handleOtpChange = (val: string) => {
+    const cleanVal = val.replace(/[^0-9]/g, '').slice(0, 6);
     setOtp(cleanVal);
     setOtpError('');
+  };
 
-    if (cleanVal.length === 6) {
-      try {
-        const response = await fetch(`${API_URL}/verify-code`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, code: cleanVal })
-        });
-        const data = await response.json();
+  const handleVerifySubmit = async () => {
+    if (isLoading || otp.length !== 6) return;
+    
+    setIsLoading(true);
+    try {
+      const endpoint = verificationType === 'register' ? 'verify-registration' : 'verify-code';
+      const response = await fetch(`${API_URL}/${endpoint}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, code: otp })
+      });
+      const data = await response.json();
 
-        if (data.success) {
-          setOtpError('');
-          setAuthStep('reset_password');
+      if (data.success) {
+        setOtpError('');
+        if (verificationType === 'register') {
+          // Registration complete, log user in
+          localStorage.setItem('token', data.data.token);
+          if (onLogin) onLogin(data.data);
+          if (onClose) onClose();
         } else {
-          setOtpError(data.error || (language === 'tr' ? 'Hatalı doğrulama kodu.' : 'Invalid verification code.'));
+          setAuthStep('reset_password');
         }
-      } catch (err) {
-        setOtpError(language === 'tr' ? "Sunucuya bağlanılamadı." : "Cannot connect to server.");
+      } else {
+        setOtpError(data.error || (language === 'tr' ? 'Hatalı doğrulama kodu.' : 'Invalid verification code.'));
       }
+    } catch (err) {
+      setOtpError(language === 'tr' ? "Sunucuya bağlanılamadı." : "Cannot connect to server.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleResend = async () => {
+    if (isLoading) return;
     setTimeLeft(120);
     setOtp('');
     setOtpError('');
-    await fetch(`${API_URL}/forgot-password`, {
+    setIsLoading(true);
+    const endpoint = verificationType === 'register' ? 'register' : 'forgot-password';
+    
+    let bodyData: any = { email };
+    if (verificationType === 'register') {
+      bodyData = { firstName, lastName, email, phoneNumber: phone, password };
+    }
+
+    await fetch(`${API_URL}/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
+        body: JSON.stringify(bodyData)
     });
+    setIsLoading(false);
   };
 
   const handleGoToVerify = async () => {
+    if (isLoading) return;
     setAuthError('');
+    setIsLoading(true);
     try {
       const response = await fetch(`${API_URL}/forgot-password`, {
           method: 'POST',
@@ -194,6 +236,7 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
       const data = await response.json();
       
       if (data.success) {
+          setVerificationType('reset');
           setAuthStep('verify_email');
           setTimeLeft(120);
           setOtp('');
@@ -203,10 +246,13 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
       }
     } catch (err) {
       setAuthError("Sunucu hatası.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleResetPasswordSubmit = async () => {
+      if (isLoading) return;
       setAuthError('');
       const result = resetPasswordSchema.safeParse({ password, confirmPassword });
       
@@ -216,6 +262,7 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
           return false;
       }
       
+      setIsLoading(true);
       try {
           const response = await fetch(`${API_URL}/reset-password`, {
               method: 'POST',
@@ -234,6 +281,8 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
       } catch (e) {
           setAuthError("Sunucu hatası");
           return false;
+      } finally {
+          setIsLoading(false);
       }
   };
 
@@ -245,6 +294,7 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
     lastName, setLastName, phone, setPhone, authError, setAuthError,
     otp, setOtp, timeLeft, otpError, resetForm, handleEmailSubmit,
     handlePasswordSubmit, handleOtpChange, handleResend, handleGoToVerify,
-    isPasswordsMatch, fieldErrors, handleRegisterSubmit, handleResetPasswordSubmit
+    isPasswordsMatch, fieldErrors, handleRegisterSubmit, handleResetPasswordSubmit,
+    verificationType, handleVerifySubmit, isLoading
   };
 }

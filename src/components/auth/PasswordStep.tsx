@@ -2,6 +2,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useSettings } from "../../contexts/SettingsContext";
 import { translations } from "../../lib/translations";
+import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 interface PasswordStepProps {
   email: string;
@@ -12,6 +14,7 @@ interface PasswordStepProps {
   handlePasswordSubmit: () => void;
   handleGoToVerify: () => void;
   setAuthStep: (step: any) => void;
+  isLoading: boolean;
 }
 
 export default function PasswordStep({
@@ -23,9 +26,11 @@ export default function PasswordStep({
   handlePasswordSubmit,
   handleGoToVerify,
   setAuthStep,
+  isLoading,
 }: PasswordStepProps) {
   const { language } = useSettings();
   const t = translations[language];
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <motion.div
@@ -51,18 +56,27 @@ export default function PasswordStep({
       <div className="flex flex-col gap-4 mt-2">
         <div className="flex flex-col gap-2 relative">
           <label className="text-sm font-medium text-white/70">{t.password}</label>
-          <input 
-            type="password" 
-            autoFocus
-            value={password}
-            onChange={(e) => { setPassword(e.target.value); setAuthError(''); }}
-            onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
-            placeholder="••••••••"
-            className={cn(
-              "w-full bg-white/5 border rounded-xl py-3 px-4 text-white focus:outline-none transition-all font-medium placeholder:text-white/30 shadow-inner",
-              authError ? "border-red-500/50 focus:border-red-500/50 focus:bg-red-500/5" : "border-white/10 focus:border-cyan-400/50 focus:bg-white/10"
-            )} 
-          />
+          <div className="relative">
+            <input 
+              type={showPassword ? "text" : "password"} 
+              autoFocus
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); setAuthError(''); }}
+              onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
+              placeholder="••••••••"
+              className={cn(
+                "w-full bg-white/5 border rounded-xl py-3 px-4 pr-11 text-white focus:outline-none transition-all font-medium placeholder:text-white/30 shadow-inner",
+                authError ? "border-red-500/50 focus:border-red-500/50 focus:bg-red-500/5" : "border-white/10 focus:border-cyan-400/50 focus:bg-white/10"
+              )} 
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors p-1"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
           <AnimatePresence>
             {authError && (
               <motion.span 
@@ -77,10 +91,10 @@ export default function PasswordStep({
 
         <button 
           onClick={handlePasswordSubmit}
-          disabled={!password}
+          disabled={!password || isLoading}
           className="w-full bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 disabled:hover:bg-cyan-400 text-black font-bold py-3.5 rounded-xl transition-all duration-200 active:scale-[0.98] mt-2 shadow-[0_0_15px_rgba(34,211,238,0.2)]"
         >
-          {t.login}
+          {isLoading ? (language === 'tr' ? 'Giriş yapılıyor...' : 'Logging in...') : t.login}
         </button>
       </div>
 
