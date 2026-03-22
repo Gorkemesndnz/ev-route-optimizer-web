@@ -19,7 +19,7 @@ export default function MyGarageModal({
 }) {
   const { language } = useSettings();
   const t = translations[language];
-  const { vehicles, setVehicles, selectedVehicleId, setSelectedVehicleId } = useVehicle();
+  const { vehicles, selectedVehicleId, removeVehicle, selectVehicle } = useVehicle();
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredVehicles = vehicles.filter(v => 
@@ -28,17 +28,14 @@ export default function MyGarageModal({
     v.customName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleSelectVehicle = (id: string) => {
-    setSelectedVehicleId(id);
+  const handleSelectVehicle = async (id: string) => {
+    await selectVehicle(id);
     onClose();
   };
 
-  const handleDeleteVehicle = (e: React.MouseEvent, id: string) => {
+  const handleDeleteVehicle = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    setVehicles(prev => prev.filter(v => v.id !== id));
-    if (selectedVehicleId === id) {
-      setSelectedVehicleId(null);
-    }
+    await removeVehicle(id);
   };
 
   return (

@@ -265,7 +265,10 @@ export const translations = {
     noVehiclesInGarage: "Garajınızda henüz araç bulunmuyor.",
     myGarageFull: "Maksimum 3 adet araç ekleyebilirsiniz.",
     vehicleName: "Araç Takma Adı",
-    clear: "Sil / Temizle"
+    clear: "Sil / Temizle",
+    selectModel: "Model Seçin",
+    searchVehicle: "Aracınızı arayın...",
+    modelYear: "Model Yılı:"
   },
   en: {
     appTitle: "IYONTREE",
@@ -533,6 +536,9 @@ export const translations = {
     noVehiclesInGarage: "No vehicles in your garage yet.",
     myGarageFull: "You can add up to 3 vehicles.",
     vehicleName: "Vehicle Nickname",
-    clear: "Delete / Clear"
+    clear: "Delete / Clear",
+    selectModel: "Select Model",
+    searchVehicle: "Search your vehicle...",
+    modelYear: "Model Year:"
   }
 };

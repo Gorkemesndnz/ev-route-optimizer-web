@@ -21,7 +21,7 @@ export default function AccountDashboard({
 }) {
   const { language } = useSettings();
   const { currentUser: user } = useAuth();
-  const { selectedVehicle: activeVehicle } = useVehicle();
+  const { selectedVehicle: activeVehicle, vehicles, selectVehicle } = useVehicle();
   const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'prices'>('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const t = translations[language];
@@ -107,6 +107,8 @@ export default function AccountDashboard({
               <AccountOverviewTab 
                 t={t} 
                 activeVehicle={activeVehicle} 
+                vehicles={vehicles}
+                selectVehicle={selectVehicle}
                 mockRoutes={mockRoutes} 
                 onChangeVehicle={onChangeVehicle} 
               />

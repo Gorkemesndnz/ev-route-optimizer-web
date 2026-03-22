@@ -3,11 +3,14 @@ export interface Vehicle {
   brand: string;
   model: string;
   variant?: string;
+  year?: number;
   customName: string;
   soc: number;
-  batteryCapacity?: number;
-  maxChargingPower?: number;
+  isActive?: boolean;
+  batteryCapacityKwh?: number;
+  maxChargingPowerKw?: number;
   rangeWLTP?: number;
+  realRangeKm?: number;
   plugType?: string;
   // Persistent Settings
   passengers?: number;

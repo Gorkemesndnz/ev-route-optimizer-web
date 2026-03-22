@@ -15,26 +15,32 @@ export default function GarageView({
   onBack: () => void;
 }) {
   const { language } = useSettings();
-  const { vehicles, setVehicles, selectedVehicleId, setSelectedVehicleId } = useVehicle();
+  const { vehicles, selectedVehicleId, selectVehicle, updateVehicle, removeVehicle } = useVehicle();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [tempName, setTempName] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
   const t = translations[language];
 
-  const handleSelectVehicle = useCallback((id: string) => setSelectedVehicleId(id), [setSelectedVehicleId]);
+  const handleSelectVehicle = useCallback(async (id: string) => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    await selectVehicle(id);
+    setIsProcessing(false);
+  }, [selectVehicle, isProcessing]);
   
-  const handleRenameVehicle = useCallback((id: string, newName: string) => {
-    setVehicles(prev => prev.map(v => v.id === id ? { ...v, customName: newName } : v));
-  }, [setVehicles]);
+  const handleRenameVehicle = useCallback(async (id: string, newName: string) => {
+    if (isProcessing || !newName.trim()) return;
+    setIsProcessing(true);
+    await updateVehicle(id, { customName: newName });
+    setIsProcessing(false);
+  }, [updateVehicle, isProcessing]);
 
-  const handleDeleteVehicle = useCallback((id: string) => {
-    setVehicles(prev => {
-      const newVehicles = prev.filter(v => v.id !== id);
-      if (selectedVehicleId === id) {
-        setSelectedVehicleId(newVehicles.length > 0 ? newVehicles[0].id : null);
-      }
-      return newVehicles;
-    });
-  }, [setVehicles, selectedVehicleId, setSelectedVehicleId]);
+  const handleDeleteVehicle = useCallback(async (id: string) => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    await removeVehicle(id);
+    setIsProcessing(false);
+  }, [removeVehicle, isProcessing]);
 
   return (
     <div className="glass-panel w-full sm:w-[420px] px-4 py-5 pointer-events-auto flex flex-col gap-4 relative h-[calc(100svh-4rem)] sm:h-auto sm:max-h-[85vh] overflow-y-auto custom-scrollbar">

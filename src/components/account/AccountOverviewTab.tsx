@@ -2,6 +2,7 @@ import type { Vehicle } from "../../types/vehicle";
 import { motion } from "framer-motion";
 import { translations } from "../../lib/translations";
 import { Car, Battery, Zap, Navigation, Map } from "lucide-react";
+import { useRef } from "react";
 
 type TranslationType = typeof translations.tr;
 
@@ -16,6 +17,8 @@ interface Route {
 interface AccountOverviewTabProps {
   t: TranslationType;
   activeVehicle: Vehicle | null;
+  vehicles: Vehicle[];
+  selectVehicle: (id: string) => Promise<void>;
   mockRoutes: Route[]; // Changed from any[] to Route[]
   onChangeVehicle: () => void;
 }
@@ -23,9 +26,21 @@ interface AccountOverviewTabProps {
 export default function AccountOverviewTab({
   t,
   activeVehicle,
+  vehicles,
+  selectVehicle,
   mockRoutes,
   onChangeVehicle,
 }: AccountOverviewTabProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const handleScroll = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (scrollRef.current) {
+      // Dikey scroll (deltaY) kaydırmasını yatay (scrollLeft) yap
+      scrollRef.current.scrollLeft += e.deltaY;
+    }
+  };
+
+  const inactiveVehicles = vehicles.filter(v => v.id !== activeVehicle?.id);
   return (
     <motion.div
       key="overview"
@@ -61,31 +76,59 @@ export default function AccountOverviewTab({
                 <Battery className="text-white/40" size={18} />
                 <div className="flex flex-col">
                   <span className="text-xs text-white/50">{t.capacity}</span>
-                  <span className="text-sm font-semibold text-white">{activeVehicle.batteryCapacity} kWh</span>
+                  <span className="text-sm font-semibold text-white">{activeVehicle.batteryCapacityKwh ?? 0} kWh</span>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <Zap className="text-amber-400/70" size={18} />
                 <div className="flex flex-col">
                   <span className="text-xs text-white/50">{t.maxPower}</span>
-                  <span className="text-sm font-semibold text-white">{activeVehicle.maxChargingPower} kW</span>
+                  <span className="text-sm font-semibold text-white">{activeVehicle.maxChargingPowerKw ?? 0} kW</span>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <Navigation className="text-cyan-400/70" size={18} />
                 <div className="flex flex-col">
                   <span className="text-xs text-white/50">{t.wltpRange}</span>
-                  <span className="text-sm font-semibold text-white">{activeVehicle.rangeWLTP} km</span>
+                  <span className="text-sm font-semibold text-white">{activeVehicle.rangeWLTP ?? 0} km</span>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <Map className="text-emerald-400/70" size={18} />
                 <div className="flex flex-col">
                   <span className="text-xs text-white/50">{t.estRange}</span>
-                  <span className="text-sm font-semibold text-white">{Math.round((activeVehicle.rangeWLTP || 0) * 0.85)} km</span>
+                  <span className="text-sm font-semibold text-white">{activeVehicle.realRangeKm ?? 0} km</span>
                 </div>
               </div>
             </div>
+
+            {/* Quick Switch */}
+            {inactiveVehicles.length > 0 && (
+              <div className="mt-2 pt-4 border-t border-white/10">
+                <p className="text-xs text-white/50 mb-3">{t.myVehicles}</p>
+                <div 
+                  ref={scrollRef}
+                  onWheel={handleScroll}
+                  className="flex items-center gap-3 overflow-x-auto hide-scrollbar pb-1 cursor-ew-resize"
+                >
+                  {inactiveVehicles.map(v => (
+                    <button
+                      key={v.id}
+                      onClick={() => selectVehicle(v.id)}
+                      className="flex-shrink-0 flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 border border-white/5 rounded-2xl transition-all active:scale-95"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/50">
+                        <Car size={16} />
+                      </div>
+                      <div className="flex flex-col text-left mr-4">
+                        <span className="text-sm font-bold text-white">{v.customName || v.model}</span>
+                        <span className="text-[10px] text-white/40">{v.soc}% {t.capacity}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <button
               onClick={onChangeVehicle}

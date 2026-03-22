@@ -31,7 +31,7 @@ export default function VehicleSettingsView({
   onBack: () => void,
 }) {
   const { language } = useSettings();
-  const { selectedVehicle, setVehicles } = useVehicle();
+  const { selectedVehicle, updateVehicle } = useVehicle();
   const t = translations[language];
 
   // Initialize state from selectedVehicle or defaults
@@ -43,14 +43,13 @@ export default function VehicleSettingsView({
   const [refConsumption, setRefConsumption] = useState(selectedVehicle?.refConsumption ?? 16.5);
   const [drivingStyle, setDrivingStyle] = useState(selectedVehicle?.drivingStyle ?? 'normal');
 
-  const handleApplySettings = () => {
+  const handleApplySettings = async () => {
     if (!selectedVehicle) {
       onBack();
       return;
     }
 
-    setVehicles(prev => prev.map(v => v.id === selectedVehicle.id ? {
-      ...v,
+    await updateVehicle(selectedVehicle.id, {
       passengers,
       extraWeight,
       climateControl,
@@ -58,7 +57,7 @@ export default function VehicleSettingsView({
       maxSpeed,
       refConsumption,
       drivingStyle: drivingStyle as any
-    } : v));
+    });
 
     onBack();
   };

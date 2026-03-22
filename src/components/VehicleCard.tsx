@@ -40,12 +40,14 @@ const VehicleCard = memo(({
   onOpenVehicleSettings: () => void
 }) => {
   const { language } = useSettings();
-  const { selectedVehicle, setVehicles, selectedVehicleId } = useVehicle();
+  const { selectedVehicle, updateVehicle } = useVehicle();
   const t = translations[language];
 
   const handleUpdateSoC = useCallback((soc: number) => {
-    setVehicles(prev => prev.map(v => v.id === selectedVehicleId ? { ...v, soc } : v));
-  }, [setVehicles, selectedVehicleId]);
+    if (selectedVehicle) {
+      updateVehicle(selectedVehicle.id, { soc });
+    }
+  }, [updateVehicle, selectedVehicle]);
   if (!selectedVehicle) {
     return (
       <div className="glass-panel w-full sm:w-[420px] p-6 pointer-events-auto flex flex-col items-center justify-center min-h-[160px] gap-4 mt-auto md:mt-2">
@@ -71,13 +73,13 @@ const VehicleCard = memo(({
             <CarFront size={20} className="text-white" />
           </div>
           <div className="flex flex-col justify-center">
-            {selectedVehicle.customName && selectedVehicle.customName !== `${selectedVehicle.brand} ${selectedVehicle.model}` && (
+            {selectedVehicle.customName && selectedVehicle.customName !== `${selectedVehicle.brand} ${selectedVehicle.model} ${selectedVehicle.variant}`.trim() && (
               <span className="text-[11px] font-medium text-cyan-400 uppercase tracking-wider mb-0.5">
-                {selectedVehicle.brand} {selectedVehicle.model}
+                {selectedVehicle.brand} {selectedVehicle.model} {selectedVehicle.variant}
               </span>
             )}
             <span className="text-[17px] font-bold text-white tracking-tight">
-              {selectedVehicle.customName || `${selectedVehicle.brand} ${selectedVehicle.model}`}
+              {selectedVehicle.customName || `${selectedVehicle.brand} ${selectedVehicle.model} ${selectedVehicle.variant}`.trim()}
             </span>
           </div>
         </div>
