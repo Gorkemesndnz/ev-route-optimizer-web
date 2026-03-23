@@ -13,6 +13,7 @@ interface VehicleContextType {
 }
 
 import { apiClient } from '../lib/apiClient';
+import { useAuth } from './AuthContext';
 
 const API_URL = "/UserVehicles";
 
@@ -65,9 +66,11 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const { currentUser } = useAuth();
+
   useEffect(() => {
     fetchVehicles();
-  }, []);
+  }, [currentUser]);
 
   const addVehicle = async (vehicle: Vehicle) => {
     const token = localStorage.getItem('token');
