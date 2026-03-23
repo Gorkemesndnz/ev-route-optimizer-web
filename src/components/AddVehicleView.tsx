@@ -35,7 +35,8 @@ export default function AddVehicleView({
   const t = translations[language];
 
   useEffect(() => {
-    fetch("http://localhost:5146/api/EvCatalog/brands")
+    import("../lib/apiClient").then(({ apiClient }) => {
+      apiClient("/EvCatalog/brands")
       .then(res => res.json())
       .then(data => {
         if (data.success) {
@@ -43,6 +44,7 @@ export default function AddVehicleView({
         }
       })
       .catch(console.error);
+    });
   }, []);
 
   const filteredBrands = brands.filter(b => 

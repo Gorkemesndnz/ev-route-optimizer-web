@@ -1,5 +1,6 @@
 import { Map, Marker, useMap } from '@vis.gl/react-google-maps';
 import { useEffect, useRef, memo } from 'react';
+import StationsLayer from './StationsLayer';
 
 const BackgroundMap = memo(({ 
   userLocation, 
@@ -55,6 +56,7 @@ const BackgroundMap = memo(({
         {userLocation && (
           <Marker position={userLocation} />
         )}
+        <StationsLayer />
       </Map>
     </div>
   );

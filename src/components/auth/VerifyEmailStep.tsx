@@ -58,9 +58,9 @@ export default function VerifyEmailStep({
             onKeyDown={(e) => e.key === 'Enter' && otp.length === 6 && handleVerifySubmit()}
             placeholder="••••••"
             className={cn(
-              "w-full max-w-[200px] text-center text-3xl tracking-[0.5em] bg-white/5 border rounded-xl py-3 px-4 text-white focus:outline-none transition-all font-black placeholder:text-white/10 shadow-inner",
+              "w-full max-w-[240px] text-center text-2xl tracking-[0.3em] font-bold bg-white/5 border rounded-xl py-3 px-4 text-white focus:outline-none transition-all placeholder:text-white/10 shadow-inner",
               otpError ? "border-red-500/50 focus:border-red-500/50 focus:bg-red-500/5" : "border-white/10 focus:border-cyan-400/50 focus:bg-white/10 disabled:opacity-50"
-            )} 
+            )}
           />
           <AnimatePresence>
             {otpError && (

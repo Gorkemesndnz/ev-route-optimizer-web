@@ -12,7 +12,9 @@ interface VehicleContextType {
   isLoading: boolean;
 }
 
-const API_URL = "http://localhost:5146/api/UserVehicles";
+import { apiClient } from '../lib/apiClient';
+
+const API_URL = "/UserVehicles";
 
 const VehicleContext = createContext<VehicleContextType | undefined>(undefined);
 
@@ -26,9 +28,7 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
     try {
       const token = localStorage.getItem('token');
       if (token) {
-        const response = await fetch(API_URL, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const response = await apiClient(API_URL);
         const data = await response.json();
         if (data.success) {
           const apiVehicles = data.data.map((v: any) => ({
@@ -72,13 +72,9 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
   const addVehicle = async (vehicle: Vehicle) => {
     const token = localStorage.getItem('token');
     if (token) {
-      const response = await fetch(API_URL, {
+      const response = await apiClient(API_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
+        body: {
           brand: vehicle.brand,
           model: vehicle.model,
           variant: vehicle.variant || "",
@@ -87,7 +83,7 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
           soc: vehicle.soc,
           batteryCapacityKwh: vehicle.batteryCapacityKwh || 0,
           isActive: vehicle.isActive || false
-        })
+        }
       });
       if (response.ok) {
         await fetchVehicles();
@@ -116,13 +112,9 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
     setVehicles(prev => prev.map(v => v.id === id ? { ...v, ...updates } : v));
 
     if (token) {
-      const response = await fetch(`${API_URL}/${id}`, {
+      const response = await apiClient(`${API_URL}/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
+        body: {
           id: id,
           brand: target.brand,
           model: target.model,
@@ -132,7 +124,7 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
           soc: updates.soc ?? target.soc,
           batteryCapacityKwh: target.batteryCapacityKwh || 0,
           isActive: updates.hasOwnProperty('isActive') ? updates.isActive : (target.id === selectedVehicleId)
-        })
+        }
       });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -155,9 +147,8 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
     setVehicles(prev => prev.filter(v => v.id !== id));
 
     if (token) {
-      await fetch(`${API_URL}/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+      await apiClient(`${API_URL}/${id}`, {
+        method: 'DELETE'
       });
       await fetchVehicles();
     } else {

@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import { useMapsLibrary } from "@vis.gl/react-google-maps";
 import { Dialog, DialogContent } from "./ui/dialog";
 import { Clock, Search, MapPin, X, Loader2, Target } from "lucide-react";
 import { useSettings } from "../contexts/SettingsContext";
 import { translations } from "../lib/translations";
 import { useDebounce } from "../hooks/useDebounce";
+import { apiClient } from "../lib/apiClient";
 
 export function LocationSearchModal({ 
   isOpen, 
@@ -22,17 +22,13 @@ export function LocationSearchModal({
 
   const [searchValue, setSearchValue] = useState("");
   const debouncedSearchValue = useDebounce(searchValue, 300);
-  const [predictions, setPredictions] = useState([]);
+  const [predictions, setPredictions] = useState<any[]>([]);
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState("");
   const [recentSearches, setRecentSearches] = useState<any[]>([]);
   
-  const placesLib = useMapsLibrary("places");
-  const geocodingLib = useMapsLibrary("geocoding");
-  
-  const autocompleteService = useRef(null);
-  const placesService = useRef(null);
-  const geocoder = useRef(null);
+  // Session token for Google Maps billing optimization
+  const [sessionToken, setSessionToken] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -61,70 +57,70 @@ export function LocationSearchModal({
     localStorage.removeItem("iyontree_recent_searches");
   };
 
-  useEffect(() => {
-    if (!placesLib || !geocodingLib) return;
-    
-    if (!autocompleteService.current) {
-      autocompleteService.current = new placesLib.AutocompleteService();
-    }
-    if (!geocoder.current) {
-      geocoder.current = new geocodingLib.Geocoder();
-    }
-    if (!placesService.current) {
-      const dummyDiv = document.createElement('div');
-      placesService.current = new placesLib.PlacesService(dummyDiv);
-    }
-  }, [placesLib, geocodingLib]);
-
+  // Generate a new session token each time the modal opens
   useEffect(() => {
     if (isOpen) {
       setSearchValue(item?.value || "");
       setPredictions([]);
+      setSessionToken(crypto.randomUUID());
       setTimeout(() => {
         inputRef.current?.focus();
       }, 50);
     }
   }, [isOpen, item]);
 
+  // Autocomplete call via .NET Proxy
   useEffect(() => {
-    if (debouncedSearchValue.length > 2 && autocompleteService.current) {
-      autocompleteService.current.getPlacePredictions({ 
-        input: debouncedSearchValue, 
-        componentRestrictions: { country: "TR" } 
-      }, (res, status) => {
-        if (status === window.google.maps.places.PlacesServiceStatus.OK && res) {
-          setPredictions(res);
-        } else {
+    if (debouncedSearchValue.length > 2) {
+      const fetchPredictions = async () => {
+        try {
+          // Send request to proxy
+          const res = await apiClient(`/maps/autocomplete?input=${encodeURIComponent(debouncedSearchValue)}&sessionToken=${sessionToken}&language=${language}`);
+          const data = await res.json();
+          if (data.success && data.data && data.data.predictions) {
+            setPredictions(data.data.predictions);
+          } else {
+            setPredictions([]);
+          }
+        } catch (error) {
+          console.error("Autocomplete failed:", error);
           setPredictions([]);
         }
-      });
+      };
+      
+      fetchPredictions();
     } else {
       setPredictions([]);
     }
-  }, [debouncedSearchValue]);
+  }, [debouncedSearchValue, sessionToken, language]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchValue(e.target.value);
   };
 
-  const handleSelectPrediction = (placeId: string) => {
-    if (!placesService.current) return;
-    placesService.current.getDetails({ 
-      placeId, 
-      fields: ['geometry', 'formatted_address'] 
-    }, (place, status) => {
-       if (status === window.google.maps.places.PlacesServiceStatus.OK && place && place.geometry) {
-          const lat = place.geometry.location.lat();
-          const lng = place.geometry.location.lng();
-          const address = place.formatted_address;
-          onSelectLocation(item.id, address, { lat, lng });
-          saveRecentSearch(address, lat, lng);
-          setSearchValue("");
-          onClose();
-       }
-    });
+  // Get place details via .NET Proxy
+  const handleSelectPrediction = async (placeId: string) => {
+    try {
+      const res = await apiClient(`/maps/place-details/${placeId}?sessionToken=${sessionToken}`);
+      const data = await res.json();
+      
+      if (data.success && data.data) {
+        const place = data.data;
+        const lat = place.latitude;
+        const lng = place.longitude;
+        const address = place.formattedAddress;
+        
+        onSelectLocation(item.id, address, { lat, lng });
+        saveRecentSearch(address, lat, lng);
+        setSearchValue("");
+        onClose();
+      }
+    } catch (error) {
+      console.error("Place Details failed:", error);
+    }
   };
 
+  // Reverse Geocode (Get address from current location) via .NET Proxy
   const handleLocateClick = async () => {
     setLocationError("");
     if (!navigator.geolocation) {
@@ -134,23 +130,25 @@ export function LocationSearchModal({
 
     setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const { latitude, longitude } = position.coords;
-        if (geocoder.current) {
-          geocoder.current.geocode({ location: { lat: latitude, lng: longitude } }, (results, status) => {
-            setIsLocating(false);
-            if (status === 'OK' && results[0]) {
-               const address = results[0].formatted_address;
-               onSelectLocation(item.id, address, { lat: latitude, lng: longitude });
-               saveRecentSearch(address, latitude, longitude);
-               setSearchValue("");
-               onClose();
-            } else {
-               setLocationError(t.searchModal.addressNotFound);
-            }
-          });
-        } else {
+        try {
+          const res = await apiClient(`/maps/reverse-geocode?lat=${latitude}&lng=${longitude}`);
+          const data = await res.json();
           setIsLocating(false);
+
+          if (data.success && data.data) {
+             const address = data.data.formattedAddress;
+             onSelectLocation(item.id, address, { lat: latitude, lng: longitude });
+             saveRecentSearch(address, latitude, longitude);
+             setSearchValue("");
+             onClose();
+          } else {
+             setLocationError(t.searchModal.addressNotFound);
+          }
+        } catch (error) {
+          setIsLocating(false);
+          setLocationError(t.searchModal.addressNotFound);
         }
       },
       (error) => {
@@ -237,16 +235,16 @@ export function LocationSearchModal({
                  <h4 className="text-white/20 text-xs font-bold uppercase tracking-widest mb-3 px-2">{t.searchModal.searchResults}</h4>
                  {predictions.map(pred => (
                    <button 
-                     key={pred.place_id} 
-                     onClick={() => handleSelectPrediction(pred.place_id)}
+                     key={pred.placeId} 
+                     onClick={() => handleSelectPrediction(pred.placeId)}
                      className="w-full max-w-full overflow-hidden flex items-center gap-4 p-4 rounded-2xl hover:bg-white/5 text-left transition-all group"
                     >
                      <div className="w-11 h-11 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors shrink-0">
                        <MapPin size={22} className="text-white/30 group-hover:text-blue-400 transition-colors" />
                      </div>
                      <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
-                       <span className="block truncate w-full text-white/90 font-semibold text-[15px]">{pred.structured_formatting?.main_text || pred.description}</span>
-                       <span className="block truncate w-full text-white/40 text-[13px] font-normal">{pred.structured_formatting?.secondary_text || 'Türkiye'}</span>
+                       <span className="block truncate w-full text-white/90 font-semibold text-[15px]">{pred.structuredFormatting?.mainText || pred.description}</span>
+                       <span className="block truncate w-full text-white/40 text-[13px] font-normal">{pred.structuredFormatting?.secondaryText || 'Türkiye'}</span>
                      </div>
                    </button>
                  ))}

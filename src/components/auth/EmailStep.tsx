@@ -72,7 +72,7 @@ export default function EmailStep({
           disabled={!email || isLoading}
           className="w-full bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 disabled:hover:bg-cyan-400 text-black font-bold py-3.5 rounded-xl transition-all duration-200 active:scale-[0.98] mt-2 shadow-[0_0_15px_rgba(34,211,238,0.2)] flex items-center justify-center gap-2"
         >
-          {isLoading ? (language === 'tr' ? 'Kontrol ediliyor...' : 'Checking...') : t.continue}
+          {isLoading ? (language === 'tr' ? 'Giriş yapılıyor...' : 'Logging in...') : t.continue}
         </button>
       </div>
 
