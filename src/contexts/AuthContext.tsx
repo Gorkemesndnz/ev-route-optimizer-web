@@ -3,6 +3,7 @@ import { createContext, useContext, useState, type ReactNode } from 'react';
 interface AuthContextType {
   currentUser: any;
   setCurrentUser: (user: any) => void;
+  logout: () => void;
   isAuthModalOpen: boolean;
   setIsAuthModalOpen: (open: boolean) => void;
   authMessage: string;
@@ -13,9 +14,27 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUserState] = useState<any>(() => {
+    const saved = localStorage.getItem('iyontree_user');
+    return saved ? JSON.parse(saved) : null;
+  });
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMessage, setAuthMessage] = useState('');
+
+  const setCurrentUser = (user: any) => {
+    if (user) {
+      localStorage.setItem('iyontree_user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('iyontree_user');
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+    }
+    setCurrentUserState(user);
+  };
+
+  const logout = () => {
+    setCurrentUser(null);
+  };
 
   const requireAuth = (message?: string) => {
     setAuthMessage(message || '');
@@ -24,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{
-      currentUser, setCurrentUser,
+      currentUser, setCurrentUser, logout,
       isAuthModalOpen, setIsAuthModalOpen,
       authMessage, setAuthMessage,
       requireAuth

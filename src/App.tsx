@@ -33,7 +33,7 @@ function App() {
   const t = translations[language];
 
   const {
-    currentUser, setCurrentUser,
+    currentUser, setCurrentUser, logout,
     setIsAuthModalOpen,
   } = useAuth();
 
@@ -201,7 +201,7 @@ function App() {
               
               <div className="flex items-center overflow-hidden transition-all duration-300 ease-in-out max-w-0 opacity-0 group-hover:max-w-[70px] group-hover:opacity-100 group-hover:mr-2">
                 <button 
-                  onClick={() => setCurrentUser(null)}
+                  onClick={() => { logout(); setActiveView('main'); }}
                   title={t.logout}
                   className="w-10 h-10 shrink-0 rounded-full glass-panel flex items-center justify-center text-red-500 hover:text-red-400 border border-white/20 shadow-none transition-all hover:bg-white/10 outline-none"
                 >
