@@ -107,20 +107,6 @@ const MapControls = memo(({
         >
           <Car size={18} />
         </button>
-        
-        <div className="w-px h-4 bg-white/20 mx-0.5" />
-        
-        <button 
-          onClick={handleToggleLayers}
-          className={cn(
-            "h-8 px-2 rounded-lg transition-all cursor-pointer flex flex-col items-center justify-center gap-0 min-w-[44px]",
-            currentStyle !== 'default' ? "text-cyan-400 bg-cyan-400/10" : "text-white/80 hover:text-white hover:bg-white/10"
-          )}
-          title={t.changeMapStyle}
-        >
-          <Layers size={18} />
-          <span className="text-[8px] font-bold uppercase tracking-tighter leading-none">{currentStyle === 'system' ? 'AUTO' : currentStyle}</span>
-        </button>
       </div>
     </div>
   );

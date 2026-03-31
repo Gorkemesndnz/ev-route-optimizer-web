@@ -64,18 +64,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   };
 
   const getMapStyle = () => {
-    let effective: 'light' | 'dark' | 'default' | 'satellite' = 'light';
-    
-    if (mapStyleKey === 'system') {
-      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      effective = isDark ? 'dark' : 'light';
-    } else {
-      effective = mapStyleKey as any;
-    }
-    
-    if (effective === 'light') return lightMapStyle;
-    if (effective === 'dark') return darkMapStyle;
-    return [];
+    return darkMapStyle;
   };
 
   return (

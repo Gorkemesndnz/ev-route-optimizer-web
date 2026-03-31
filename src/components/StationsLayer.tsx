@@ -98,16 +98,34 @@ export default function StationsLayer() {
   const markersRef = useRef<{ [key: string]: google.maps.Marker }>({});
   const [stations, setStations] = useState<any[]>([]);
 
+  const sourceRef = useRef<'ocm' | 'google'>('ocm');
+
   // Initialize Clusterer
   useEffect(() => {
     if (!map) return;
-    if (!clustererRef.current) {
-      clustererRef.current = new MarkerClusterer({
-        map,
-        algorithm: new SuperClusterAlgorithm({ radius: 180 }), // Increased to cluster aggressively
-        renderer: new VectorLiquidGlassRenderer()
-      });
-    }
+    
+    const clusterer = new MarkerClusterer({
+      map,
+      algorithm: new SuperClusterAlgorithm({ radius: 180 }), // Increased to cluster aggressively
+      renderer: new VectorLiquidGlassRenderer()
+    });
+    
+    clustererRef.current = clusterer;
+
+    // React StrictMode veya component yeniden mount olduğunda (HMR),
+    // eski harita üzerinde kalan "hayalet" (ghost) markerleri ve kümeleri temizle!
+    return () => {
+      clusterer.clearMarkers(); // Kümelerden temizle
+      clusterer.setMap(null); // Haritadan tamamen sök
+      
+      // Kümelenmemiş tekil marker'ların harita üzerindeki kalıntılarını sök
+      Object.values(markersRef.current).forEach(m => m.setMap(null));
+      markersRef.current = {};
+      
+      if (clustererRef.current === clusterer) {
+        clustererRef.current = null;
+      }
+    };
   }, [map]);
 
   // Handle Viewport changes
@@ -118,25 +136,40 @@ export default function StationsLayer() {
 
     const loadStations = async () => {
       const bounds = map.getBounds();
+      const zoom = map.getZoom() || 6;
       if (!bounds) return;
 
       const sw = bounds.getSouthWest();
       const ne = bounds.getNorthEast();
 
       try {
-        const url = '/stations/base?swLat=' + sw.lat() + '&swLng=' + sw.lng() + '&neLat=' + ne.lat() + '&neLng=' + ne.lng();
+        // AŞAMA 2: Hybrid Archi - Zoom 10 ve üzerindeyken Canlı Google Places API'yi çağır
+        const currentSource = zoom >= 10 ? 'google' : 'ocm';
+        const endpoint = currentSource === 'google' ? '/stations/google' : '/stations/base';
+        
+        const sourceChanged = sourceRef.current !== currentSource;
+        if (sourceChanged) {
+          sourceRef.current = currentSource;
+        }
+
+        const url = `${endpoint}?swLat=${sw.lat()}&swLng=${sw.lng()}&neLat=${ne.lat()}&neLng=${ne.lng()}`;
+        
         const res = await apiClient(url);
         const data = await res.json();
 
         if (data.success && data.data) {
           setStations((prev) => {
-            const prevMap = new Map(prev.map((s: any) => [s.id, s]));
-            data.data.forEach((s: any) => prevMap.set(s.id, s));
+            // Kaynak değiştiyse (OCM <-> Google geçişi) önceki verileri TEMİZLE!
+            const prevMap = sourceChanged ? new Map() : new Map(prev.map((s: any) => [String(s.id), s]));
+            
+            data.data.forEach((s: any) => {
+              prevMap.set(String(s.id), { ...s, isGoogle: currentSource === 'google' });
+            });
             return Array.from(prevMap.values());
           });
         }
       } catch (err) {
-        console.error('Failed to load stations from Base/OCM', err);
+        console.error('Failed to load stations from Backend/Google', err);
       }
     };
 
@@ -157,7 +190,22 @@ export default function StationsLayer() {
 
   // Sync markers with Clusterer
   useEffect(() => {
-    if (!clustererRef.current || stations.length === 0 || !map) return;
+    if (!clustererRef.current || !map) return;
+
+    // Haritadan silinmesi gereken marker'ları tespit et (Örn: OCM -> Google geçişinde)
+    const currentStationIds = new Set(stations.map(s => String(s.id)));
+    const markersToRemove: google.maps.Marker[] = [];
+    
+    Object.keys(markersRef.current).forEach(id => {
+      if (!currentStationIds.has(id)) {
+        markersToRemove.push(markersRef.current[id]);
+        delete markersRef.current[id];
+      }
+    });
+
+    if (markersToRemove.length > 0) {
+      clustererRef.current.removeMarkers(markersToRemove);
+    }
 
     const newMarkers: google.maps.Marker[] = [];
 
@@ -165,18 +213,27 @@ export default function StationsLayer() {
       // Hatalı/Bozuk verileri (Null Island - Afrika açıkları) filtrele
       if (st.latitude === 0 && st.longitude === 0) return;
 
-      if (!markersRef.current[st.id]) {
+      const strId = String(st.id);
+      const isGoogle = st.isGoogle === true;
+
+      if (!markersRef.current[strId]) {
         const marker = new google.maps.Marker({
           position: { lat: st.latitude, lng: st.longitude },
-          title: st.title,
+          title: isGoogle ? st.title : '',
+          // cluster.count değerinin 0 (sıfır) dönmemesi için her zaman visible: true kalmalı!
+          // Çünkü Google MarkerClusterer algoritması count hesabını "visible" olanlar üzerinden yapar.
+          visible: true, 
+          // OCM istasyonlarının tekil görünümünü engellemek için transparan yapıp tıklanmayı iptal ediyoruz.
+          opacity: isGoogle ? 1 : 0,
+          clickable: isGoogle,
           icon: {
-            url: PIN_SVG_URL,
+            url: isGoogle ? PIN_SVG_URL : 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=', // Boş GIF
             scaledSize: new google.maps.Size(56, 56), // ContentSize = 36 + 20
             anchor: new google.maps.Point(28, 28)
           }
         });
 
-        markersRef.current[st.id] = marker;
+        markersRef.current[strId] = marker;
         newMarkers.push(marker);
       }
     });
