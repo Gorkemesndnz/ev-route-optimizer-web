@@ -151,4 +151,23 @@
       inset 0 6px 12px rgba(255, 255, 255, 0.6),
       inset 0 -4px 8px rgba(0, 0, 0, 0.05);
   }
+
+  /* Custom Transparent InfoWindow */
+  .gm-style-iw-c {
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+  }
+  .gm-style-iw-d {
+    overflow: hidden !important;
+  }
+  .gm-style-iw-tc::after {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  button.gm-ui-hover-effect {
+    display: none !important;
+  }
 }

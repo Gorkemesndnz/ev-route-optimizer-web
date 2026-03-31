@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMap } from '@vis.gl/react-google-maps';
+
 import { MarkerClusterer, SuperClusterAlgorithm, type Renderer, type Cluster, type ClusterStats } from '@googlemaps/markerclusterer';
 import { apiClient } from '../lib/apiClient';
 import { useSettings } from '../contexts/SettingsContext';
+
 
 function createLiquidGlassClusterSvg(count: number, scale: number): string {
   const r = scale / 2;
@@ -32,37 +34,38 @@ function createLiquidGlassClusterSvg(count: number, scale: number): string {
   ].join('');
 }
 
-function createLiquidGlassPinSvg(types: string[]): string {
-  const contentSize = 120; // Room for shadow and large width
-  const cx = 60; 
-  const cy = 90; // The bottom tip pointing precisely to the location
+function createLiquidGlassPinSvg(types: string[], title?: string, isGoogle: boolean = true): { svg: string, width: number } {
+  const contentSizeHeight = 120;
   
-  if (types.length === 0) {
+  if (types.length === 0 && (!isGoogle)) {
       // Fallback tiny dot for unknown stations
-      return [
-        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${contentSize} ${contentSize}" width="${contentSize}" height="${contentSize}">`,
-        '<defs>',
-        '<filter id="drop-shadow" x="-30%" y="-30%" width="160%" height="160%">',
-        '<feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000" flood-opacity="0.3"/>',
-        '</filter>',
-        '</defs>',
-        `<circle cx="${cx}" cy="${cy}" r="5" fill="#334155" stroke="#ffffff" stroke-width="1.5" filter="url(#drop-shadow)"/>`,
-        '</svg>'
-      ].join('');
+      const contentSize = 120;
+      return {
+        svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${contentSize} ${contentSize}" width="${contentSize}" height="${contentSize}"><defs><filter id="drop-shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000" flood-opacity="0.3"/></filter></defs><circle cx="60" cy="90" r="5" fill="#334155" stroke="#ffffff" stroke-width="1.5" filter="url(#drop-shadow)"/></svg>`,
+        width: contentSize
+      };
   }
 
-  // Calculate width dynamically
-  let w = 40;
-  if (types.length === 2) w = 68;
-  if (types.length === 3) w = 96;
+  // Calculate widths dynamically
+  let typesWidth = 10;
+  if (types.length === 1) typesWidth = 24;
+  if (types.length === 2) typesWidth = 52;
+  if (types.length === 3) typesWidth = 80;
       
-  let strokeColor = '#ffffff';
-  if (types.length === 1) {
-    if (types[0] === 'AC') strokeColor = '#22c55e'; // Green
-    else if (types[0] === 'DC') strokeColor = '#f59e0b'; // Orange
-    else if (types[0] === 'HPC') strokeColor = '#ec4899'; // Pink
-  }
+  const displayTitle = title ? (title.length > 25 ? title.substring(0, 23) + '...' : title) : '';
+  // Modern web font char width approx
+  const titleWidth = displayTitle ? displayTitle.length * 6.5 : 0; 
   
+  const hasBoth = types.length > 0 && displayTitle.length > 0;
+  const gap = hasBoth ? 12 : 0;
+
+  let w = typesWidth + titleWidth + gap + 16;
+  if (w < 40) w = 40; // minimum width
+  
+  const contentSizeWidth = w + 60; // Room for shadow & dynamic expansion expansion width
+  const cx = contentSizeWidth / 2;
+  const cy = 90;
+
   // Create solid tooltip shape
   const r = 8;
   const h = 26;
@@ -86,46 +89,99 @@ function createLiquidGlassPinSvg(types: string[]): string {
     Z
   `;
 
-  let textSvg = '';
-  types.forEach((type, index) => {
-    let color = '#ffffff';
-    if (type === 'AC') color = '#22c55e';
-    if (type === 'DC') color = '#f59e0b';
-    if (type === 'HPC') color = '#ec4899';
-    
-    textSvg += `<tspan fill="${color}">${type}</tspan>`;
-    if (index < types.length - 1) {
-      textSvg += `<tspan fill="#64748b"> | </tspan>`;
-    }
-  });
+  let innerHtml = '';
+  // Align text relative to the left of the shape
+  const boxLeft = cx - w/2 + 8;
+  let currentX = boxLeft;
+  
+  // If we only have types (not expanded), we can just center them exactly for perfection
+  if (!displayTitle && types.length > 0) {
+      let typeTextSvg = '';
+      types.forEach((type, index) => {
+        let color = '#ffffff';
+        if (type === 'AC') color = '#22c55e';
+        if (type === 'DC') color = '#f59e0b';
+        if (type === 'HPC') color = '#ec4899';
+        if (type === 'EV') color = '#3b82f6'; // Blue
+        
+        typeTextSvg += `<tspan fill="${color}">${type}</tspan>`;
+        if (index < types.length - 1) {
+          typeTextSvg += `<tspan fill="#64748b"> | </tspan>`;
+        }
+      });
+      innerHtml += `<text x="${cx}" y="${boxTop + h/2 + 4.5}" font-family="system-ui, sans-serif" font-weight="900" font-size="11px" text-anchor="middle">${typeTextSvg}</text>`;
+  } else {
+      if (displayTitle) {
+          innerHtml += `<text x="${currentX}" y="${boxTop + h/2 + 4.5}" fill="#f8fafc" font-family="system-ui, sans-serif" font-weight="600" font-size="11px">${displayTitle}</text>`;
+          currentX += titleWidth + gap;
+          
+          if (types.length > 0) {
+            innerHtml += `<line x1="${currentX - Math.max(gap/2, 4)}" y1="${boxTop + 6}" x2="${currentX - Math.max(gap/2, 4)}" y2="${boxBottom - 6}" stroke="#334155" stroke-width="1.5" />`;
+          }
+      }
 
-  return [
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${contentSize} ${contentSize}" width="${contentSize}" height="${contentSize}">`,
+      if (types.length > 0) {
+          let typeTextSvg = '';
+          types.forEach((type, index) => {
+            let color = '#ffffff';
+            if (type === 'AC') color = '#22c55e';
+            if (type === 'DC') color = '#f59e0b';
+            if (type === 'HPC') color = '#ec4899';
+            if (type === 'EV') color = '#3b82f6'; // Blue for Generic
+            
+            typeTextSvg += `<tspan fill="${color}">${type}</tspan>`;
+            if (index < types.length - 1) {
+              typeTextSvg += `<tspan fill="#64748b"> | </tspan>`;
+            }
+          });
+          innerHtml += `<text x="${currentX}" y="${boxTop + h/2 + 4.5}" font-family="system-ui, sans-serif" font-weight="900" font-size="11px">${typeTextSvg}</text>`;
+      }
+  }
+
+  let strokeColor = '#ffffff';
+  if (types.length === 1) {
+    if (types[0] === 'AC') strokeColor = '#22c55e';
+    else if (types[0] === 'DC') strokeColor = '#f59e0b';
+    else if (types[0] === 'HPC') strokeColor = '#ec4899';
+    else if (types[0] === 'EV') strokeColor = '#3b82f6'; // Blue
+  } else if (types.length > 1) {
+    strokeColor = '#e2e8f0'; // slate-200 for combos
+  }
+
+  const svg = [
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${contentSizeWidth} ${contentSizeHeight}" width="${contentSizeWidth}" height="${contentSizeHeight}">`,
     '<defs>',
     '<filter id="drop-shadow" x="-50%" y="-50%" width="200%" height="200%">',
     '<feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000" flood-opacity="0.5"/>',
     '</filter>',
     '</defs>',
     `<path d="${tooltipPath}" fill="#0f172a" stroke="${strokeColor}" stroke-width="2" filter="url(#drop-shadow)" />`,
-    `<text x="${cx}" y="${boxTop + h/2 + 4}" font-family="system-ui, sans-serif" font-weight="900" font-size="11px" text-anchor="middle">${textSvg}</text>`,
+    innerHtml,
     '</svg>'
   ].join('');
+
+  return { svg, width: contentSizeWidth };
 }
 
-const COMBO_KEYS = [
-  [],
-  ['AC'],
-  ['DC'],
-  ['HPC'],
-  ['AC', 'DC'],
-  ['AC', 'HPC'],
-  ['DC', 'HPC'],
-  ['AC', 'DC', 'HPC']
-];
+  const COMBO_KEYS = [
+    [],
+    ['AC'],
+    ['DC'],
+    ['HPC'],
+    ['AC', 'DC'],
+    ['AC', 'HPC'],
+    ['DC', 'HPC'],
+    ['AC', 'DC', 'HPC'],
+    ['EV']
+  ];
 
-const PIN_SVGS: Record<string, string> = {};
+const PIN_SVGS: Record<string, { url: string, width: number }> = {};
 COMBO_KEYS.forEach(combo => {
-  PIN_SVGS[combo.join('_')] = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(createLiquidGlassPinSvg(combo));
+  const result = createLiquidGlassPinSvg(combo);
+  PIN_SVGS[combo.join('_')] = {
+    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(result.svg),
+    width: result.width
+  };
 });
 
 // SVG Cluster Renderer using Legacy Marker to preserve MapId local styling
@@ -159,6 +215,7 @@ export default function StationsLayer() {
   const [stations, setStations] = useState<any[]>([]);
 
   const sourceRef = useRef<'ocm' | 'google'>('ocm');
+  const activeMarkerIdRef = useRef<string | null>(null);
 
   // Initialize Clusterer
   useEffect(() => {
@@ -260,6 +317,7 @@ export default function StationsLayer() {
     clustererRef.current.clearMarkers(true); // true = noDraw, henüz haritayı güncelleme
     Object.values(markersRef.current).forEach(m => m.setMap(null));
     markersRef.current = {};
+    activeMarkerIdRef.current = null; // Filtre/zoom değişiminde açık kalanı temizle
 
     const newMarkers: google.maps.Marker[] = [];
 
@@ -295,22 +353,78 @@ export default function StationsLayer() {
       }
 
       if (hasMatch) {
-        const comboArr = Array.from(types).sort();
+        let comboArr = Array.from(types).sort();
+        // Eğer boş bir Google istasyonuysa (Google API bağlantı tiplerini döndürememişse)
+        if (comboArr.length === 0 && isGoogle) {
+           comboArr = ['EV']; // Fallback generic tab
+        }
+
         const svgKey = comboArr.join('_');
-        const iconUrl = isGoogle ? (PIN_SVGS[svgKey] || PIN_SVGS['']) : 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+        
+        let iconUrl = '';
+        let iconWidth = 120;
+        
+        if (isGoogle) {
+          const defaultData = PIN_SVGS[svgKey] || PIN_SVGS[''];
+          iconUrl = defaultData.url;
+          iconWidth = defaultData.width;
+        } else {
+          iconUrl = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+        }
 
         const marker = new google.maps.Marker({
           position: { lat: st.latitude, lng: st.longitude },
-          title: isGoogle ? st.title : '',
+          title: '', // Native (OS) tooltipi kapat
           visible: true, 
           opacity: isGoogle ? 1 : 0, // OCM ise tekil markerları şeffaf yap
           clickable: isGoogle,
           icon: {
             url: iconUrl,
-            scaledSize: new google.maps.Size(120, 120),
-            anchor: new google.maps.Point(60, 90)
+            scaledSize: new google.maps.Size(iconWidth, 120),
+            anchor: new google.maps.Point(iconWidth / 2, 90)
           }
         });
+
+        if (isGoogle) {
+          // Collapse fonksiyonunu tanımlayıp marker içerisine atıyoruz
+          marker.set('collapse', () => {
+             marker.setIcon({
+                url: iconUrl,
+                scaledSize: new google.maps.Size(iconWidth, 120),
+                anchor: new google.maps.Point(iconWidth / 2, 90)
+             });
+             marker.setZIndex(undefined);
+          });
+
+          marker.addListener('click', () => {
+            // Eğer tıkızlanan marker zaten açıksa, kapat ve çık
+            if (activeMarkerIdRef.current === strId) {
+                marker.get('collapse')();
+                activeMarkerIdRef.current = null;
+                return;
+            }
+
+            // Başka bir marker açıksa onu kapat
+            if (activeMarkerIdRef.current) {
+                const prevMarker = markersRef.current[activeMarkerIdRef.current];
+                if (prevMarker && typeof prevMarker.get('collapse') === 'function') {
+                    prevMarker.get('collapse')();
+                }
+            }
+
+            // Yeni tıklananı genişlet
+            const displayTitle = st.title || 'Şarj İstasyonu';
+            const expanded = createLiquidGlassPinSvg(comboArr, displayTitle, true);
+            marker.setIcon({
+               url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(expanded.svg),
+               scaledSize: new google.maps.Size(expanded.width, 120),
+               anchor: new google.maps.Point(expanded.width / 2, 90)
+            });
+            marker.setZIndex(Number(google.maps.Marker.MAX_ZINDEX) + 999);
+            
+            activeMarkerIdRef.current = strId;
+          });
+        }
 
         markersRef.current[strId] = marker;
         newMarkers.push(marker);
@@ -321,6 +435,28 @@ export default function StationsLayer() {
     // Marker yoksa bile boş diziyle çağırarak kümeleme motorunu tetikliyoruz.
     clustererRef.current.addMarkers(newMarkers);
   }, [stations, map, stationFilters]);
+
+  // Haritada scroll, pan, zoom veya click yapıldığında açık olanı kapatıyoruz
+  useEffect(() => {
+    if (!map) return;
+    const hideTooltip = () => {
+        if (activeMarkerIdRef.current) {
+            const m = markersRef.current[activeMarkerIdRef.current];
+            if (m && typeof m.get('collapse') === 'function') m.get('collapse')();
+            activeMarkerIdRef.current = null;
+        }
+    };
+    
+    map.addListener('dragstart', hideTooltip);
+    map.addListener('zoom_changed', hideTooltip);
+    map.addListener('click', hideTooltip);
+    
+    return () => {
+      google.maps.event.clearListeners(map, 'dragstart');
+      google.maps.event.clearListeners(map, 'zoom_changed');
+      google.maps.event.clearListeners(map, 'click');
+    };
+  }, [map]);
 
   return null;
 }
