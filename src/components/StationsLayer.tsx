@@ -71,8 +71,9 @@ const PIN_SVG_URL = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(cre
 
 // SVG Cluster Renderer using Legacy Marker to preserve MapId local styling
 class VectorLiquidGlassRenderer implements Renderer {
-  render(cluster: Cluster, stats: ClusterStats, _map: google.maps.Map): google.maps.Marker {
+  render(cluster: Cluster, stats: ClusterStats, map: google.maps.Map): google.maps.Marker {
     const count = cluster.count;
+
     const scale = Math.min(45 + (count / Math.max(stats.clusters.markers.max, 1)) * 15, 65);
     const contentSize = scale + 24;
 
@@ -103,7 +104,7 @@ export default function StationsLayer() {
     if (!clustererRef.current) {
       clustererRef.current = new MarkerClusterer({
         map,
-        algorithm: new SuperClusterAlgorithm({ radius: 120 }),
+        algorithm: new SuperClusterAlgorithm({ radius: 180 }), // Increased to cluster aggressively
         renderer: new VectorLiquidGlassRenderer()
       });
     }
@@ -141,24 +142,29 @@ export default function StationsLayer() {
 
     loadStations();
 
-    const listener = map.addListener('idle', () => {
+    const listenerIdle = map.addListener('idle', () => {
       clearTimeout(timeoutId);
-      timeoutId = setTimeout(loadStations, 500);
+      timeoutId = setTimeout(() => {
+        loadStations();
+      }, 500);
     });
 
     return () => {
-      google.maps.event.removeListener(listener);
+      google.maps.event.removeListener(listenerIdle);
       clearTimeout(timeoutId);
     };
   }, [map]);
 
   // Sync markers with Clusterer
   useEffect(() => {
-    if (!clustererRef.current || stations.length === 0) return;
+    if (!clustererRef.current || stations.length === 0 || !map) return;
 
     const newMarkers: google.maps.Marker[] = [];
 
     stations.forEach((st: any) => {
+      // Hatalı/Bozuk verileri (Null Island - Afrika açıkları) filtrele
+      if (st.latitude === 0 && st.longitude === 0) return;
+
       if (!markersRef.current[st.id]) {
         const marker = new google.maps.Marker({
           position: { lat: st.latitude, lng: st.longitude },
@@ -178,7 +184,7 @@ export default function StationsLayer() {
     if (newMarkers.length > 0) {
       clustererRef.current.addMarkers(newMarkers);
     }
-  }, [stations]);
+  }, [stations, map]);
 
   return null;
 }
