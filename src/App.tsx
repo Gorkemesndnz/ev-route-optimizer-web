@@ -11,17 +11,19 @@ import AuthModal from "./components/AuthModal";
 import AccountDashboard from "./components/AccountDashboard";
 import CookieConsent from "./components/CookieConsent";
 import GeneralMenu from "./components/GeneralMenu";
+import StationDetailsPanel from "./components/StationDetailsPanel";
 import { LogOut } from "lucide-react";
 import { translations } from "./lib/translations";
 import { AnimatePresence, motion } from "framer-motion";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useSettings } from "./contexts/SettingsContext";
 import { useAuth } from "./contexts/AuthContext";
 import { useVehicle } from "./contexts/VehicleContext";
+import { useStation } from "./contexts/StationContext";
 
 function App() {
-  const [activeView, setActiveView] = useState<'main' | 'settings' | 'garage' | 'add_vehicle' | 'vehicle_settings' | 'account' | 'privacy' | 'about' | 'terms'>('main');
-  const [previousView, setPreviousView] = useState<'main' | 'account' | 'settings' | 'garage' | 'add_vehicle' | 'vehicle_settings' | 'privacy' | 'about' | 'terms'>('main');
+  const [activeView, setActiveView] = useState<'main' | 'settings' | 'garage' | 'add_vehicle' | 'vehicle_settings' | 'account' | 'privacy' | 'about' | 'terms' | 'station_details'>('main');
+  const [previousView, setPreviousView] = useState<'main' | 'account' | 'settings' | 'garage' | 'add_vehicle' | 'vehicle_settings' | 'privacy' | 'about' | 'terms' | 'station_details'>('main');
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [isRightMenuOpen, setIsRightMenuOpen] = useState(false);
 
@@ -40,6 +42,18 @@ function App() {
   const {
     vehicles,
   } = useVehicle();
+
+  const { selectedStation, setSelectedStation } = useStation();
+
+  // İstasyon seçildiğinde sol paneli aç
+  useEffect(() => {
+    if (selectedStation) {
+      if (activeView !== 'station_details') {
+        setPreviousView(activeView);
+        setActiveView('station_details');
+      }
+    }
+  }, [selectedStation]);
 
   const mapStyle = useMemo(() => getMapStyle() as google.maps.MapTypeStyle[], [getMapStyle]);
 
@@ -80,7 +94,10 @@ function App() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              onClick={() => setActiveView('main')}
+              onClick={() => {
+                if (activeView === 'station_details') setSelectedStation(null);
+                setActiveView('main');
+              }}
               className="fixed inset-0 bg-black/40 backdrop-blur-sm z-30 pointer-events-auto cursor-pointer"
             />
           )}
@@ -106,6 +123,24 @@ function App() {
                   onOpenGarage={() => { setPreviousView('main'); setActiveView('garage'); }}
                   onOpenAddVehicle={() => { setPreviousView('main'); setActiveView('add_vehicle'); }}
                   onOpenVehicleSettings={() => { setPreviousView('main'); setActiveView('vehicle_settings'); }}
+                />
+              </motion.div>
+            )}
+
+            {activeView === 'station_details' && (
+              <motion.div
+                key="station_details"
+                initial={{ x: -100, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -100, opacity: 0 }}
+                transition={{ type: "tween", ease: "easeInOut", duration: 0.3 }}
+                className="relative z-40 pointer-events-none"
+              >
+                <StationDetailsPanel 
+                  onBack={() => {
+                    setActiveView('main');
+                    setSelectedStation(null);
+                  }} 
                 />
               </motion.div>
             )}

@@ -4,6 +4,7 @@ import { useMap } from '@vis.gl/react-google-maps';
 import { MarkerClusterer, SuperClusterAlgorithm, type Renderer, type Cluster, type ClusterStats } from '@googlemaps/markerclusterer';
 import { apiClient } from '../lib/apiClient';
 import { useSettings } from '../contexts/SettingsContext';
+import { useStation } from '../contexts/StationContext';
 
 
 function createLiquidGlassClusterSvg(count: number, scale: number): string {
@@ -210,6 +211,7 @@ class VectorLiquidGlassRenderer implements Renderer {
 export default function StationsLayer() {
   const map = useMap();
   const { stationFilters } = useSettings();
+  const { setSelectedStation } = useStation();
   const clustererRef = useRef<MarkerClusterer | null>(null);
   const markersRef = useRef<{ [key: string]: google.maps.Marker }>({});
   const [stations, setStations] = useState<any[]>([]);
@@ -401,6 +403,7 @@ export default function StationsLayer() {
             if (activeMarkerIdRef.current === strId) {
                 marker.get('collapse')();
                 activeMarkerIdRef.current = null;
+                setSelectedStation(null); // Deselect on collapse
                 return;
             }
 
@@ -423,6 +426,16 @@ export default function StationsLayer() {
             marker.setZIndex(Number(google.maps.Marker.MAX_ZINDEX) + 999);
             
             activeMarkerIdRef.current = strId;
+            setSelectedStation(st); // Dispatch to context!
+            
+            // Haritayı kaydır (flyTo) ve biraz yakınlaş
+            if (map) {
+                map.panTo({ lat: st.latitude, lng: st.longitude });
+                // Animasyonlu akıcı geçiş için panTo ile kayıyor
+                if (map.getZoom()! < 14) {
+                    map.setZoom(14);
+                }
+            }
           });
         }
 
@@ -434,7 +447,7 @@ export default function StationsLayer() {
     // clearMarkers(true) ile çizim ertelenmişti, şimdi addMarkers() ile tek seferde çiz.
     // Marker yoksa bile boş diziyle çağırarak kümeleme motorunu tetikliyoruz.
     clustererRef.current.addMarkers(newMarkers);
-  }, [stations, map, stationFilters]);
+  }, [stations, map, stationFilters, setSelectedStation]);
 
   // Haritada scroll, pan, zoom veya click yapıldığında açık olanı kapatıyoruz
   useEffect(() => {
@@ -447,14 +460,14 @@ export default function StationsLayer() {
         }
     };
     
-    map.addListener('dragstart', hideTooltip);
-    map.addListener('zoom_changed', hideTooltip);
-    map.addListener('click', hideTooltip);
+    const l1 = map.addListener('dragstart', hideTooltip);
+    const l2 = map.addListener('zoom_changed', hideTooltip);
+    const l3 = map.addListener('click', hideTooltip);
     
     return () => {
-      google.maps.event.clearListeners(map, 'dragstart');
-      google.maps.event.clearListeners(map, 'zoom_changed');
-      google.maps.event.clearListeners(map, 'click');
+      google.maps.event.removeListener(l1);
+      google.maps.event.removeListener(l2);
+      google.maps.event.removeListener(l3);
     };
   }, [map]);
 
