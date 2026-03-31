@@ -31,43 +31,101 @@ function createLiquidGlassClusterSvg(count: number, scale: number): string {
   ].join('');
 }
 
-function createLiquidGlassPinSvg(): string {
-  const scale = 36;
-  const contentSize = scale + 20;
-  const r = scale / 2;
-  const cx = contentSize / 2;
-  const cy = contentSize / 2;
+function createLiquidGlassPinSvg(types: string[]): string {
+  const contentSize = 120; // Room for shadow and large width
+  const cx = 60; 
+  const cy = 90; // The bottom tip pointing precisely to the location
   
+  if (types.length === 0) {
+      // Fallback tiny dot for unknown stations
+      return [
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${contentSize} ${contentSize}" width="${contentSize}" height="${contentSize}">`,
+        '<defs>',
+        '<filter id="drop-shadow" x="-30%" y="-30%" width="160%" height="160%">',
+        '<feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000" flood-opacity="0.3"/>',
+        '</filter>',
+        '</defs>',
+        `<circle cx="${cx}" cy="${cy}" r="5" fill="#334155" stroke="#ffffff" stroke-width="1.5" filter="url(#drop-shadow)"/>`,
+        '</svg>'
+      ].join('');
+  }
+
+  // Calculate width dynamically
+  let w = 40;
+  if (types.length === 2) w = 68;
+  if (types.length === 3) w = 96;
+      
+  let strokeColor = '#ffffff';
+  if (types.length === 1) {
+    if (types[0] === 'AC') strokeColor = '#22c55e'; // Green
+    else if (types[0] === 'DC') strokeColor = '#f59e0b'; // Orange
+    else if (types[0] === 'HPC') strokeColor = '#ec4899'; // Pink
+  }
+  
+  // Create solid tooltip shape
+  const r = 8;
+  const h = 26;
+  const th = 8;
+  const tw = 6;
+  const boxBottom = cy - th;
+  const boxTop = boxBottom - h;
+
+  const tooltipPath = `
+    M ${cx}, ${cy}
+    L ${cx + tw}, ${boxBottom}
+    L ${cx + w/2 - r}, ${boxBottom}
+    Q ${cx + w/2}, ${boxBottom} ${cx + w/2}, ${boxBottom - r}
+    L ${cx + w/2}, ${boxTop + r}
+    Q ${cx + w/2}, ${boxTop} ${cx + w/2 - r}, ${boxTop}
+    L ${cx - w/2 + r}, ${boxTop}
+    Q ${cx - w/2}, ${boxTop} ${cx - w/2}, ${boxTop + r}
+    L ${cx - w/2}, ${boxBottom - r}
+    Q ${cx - w/2}, ${boxBottom} ${cx - w/2 + r}, ${boxBottom}
+    L ${cx - tw}, ${boxBottom}
+    Z
+  `;
+
+  let textSvg = '';
+  types.forEach((type, index) => {
+    let color = '#ffffff';
+    if (type === 'AC') color = '#22c55e';
+    if (type === 'DC') color = '#f59e0b';
+    if (type === 'HPC') color = '#ec4899';
+    
+    textSvg += `<tspan fill="${color}">${type}</tspan>`;
+    if (index < types.length - 1) {
+      textSvg += `<tspan fill="#64748b"> | </tspan>`;
+    }
+  });
+
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${contentSize} ${contentSize}" width="${contentSize}" height="${contentSize}">`,
     '<defs>',
-    '<linearGradient id="lg-bg" x1="0%" y1="0%" x2="100%" y2="100%">',
-    '<stop offset="0%" stop-color="rgba(255,255,255,0.4)" />',
-    '<stop offset="100%" stop-color="rgba(255,255,255,0.1)" />',
-    '</linearGradient>',
-    '<linearGradient id="lg-border" x1="0%" y1="0%" x2="100%" y2="100%">',
-    '<stop offset="0%" stop-color="rgba(255,255,255,0.8)" />',
-    '<stop offset="100%" stop-color="rgba(255,255,255,0.2)" />',
-    '</linearGradient>',
-    '<filter id="lg-shadow" x="-50%" y="-50%" width="200%" height="200%">',
-    '<feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#000000" flood-opacity="0.2"/>',
-    '</filter>',
-    '<filter id="neon-glow" x="-50%" y="-50%" width="200%" height="200%">',
-    '<feGaussianBlur stdDeviation="3" result="blur" />',
-    '<feMerge>',
-    '<feMergeNode in="blur" />',
-    '<feMergeNode in="SourceGraphic" />',
-    '</feMerge>',
+    '<filter id="drop-shadow" x="-50%" y="-50%" width="200%" height="200%">',
+    '<feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000" flood-opacity="0.5"/>',
     '</filter>',
     '</defs>',
-    `<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#lg-bg)" filter="url(#lg-shadow)" />`,
-    `<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#lg-bg)" stroke="url(#lg-border)" stroke-width="1.5" />`,
-    `<circle cx="${cx}" cy="${cy}" r="4.5" fill="#22d3ee" filter="url(#neon-glow)" />`,
+    `<path d="${tooltipPath}" fill="#0f172a" stroke="${strokeColor}" stroke-width="2" filter="url(#drop-shadow)" />`,
+    `<text x="${cx}" y="${boxTop + h/2 + 4}" font-family="system-ui, sans-serif" font-weight="900" font-size="11px" text-anchor="middle">${textSvg}</text>`,
     '</svg>'
   ].join('');
 }
 
-const PIN_SVG_URL = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(createLiquidGlassPinSvg());
+const COMBO_KEYS = [
+  [],
+  ['AC'],
+  ['DC'],
+  ['HPC'],
+  ['AC', 'DC'],
+  ['AC', 'HPC'],
+  ['DC', 'HPC'],
+  ['AC', 'DC', 'HPC']
+];
+
+const PIN_SVGS: Record<string, string> = {};
+COMBO_KEYS.forEach(combo => {
+  PIN_SVGS[combo.join('_')] = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(createLiquidGlassPinSvg(combo));
+});
 
 // SVG Cluster Renderer using Legacy Marker to preserve MapId local styling
 class VectorLiquidGlassRenderer implements Renderer {
@@ -219,20 +277,39 @@ export default function StationsLayer() {
       const strId = String(st.id);
       const isGoogle = st.isGoogle === true;
 
+      const types = new Set<string>();
+
+      if (st.connections && Array.isArray(st.connections)) {
+        st.connections.forEach((c: any) => {
+          if (c.currentType === 'HPC' || c.currentType === 'DC' || c.currentType === 'AC') {
+             types.add(c.currentType);
+          } else {
+             // Fallback for OCM or unmapped
+             const t = (c.currentType || c.connectionType || '').toUpperCase();
+             const pwr = typeof c.powerKw === 'number' ? c.powerKw : 0;
+             if (t.includes('HPC') || t.includes('CHADEMO') || t.includes('TESLA')) types.add('HPC');
+             else if (t.includes('DC') || t.includes('CCS') || pwr > 22) types.add('DC');
+             else if (t.includes('AC') || t.includes('TYPE') || t.includes('J1772') || t.includes('WALL') || (pwr > 0 && pwr <= 22)) types.add('AC');
+          }
+        });
+      }
+      
+      const comboArr = Array.from(types).sort();
+      const svgKey = comboArr.join('_');
+      const iconUrl = isGoogle ? (PIN_SVGS[svgKey] || PIN_SVGS['']) : 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+
       if (!markersRef.current[strId]) {
         const marker = new google.maps.Marker({
           position: { lat: st.latitude, lng: st.longitude },
           title: isGoogle ? st.title : '',
-          // cluster.count değerinin 0 (sıfır) dönmemesi için her zaman visible: true kalmalı!
-          // Çünkü Google MarkerClusterer algoritması count hesabını "visible" olanlar üzerinden yapar.
           visible: true, 
           // OCM istasyonlarının tekil görünümünü engellemek için transparan yapıp tıklanmayı iptal ediyoruz.
           opacity: isGoogle ? 1 : 0,
           clickable: isGoogle,
           icon: {
-            url: isGoogle ? PIN_SVG_URL : 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=', // Boş GIF
-            scaledSize: new google.maps.Size(56, 56), // ContentSize = 36 + 20
-            anchor: new google.maps.Point(28, 28)
+            url: iconUrl,
+            scaledSize: new google.maps.Size(120, 120),
+            anchor: new google.maps.Point(60, 90)
           }
         });
 
