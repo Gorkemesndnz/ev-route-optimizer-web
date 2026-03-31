@@ -14,6 +14,8 @@ interface SettingsContextType {
   showCookieModal: boolean;
   setShowCookieModal: (show: boolean) => void;
   handleSaveCookies: (prefs: any) => void;
+  stationFilters: string[];
+  setStationFilters: (filters: string[]) => void;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -44,6 +46,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }
   });
   const [showCookieModal, setShowCookieModal] = useState(false);
+  
+  // Varsayılan olarak hiçbir şey seçili değilse TÜMÜ gösterilir
+  const [stationFilters, setStationFilters] = useState<string[]>([]);
 
   useEffect(() => {
     localStorage.setItem('iyontree_language', language);
@@ -75,7 +80,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       showTraffic, setShowTraffic,
       showCookieBanner, setShowCookieBanner,
       showCookieModal, setShowCookieModal,
-      handleSaveCookies
+      handleSaveCookies,
+      stationFilters, setStationFilters
     }}>
       {children}
     </SettingsContext.Provider>

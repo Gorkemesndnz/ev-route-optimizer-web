@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useMap } from '@vis.gl/react-google-maps';
 import { MarkerClusterer, SuperClusterAlgorithm, type Renderer, type Cluster, type ClusterStats } from '@googlemaps/markerclusterer';
 import { apiClient } from '../lib/apiClient';
+import { useSettings } from '../contexts/SettingsContext';
 
 function createLiquidGlassClusterSvg(count: number, scale: number): string {
   const r = scale / 2;
@@ -152,6 +153,7 @@ class VectorLiquidGlassRenderer implements Renderer {
 
 export default function StationsLayer() {
   const map = useMap();
+  const { stationFilters } = useSettings();
   const clustererRef = useRef<MarkerClusterer | null>(null);
   const markersRef = useRef<{ [key: string]: google.maps.Marker }>({});
   const [stations, setStations] = useState<any[]>([]);
@@ -253,30 +255,19 @@ export default function StationsLayer() {
   useEffect(() => {
     if (!clustererRef.current || !map) return;
 
-    // Haritadan silinmesi gereken marker'ları tespit et (Örn: OCM -> Google geçişinde)
-    const currentStationIds = new Set(stations.map(s => String(s.id)));
-    const markersToRemove: google.maps.Marker[] = [];
-    
-    Object.keys(markersRef.current).forEach(id => {
-      if (!currentStationIds.has(id)) {
-        markersToRemove.push(markersRef.current[id]);
-        delete markersRef.current[id];
-      }
-    });
-
-    if (markersToRemove.length > 0) {
-      clustererRef.current.removeMarkers(markersToRemove);
-    }
+    // noDraw=true: önce sessizce tüm eski marker'ları kaldır, sonra yenilerini ekle, 
+    // böylece kümeleme motoru (MarkerClusterer) arada boş bir kare çizmez.
+    clustererRef.current.clearMarkers(true); // true = noDraw, henüz haritayı güncelleme
+    Object.values(markersRef.current).forEach(m => m.setMap(null));
+    markersRef.current = {};
 
     const newMarkers: google.maps.Marker[] = [];
 
     stations.forEach((st: any) => {
-      // Hatalı/Bozuk verileri (Null Island - Afrika açıkları) filtrele
       if (st.latitude === 0 && st.longitude === 0) return;
 
       const strId = String(st.id);
       const isGoogle = st.isGoogle === true;
-
       const types = new Set<string>();
 
       if (st.connections && Array.isArray(st.connections)) {
@@ -294,17 +285,25 @@ export default function StationsLayer() {
         });
       }
       
-      const comboArr = Array.from(types).sort();
-      const svgKey = comboArr.join('_');
-      const iconUrl = isGoogle ? (PIN_SVGS[svgKey] || PIN_SVGS['']) : 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+      let hasMatch = false;
+      if (stationFilters.length === 0) {
+        hasMatch = true; // Hiç filtre yoksa tümünü göster
+      } else if (types.size === 0) {
+        hasMatch = false; // Filtre var ama istasyonda veri yoksa gizle
+      } else {
+        hasMatch = Array.from(types).some(t => stationFilters.includes(t));
+      }
 
-      if (!markersRef.current[strId]) {
+      if (hasMatch) {
+        const comboArr = Array.from(types).sort();
+        const svgKey = comboArr.join('_');
+        const iconUrl = isGoogle ? (PIN_SVGS[svgKey] || PIN_SVGS['']) : 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+
         const marker = new google.maps.Marker({
           position: { lat: st.latitude, lng: st.longitude },
           title: isGoogle ? st.title : '',
           visible: true, 
-          // OCM istasyonlarının tekil görünümünü engellemek için transparan yapıp tıklanmayı iptal ediyoruz.
-          opacity: isGoogle ? 1 : 0,
+          opacity: isGoogle ? 1 : 0, // OCM ise tekil markerları şeffaf yap
           clickable: isGoogle,
           icon: {
             url: iconUrl,
@@ -318,10 +317,10 @@ export default function StationsLayer() {
       }
     });
 
-    if (newMarkers.length > 0) {
-      clustererRef.current.addMarkers(newMarkers);
-    }
-  }, [stations, map]);
+    // clearMarkers(true) ile çizim ertelenmişti, şimdi addMarkers() ile tek seferde çiz.
+    // Marker yoksa bile boş diziyle çağırarak kümeleme motorunu tetikliyoruz.
+    clustererRef.current.addMarkers(newMarkers);
+  }, [stations, map, stationFilters]);
 
   return null;
 }
