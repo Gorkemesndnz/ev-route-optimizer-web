@@ -106,7 +106,10 @@ export default function StationsLayer() {
     
     const clusterer = new MarkerClusterer({
       map,
-      algorithm: new SuperClusterAlgorithm({ radius: 180 }), // Increased to cluster aggressively
+      // radius: 180 çok agresifti, yaklaşıldığında ayrışmayı engelliyordu. 60 doğal bir değer.
+      // maxZoom: 13 -> Zoom level 14 ve sonrasında (şehir/mahalle içi) kümelemeyi ŞARTSIZ İPTAL ET. 
+      // Mahallede tüm istasyonlar tekil cam pinler olarak parlasın.
+      algorithm: new SuperClusterAlgorithm({ radius: 60, maxZoom: 13 }),
       renderer: new VectorLiquidGlassRenderer()
     });
     
