@@ -3,70 +3,93 @@ import { useMap } from '@vis.gl/react-google-maps';
 import { MarkerClusterer, SuperClusterAlgorithm, type Renderer, type Cluster, type ClusterStats } from '@googlemaps/markerclusterer';
 import { apiClient } from '../lib/apiClient';
 
-// Cam efekti (glassmorphism) ve koyu tema su damlası (Cluster)
-function createClusterSvg(count: number, scale: number): string {
-  const height = Math.round(scale * 1.3);
+function createLiquidGlassClusterSvg(count: number, scale: number): string {
+  const r = scale / 2;
+  const contentSize = scale + 24; // Extra space for shadow
+  const cx = contentSize / 2;
+  const cy = contentSize / 2;
+  
   return [
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 58" width="' + scale + '" height="' + height + '">',
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${contentSize} ${contentSize}" width="${contentSize}" height="${contentSize}">`,
     '<defs>',
-    '<linearGradient id="glass" x1="0%" y1="0%" x2="0%" y2="100%">',
-    '<stop offset="0%" stop-color="rgba(255,255,255,0.6)" />',
+    '<linearGradient id="lg-bg" x1="0%" y1="0%" x2="100%" y2="100%">',
+    '<stop offset="0%" stop-color="rgba(255,255,255,0.4)" />',
     '<stop offset="100%" stop-color="rgba(255,255,255,0.1)" />',
     '</linearGradient>',
-    '<filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">',
-    '<feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.6"/>',
+    '<linearGradient id="lg-border" x1="0%" y1="0%" x2="100%" y2="100%">',
+    '<stop offset="0%" stop-color="rgba(255,255,255,0.8)" />',
+    '<stop offset="100%" stop-color="rgba(255,255,255,0.2)" />',
+    '</linearGradient>',
+    '<filter id="lg-shadow" x="-50%" y="-50%" width="200%" height="200%">',
+    '<feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#000000" flood-opacity="0.2"/>',
     '</filter>',
     '</defs>',
-    '<path filter="url(#shadow)" fill="rgba(15, 23, 42, 0.85)" stroke="url(#glass)" stroke-width="1.5" ',
-    'd="M22,0 C9.85,0 0,9.85 0,22 C0,34.15 22,58 22,58 C22,58 44,34.15 44,22 C44,9.85 34.15,0 22,0 Z" />',
-    '<text x="22" y="24" fill="#ffffff" font-family="system-ui, sans-serif" font-weight="600" font-size="14px" text-anchor="middle" alignment-baseline="central">' + count + '</text>',
+    `<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#lg-bg)" filter="url(#lg-shadow)" />`,
+    `<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#lg-bg)" stroke="url(#lg-border)" stroke-width="1.5" />`,
+    `<text x="${cx}" y="${cy + 1}" fill="#ffffff" font-family="system-ui, sans-serif" font-weight="800" font-size="${scale * 0.38}px" text-anchor="middle" alignment-baseline="central">${count}</text>`,
     '</svg>'
   ].join('');
 }
 
-// Cam efekti ve koyu tema su damlası (Tekil Pin)
-function createPinSvg(): string {
+function createLiquidGlassPinSvg(): string {
+  const scale = 36;
+  const contentSize = scale + 20;
+  const r = scale / 2;
+  const cx = contentSize / 2;
+  const cy = contentSize / 2;
+  
   return [
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 32" width="24" height="32">',
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${contentSize} ${contentSize}" width="${contentSize}" height="${contentSize}">`,
     '<defs>',
-    '<linearGradient id="pinGlass" x1="0%" y1="0%" x2="0%" y2="100%">',
-    '<stop offset="0%" stop-color="rgba(255,255,255,0.6)" />',
+    '<linearGradient id="lg-bg" x1="0%" y1="0%" x2="100%" y2="100%">',
+    '<stop offset="0%" stop-color="rgba(255,255,255,0.4)" />',
     '<stop offset="100%" stop-color="rgba(255,255,255,0.1)" />',
     '</linearGradient>',
-    '<filter id="pinShadow" x="-30%" y="-30%" width="160%" height="160%">',
-    '<feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.6"/>',
+    '<linearGradient id="lg-border" x1="0%" y1="0%" x2="100%" y2="100%">',
+    '<stop offset="0%" stop-color="rgba(255,255,255,0.8)" />',
+    '<stop offset="100%" stop-color="rgba(255,255,255,0.2)" />',
+    '</linearGradient>',
+    '<filter id="lg-shadow" x="-50%" y="-50%" width="200%" height="200%">',
+    '<feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#000000" flood-opacity="0.2"/>',
+    '</filter>',
+    '<filter id="neon-glow" x="-50%" y="-50%" width="200%" height="200%">',
+    '<feGaussianBlur stdDeviation="3" result="blur" />',
+    '<feMerge>',
+    '<feMergeNode in="blur" />',
+    '<feMergeNode in="SourceGraphic" />',
+    '</feMerge>',
     '</filter>',
     '</defs>',
-    '<path filter="url(#pinShadow)" fill="rgba(15, 23, 42, 0.9)" stroke="url(#pinGlass)" stroke-width="1.5" ',
-    'd="M12,0 C5.37,0 0,5.37 0,12 C0,18.63 12,32 12,32 C12,32 24,18.63 24,12 C24,5.37 18.63,0 12,0 Z" />',
-    '<circle cx="12" cy="11" r="3.5" fill="#22d3ee" />',
+    `<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#lg-bg)" filter="url(#lg-shadow)" />`,
+    `<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#lg-bg)" stroke="url(#lg-border)" stroke-width="1.5" />`,
+    `<circle cx="${cx}" cy="${cy}" r="4.5" fill="#22d3ee" filter="url(#neon-glow)" />`,
     '</svg>'
   ].join('');
 }
 
-// Custom, Premium SVG Cluster Renderer (Glassmorphism Su Damlası)
-class CustomTeardropRenderer implements Renderer {
+const PIN_SVG_URL = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(createLiquidGlassPinSvg());
+
+// SVG Cluster Renderer using Legacy Marker to preserve MapId local styling
+class VectorLiquidGlassRenderer implements Renderer {
   render(cluster: Cluster, stats: ClusterStats, _map: google.maps.Map): google.maps.Marker {
     const count = cluster.count;
-    const scale = Math.min(45 + (count / Math.max(stats.clusters.markers.max, 1)) * 15, 60);
+    const scale = Math.min(45 + (count / Math.max(stats.clusters.markers.max, 1)) * 15, 65);
+    const contentSize = scale + 24;
 
-    const svg = createClusterSvg(count, scale);
-    const height = Math.round(scale * 1.3);
+    const svg = createLiquidGlassClusterSvg(count, scale);
 
     return new google.maps.Marker({
       position: cluster.position,
       zIndex: Number(google.maps.Marker.MAX_ZINDEX) + count,
       icon: {
         url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
-        scaledSize: new google.maps.Size(scale, height),
-        anchor: new google.maps.Point(scale / 2, height),
+        scaledSize: new google.maps.Size(contentSize, contentSize),
+        anchor: new google.maps.Point(contentSize / 2, contentSize / 2),
       },
       title: count + ' İstasyon'
     });
   }
 }
-
-const PIN_SVG_URL = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(createPinSvg());
 
 export default function StationsLayer() {
   const map = useMap();
@@ -81,7 +104,7 @@ export default function StationsLayer() {
       clustererRef.current = new MarkerClusterer({
         map,
         algorithm: new SuperClusterAlgorithm({ radius: 120 }),
-        renderer: new CustomTeardropRenderer()
+        renderer: new VectorLiquidGlassRenderer()
       });
     }
   }, [map]);
@@ -142,8 +165,8 @@ export default function StationsLayer() {
           title: st.title,
           icon: {
             url: PIN_SVG_URL,
-            scaledSize: new google.maps.Size(24, 32),
-            anchor: new google.maps.Point(12, 32)
+            scaledSize: new google.maps.Size(56, 56), // ContentSize = 36 + 20
+            anchor: new google.maps.Point(28, 28)
           }
         });
 
