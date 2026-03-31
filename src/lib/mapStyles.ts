@@ -53,52 +53,64 @@ export const lightMapStyle = [
 export const darkMapStyle = [
   {
     "elementType": "geometry",
-    "stylers": [{ "color": "#020617" }]
+    "stylers": [{ "color": "#09090b" }] // Ana zemin rengi (Zinc-950)
   },
   {
+    "featureType": "poi",
     "elementType": "labels.icon",
-    "stylers": [{ "visibility": "on" }]
+    "stylers": [{ "visibility": "off" }] // Restoran, hastane vb. kafa karıştıran PİN'leri KAPAT.
+  },
+  {
+    "featureType": "poi",
+    "elementType": "geometry",
+    "stylers": [{ "color": "#0f172a" }] // Orman/AVM gibi alanları karart.
+  },
+  {
+    "featureType": "transit",
+    "elementType": "labels.icon",
+    "stylers": [{ "visibility": "off" }] // Otobüs/Metro durak ikonlarını KAPAT.
   },
   {
     "elementType": "labels.text.fill",
-    "stylers": [{ "color": "#94a3b8" }]
+    "stylers": [{ "color": "#64748b" }] // Şehir isimleri (Slate 500)
   },
   {
     "elementType": "labels.text.stroke",
-    "stylers": [{ "color": "#020617" }]
+    "stylers": [{ "color": "#09090b" }, { "weight": 3 }] // Şehir isimleri etrafındaki kalın siyah kontür
   },
-  // Ücretli/Özel Otobanlar -> Turkuaz
+  {
+    "featureType": "road",
+    "elementType": "geometry.fill",
+    "stylers": [{ "color": "#1e293b" }] // Ana yollar (Slate 800)
+  },
+  {
+    "featureType": "road",
+    "elementType": "geometry.stroke",
+    "stylers": [{ "color": "#09090b" }]
+  },
+  {
+    "featureType": "road.highway",
+    "elementType": "geometry.fill",
+    "stylers": [{ "color": "#334155" }] // Otobanlar 
+  },
   {
     "featureType": "road.highway.controlled_access",
     "elementType": "geometry.fill",
-    "stylers": [{ "color": "#06b6d4" }]
-  },
-  // Devlet Otobanları -> Parlak Gümüş / Beyaz (Yeşil E80 tabelalarının parlaması için)
-  {
-    "featureType": "road.highway",
-    "elementType": "geometry.fill",
-    "stylers": [{ "color": "#ffffff" }]
+    "stylers": [{ "color": "#475569" }] // Ücretli Otobanlar
   },
   {
     "featureType": "road.highway",
-    "elementType": "geometry.stroke",
-    "stylers": [{ "color": "#cbd5e1" }]
+    "elementType": "labels.icon",
+    "stylers": [{ "visibility": "on" }] // Sadece yeşil otoban tabelaları (E80 vb) açık kalsın
   },
-  // Ana Karayolları -> Parlak Turuncu
   {
-    "featureType": "road.arterial",
-    "elementType": "geometry.fill",
-    "stylers": [{ "color": "#f97316" }]
-  },
-  // Ara Sokaklar -> Derin Lacivert (Zeminden bir tık açık)
-  {
-    "featureType": "road.local",
-    "elementType": "geometry.fill",
-    "stylers": [{ "color": "#1e293b" }]
+    "featureType": "administrative",
+    "elementType": "labels.text.fill",
+    "stylers": [{ "color": "#94a3b8" }] // Ülke/İlçe isimlerini bir tık daha belirgin yap
   },
   {
     "featureType": "water",
     "elementType": "geometry",
-    "stylers": [{ "color": "#0c4a6e" }]
+    "stylers": [{ "color": "#0f2e4a" }] // Deniz rengini belirginleştirecek kadar açtık (Deep Navy Blue)
   }
 ];
