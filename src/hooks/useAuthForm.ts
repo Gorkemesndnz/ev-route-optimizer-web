@@ -9,6 +9,19 @@ const API_URL = "http://localhost:5146/api/auth";
 
 export type AuthStep = 'email' | 'password' | 'register' | 'verify_email' | 'reset_password';
 
+const formatError = (error: any, defaultMsg: string): string => {
+  if (!error) return defaultMsg;
+  if (typeof error === 'string') return error;
+  if (typeof error === 'object') {
+    if (error.errors && typeof error.errors === 'object' && !Array.isArray(error.errors)) {
+      const details = Object.values(error.errors).flat().join('\n');
+      if (details) return details;
+    }
+    if (error.message) return typeof error.message === 'string' ? error.message : defaultMsg;
+  }
+  return defaultMsg;
+};
+
 export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void) {
   const { language } = useSettings();
   const [authStep, setAuthStep] = useState<AuthStep>('email');
@@ -89,7 +102,7 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
           setAuthStep('register');
         }
       } else {
-        setAuthError(data.error || (language === 'tr' ? 'Lütfen geçerli bir e-posta adresi giriniz.' : 'Please enter a valid email address.'));
+        setAuthError(formatError(data.error, language === 'tr' ? 'Lütfen geçerli bir e-posta adresi giriniz.' : 'Please enter a valid email address.'));
       }
     } catch (err) {
       console.error("API Error in check-email:", err);
@@ -131,7 +144,7 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
         if (onLogin) onLogin(data.data);
         if (onClose) onClose();
       } else {
-        setAuthError(data.error || (language === 'tr' ? "Girdiğiniz şifre hatalı." : "Incorrect password."));
+        setAuthError(formatError(data.error, language === 'tr' ? "Girdiğiniz şifre hatalı." : "Incorrect password."));
       }
     } catch (error) {
       setAuthError(language === 'tr' ? "Sunucuya bağlanılamadı." : "Cannot connect to server.");
@@ -165,9 +178,10 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
 
     setIsLoading(true);
     try {
+      const cleanPhone = phone.replace(/\D/g, '');
       const response = await apiClient('/auth/register', {
         method: 'POST',
-        body: { firstName, lastName, email, phoneNumber: phone, password }
+        body: { firstName, lastName, email, phoneNumber: cleanPhone, password }
       });
       const data = await response.json();
 
@@ -177,7 +191,7 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
         setTimeLeft(120);
         setOtp('');
       } else {
-        setAuthError(data.error || (language === 'tr' ? "Kayıt olurken bir hata oluştu." : "Registration error."));
+        setAuthError(formatError(data.error, language === 'tr' ? "Kayıt olurken bir hata oluştu." : "Registration error."));
       }
     } catch (error) {
       setAuthError(language === 'tr' ? "Sunucu hatası." : "Server error.");
@@ -219,7 +233,7 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
           setAuthStep('reset_password');
         }
       } else {
-        setOtpError(data.error || (language === 'tr' ? 'Hatalı doğrulama kodu.' : 'Invalid verification code.'));
+        setOtpError(formatError(data.error, language === 'tr' ? 'Hatalı doğrulama kodu.' : 'Invalid verification code.'));
       }
     } catch (err) {
       setOtpError(language === 'tr' ? "Sunucuya bağlanılamadı." : "Cannot connect to server.");
@@ -237,7 +251,7 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
       
       let bodyData: any = { email };
       if (verificationType === 'register') {
-        bodyData = { firstName, lastName, email, phoneNumber: phone, password };
+        bodyData = { firstName, lastName, email, phoneNumber: phone.replace(/\D/g, ''), password };
       }
 
       await apiClient(`/auth/${endpoint}`, {
@@ -270,7 +284,7 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
           setOtp('');
           setOtpError('');
       } else {
-          setAuthError(data.error || "Kullanıcı bulunamadı.");
+          setAuthError(formatError(data.error, language === 'tr' ? "Kullanıcı bulunamadı." : "User not found."));
       }
     } catch (err) {
       setAuthError("Sunucu hatası.");
@@ -310,7 +324,7 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
               handlePasswordSubmit();
               return true;
           } else {
-              setAuthError(data.error || (language === 'tr' ? "Sıfırlama başarısız." : "Reset failed."));
+              setAuthError(formatError(data.error, language === 'tr' ? "Sıfırlama başarısız." : "Reset failed."));
               return false;
           }
       } catch (e) {

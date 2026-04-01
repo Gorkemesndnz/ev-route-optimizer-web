@@ -59,7 +59,13 @@ export const registerSchema = z.object({
     .min(2, { message: "Soyad en az 2 karakter olmalıdır / Last name must be at least 2 characters" })
     .max(50),
   phone: z.string()
-    .min(14, { message: "Geçersiz telefon formatı / Invalid phone format" }),
+    .min(14, { message: "Geçersiz telefon formatı / Invalid phone format" })
+    .refine((val) => {
+      const digits = val.replace(/\D/g, '');
+      if (digits.length < 10) return false;
+      if (/^(\d)\1+$/.test(digits)) return false; // Tüm karakterler aynı ise (örn: 0000000000)
+      return true;
+    }, { message: "Geçerli bir telefon numarası giriniz / Please enter a valid phone number" }),
   password: z.string()
     .min(8, { message: "Şifre en az 8 karakter olmalıdır / Password must be at least 8 characters" })
     .regex(/[A-Z]/, { message: "En az bir büyük harf gereklidir / At least one uppercase letter is required" })
