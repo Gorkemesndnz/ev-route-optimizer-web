@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, Heart, Share2, MapPin, Navigation, Phone, Calendar, Star, AlertCircle, CloudRain, Sun, Cloud, Snowflake, ShieldCheck } from 'lucide-react';
 import { useStation } from '../contexts/StationContext';
 import { translations } from '../lib/translations';
@@ -9,6 +9,18 @@ import { apiClient } from '../lib/apiClient';
 const MOCK_COVER = "https://images.unsplash.com/photo-1620060935399-6e3e1ffb1046?q=80&w=600&auto=format&fit=crop";
 const MOCK_LOGO = "https://ui-avatars.com/api/?name=ZES&background=0f172a&color=fff&bold=true";
 
+const formatConnectionType = (type: string | undefined): string => {
+  if (!type) return 'Bilinmiyor';
+  if (type.includes('CCS_COMBO_2')) return 'CCS 2';
+  if (type.includes('CCS_COMBO_1')) return 'CCS 1';
+  if (type.includes('TYPE_2')) return 'Type 2';
+  if (type.includes('TYPE_1')) return 'Type 1';
+  if (type.includes('CHADEMO')) return 'CHAdeMO';
+  if (type.includes('J1772')) return 'J1772';
+  if (type.includes('TESLA')) return 'Tesla';
+  if (type.includes('WALL')) return 'Priz (Wall)';
+  return type.replace('EV_CONNECTOR_TYPE_', '').replace(/_/g, ' ');
+};
 export default function StationDetailsPanel({
   onBack
 }: {
@@ -20,7 +32,27 @@ export default function StationDetailsPanel({
 
   // Weather State
   const [weatherData, setWeatherData] = useState<{tempCelsius: number, description: string, iconCode: string} | null>(null);
+  
+  // Address State
+  const [isAddressExpanded, setIsAddressExpanded] = useState(false);
+  
+  // Reservation Button State
+  const [reservationClicked, setReservationClicked] = useState(false);
+  const reservationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const handleReservationClick = () => {
+     setReservationClicked(true);
+     if (reservationTimeoutRef.current) clearTimeout(reservationTimeoutRef.current);
+     reservationTimeoutRef.current = setTimeout(() => {
+        setReservationClicked(false);
+     }, 2500);
+  };
+
+  useEffect(() => {
+     return () => {
+        if (reservationTimeoutRef.current) clearTimeout(reservationTimeoutRef.current);
+     };
+  }, []);
   useEffect(() => {
     if (!selectedStation) return;
     
@@ -49,7 +81,7 @@ export default function StationDetailsPanel({
     <div className="glass-panel w-full sm:w-[420px] h-[calc(100svh-48px)] overflow-hidden flex flex-col pointer-events-auto relative mt-2 mb-4 mx-4 shadow-3xl">
       
       {/* Top Image Section */}
-      <div className="relative h-56 shrink-0 bg-cover bg-center rounded-t-[1.3rem] overflow-hidden" style={{ backgroundImage: `url(${MOCK_COVER})` }}>
+      <div className="relative h-36 shrink-0 bg-cover bg-center rounded-t-[1.3rem] overflow-hidden" style={{ backgroundImage: `url(${MOCK_COVER})` }}>
         {/* Gradient Overlay for Top Controls */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80 pointer-events-none" />
         
@@ -104,7 +136,13 @@ export default function StationDetailsPanel({
             <div className="flex gap-4 justify-between items-start pt-1">
                <div className="flex gap-2 items-start flex-1 text-zinc-300 text-sm">
                   <MapPin size={18} className="shrink-0 mt-0.5" />
-                  <p className="line-clamp-2">{selectedStation.formattedAddress || 'Adres bilgisi bulunamadı.'}</p>
+                  <p 
+                    onClick={() => setIsAddressExpanded(!isAddressExpanded)}
+                    className={`cursor-pointer transition-all ${isAddressExpanded ? '' : 'line-clamp-2'}`}
+                    title={!isAddressExpanded ? "Tamamını gör" : "Daralt"}
+                  >
+                    {selectedStation.formattedAddress || 'Adres bilgisi bulunamadı.'}
+                  </p>
                </div>
                <div className="flex items-center gap-3 shrink-0">
                   {weatherData && (
@@ -131,8 +169,34 @@ export default function StationDetailsPanel({
                <button className="bg-blue-500 hover:bg-blue-600 active:scale-95 transition-all text-white font-semibold py-2.5 rounded-xl flex items-center justify-center gap-1 text-sm shadow-lg shadow-blue-500/20">
                   <Phone size={16} /> Ara
                </button>
-               <button className="bg-blue-500 hover:bg-blue-600 active:scale-95 transition-all text-white font-semibold py-2.5 rounded-xl flex items-center justify-center gap-1 text-[13px] shadow-lg shadow-blue-500/20 whitespace-nowrap">
-                  <Calendar size={16} /> Rezervasyon
+               <button 
+                  onClick={handleReservationClick}
+                  className="relative bg-blue-500 hover:bg-blue-600 active:scale-95 transition-all text-white font-semibold rounded-xl flex items-center justify-center text-[13px] shadow-lg shadow-blue-500/20 whitespace-nowrap overflow-hidden h-10">
+                  <AnimatePresence mode="wait">
+                     {reservationClicked ? (
+                        <motion.div
+                           key="soon"
+                           initial={{ opacity: 0, y: 15 }}
+                           animate={{ opacity: 1, y: 0 }}
+                           exit={{ opacity: 0, y: -15 }}
+                           transition={{ duration: 0.2 }}
+                           className="absolute flex items-center justify-center w-full"
+                        >
+                           Çok Yakında..
+                        </motion.div>
+                     ) : (
+                        <motion.div
+                           key="rez"
+                           initial={{ opacity: 0, y: 15 }}
+                           animate={{ opacity: 1, y: 0 }}
+                           exit={{ opacity: 0, y: -15 }}
+                           transition={{ duration: 0.2 }}
+                           className="absolute flex items-center justify-center gap-1 w-full"
+                        >
+                           <Calendar size={16} /> Rezervasyon
+                        </motion.div>
+                     )}
+                  </AnimatePresence>
                </button>
             </div>
             
@@ -156,7 +220,7 @@ export default function StationDetailsPanel({
                                  </div>
                                  <div className="flex flex-col">
                                     <span className="text-xs text-white/50">Soket</span>
-                                    <span className="font-bold">{conn.connectionType || conn.currentType || 'Bilinmiyor'}</span>
+                                    <span className="font-bold">{formatConnectionType(conn.connectionType || conn.currentType)}</span>
                                  </div>
                                  <div className="flex flex-col">
                                     <span className="text-xs text-white/50">Güç</span>
@@ -244,3 +308,4 @@ export default function StationDetailsPanel({
     </div>
   );
 }
+
