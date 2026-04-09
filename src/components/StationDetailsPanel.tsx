@@ -57,41 +57,41 @@ export default function StationDetailsPanel({
         <div className="absolute top-4 left-4 flex gap-2">
           <button 
             onClick={onBack}
-            className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-white/20 active:scale-95 transition-all"
+            className="p-1 -ml-1 text-white hover:scale-105 active:scale-95 transition-all drop-shadow-lg"
           >
-            <ChevronLeft size={24} />
+            <ChevronLeft size={28} />
           </button>
         </div>
 
-        <div className="absolute top-4 right-4 flex flex-col gap-2">
-           <button className="w-10 h-10 rounded-full bg-white/95 text-red-500 shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all">
-             <Heart size={20} className="fill-red-500" />
-           </button>
-           <button className="w-10 h-10 rounded-full bg-white/95 text-black shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all">
-             <Share2 size={18} />
-           </button>
-        </div>
-
-        {/* Floating Brand Cover Content */}
-        <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
-           <div className="flex gap-3 items-center">
+        {/* Floating Brand Cover Content & Actions */}
+        <div className="absolute top-16 left-4 right-4 flex items-center justify-between pointer-events-none">
+           <div className="flex gap-3 items-center pointer-events-auto">
              <div className="w-14 h-14 rounded-2xl bg-white p-1 shadow-lg overflow-hidden shrink-0">
                 <img src={MOCK_LOGO} alt="Brand Logo" className="w-full h-full object-cover rounded-xl" />
              </div>
              <div>
-                <h2 className="text-xl font-bold text-white leading-tight drop-shadow-md">{selectedStation.title}</h2>
+                <h2 className="text-xl font-bold text-white leading-tight drop-shadow-md line-clamp-2">{selectedStation.title}</h2>
                 <div className="flex items-center gap-1 mt-0.5">
                    {/* 0 Stars Mock Rating */}
-                   <div className="flex text-zinc-500">
+                   <div className="flex text-zinc-500 drop-shadow-sm">
                      <Star size={14} className="fill-transparent" />
                      <Star size={14} className="fill-transparent" />
                      <Star size={14} className="fill-transparent" />
                      <Star size={14} className="fill-transparent" />
                      <Star size={14} className="fill-transparent" />
-                     <span className="text-zinc-300 ml-1 text-xs font-medium">0.0 <span className="text-zinc-400 font-normal">(0 {language === 'tr' ? 'değerlendirme' : 'reviews'})</span></span>
+                     <span className="text-white ml-1 text-xs font-medium">0.0 <span className="text-zinc-300 font-normal">(0 {language === 'tr' ? 'değerlendirme' : 'reviews'})</span></span>
                    </div>
                 </div>
              </div>
+           </div>
+
+           <div className="flex flex-row gap-2 pointer-events-auto shrink-0">
+             <button className="w-10 h-10 rounded-full bg-white/95 text-red-500 shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all">
+               <Heart size={20} className="fill-red-500" />
+             </button>
+             <button className="w-10 h-10 rounded-full bg-white/95 text-black shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all">
+               <Share2 size={18} />
+             </button>
            </div>
         </div>
       </div>
@@ -106,21 +106,19 @@ export default function StationDetailsPanel({
                   <MapPin size={18} className="shrink-0 mt-0.5" />
                   <p className="line-clamp-2">{selectedStation.formattedAddress || 'Adres bilgisi bulunamadı.'}</p>
                </div>
-               <div className="flex flex-col gap-2 shrink-0 items-end">
-                  <div className="flex items-center gap-3">
-                     {weatherData && (
-                        <div className="flex flex-col items-center">
-                           {getWeatherIcon(weatherData.iconCode)}
-                           <span className="text-[10px] text-zinc-300 font-bold mt-0.5">{Math.round(weatherData.tempCelsius)}°C</span>
-                        </div>
-                     )}
+               <div className="flex items-center gap-3 shrink-0">
+                  {weatherData && (
                      <div className="flex flex-col items-center">
-                        <MapPin size={18} className="text-emerald-400" />
-                        <span className="text-[10px] text-emerald-400 font-bold mt-0.5 text-center">2km</span>
+                        {getWeatherIcon(weatherData.iconCode)}
+                        <span className="text-[10px] text-zinc-300 font-bold mt-0.5">{Math.round(weatherData.tempCelsius)}°C</span>
                      </div>
+                  )}
+                  <div className="flex flex-col items-center">
+                     <MapPin size={18} className="text-emerald-400" />
+                     <span className="text-[10px] text-emerald-400 font-bold mt-0.5 text-center">2km</span>
                   </div>
-                  <button className="text-red-500 bg-red-500/10 hover:bg-red-500/20 active:bg-red-500/30 p-1.5 rounded-full transition-colors mt-2">
-                     <AlertCircle size={20} />
+                  <button className="text-red-500 bg-red-500/10 hover:bg-red-500/20 active:bg-red-500/30 p-2 rounded-full transition-colors ml-1 self-center">
+                     <AlertCircle size={18} />
                   </button>
                </div>
             </div>
