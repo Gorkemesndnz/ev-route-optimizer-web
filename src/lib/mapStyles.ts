@@ -56,9 +56,34 @@ export const darkMapStyle = [
     "stylers": [{ "color": "#09090b" }] // Ana zemin rengi (Zinc-950)
   },
   {
-    "featureType": "poi",
+    "featureType": "poi.medical",
     "elementType": "labels.icon",
-    "stylers": [{ "visibility": "off" }] // Restoran, hastane vb. kafa karıştıran PİN'leri KAPAT.
+    "stylers": [{ "visibility": "off" }] 
+  },
+  {
+    "featureType": "poi.school",
+    "elementType": "labels.icon",
+    "stylers": [{ "visibility": "off" }] 
+  },
+  {
+    "featureType": "poi.government",
+    "elementType": "labels.icon",
+    "stylers": [{ "visibility": "off" }] 
+  },
+  {
+    "featureType": "poi.business",
+    "elementType": "labels.icon",
+    "stylers": [{ "visibility": "on" }] 
+  },
+  {
+    "featureType": "poi.attraction",
+    "elementType": "labels.icon",
+    "stylers": [{ "visibility": "on" }] 
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "labels.icon",
+    "stylers": [{ "visibility": "on" }] 
   },
   {
     "featureType": "poi",

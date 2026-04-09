@@ -25,6 +25,7 @@ function App() {
   const [activeView, setActiveView] = useState<'main' | 'settings' | 'garage' | 'add_vehicle' | 'vehicle_settings' | 'account' | 'privacy' | 'about' | 'terms' | 'station_details'>('main');
   const [previousView, setPreviousView] = useState<'main' | 'account' | 'settings' | 'garage' | 'add_vehicle' | 'vehicle_settings' | 'privacy' | 'about' | 'terms' | 'station_details'>('main');
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [selectedTouristSpot, setSelectedTouristSpot] = useState<{lat: number, lng: number, name: string} | null>(null);
   const [isRightMenuOpen, setIsRightMenuOpen] = useState(false);
 
   const {
@@ -76,6 +77,7 @@ function App() {
         {/* 1. Background Map */}
         <BackgroundMap 
           userLocation={userLocation} 
+          selectedTouristSpot={selectedTouristSpot}
           mapStyle={mapStyle} 
           showTraffic={showTraffic}
         />
@@ -137,9 +139,11 @@ function App() {
                 className="relative z-40 pointer-events-none"
               >
                 <StationDetailsPanel 
+                  onSelectTouristSpot={setSelectedTouristSpot}
                   onBack={() => {
                     setActiveView('main');
                     setSelectedStation(null);
+                    setSelectedTouristSpot(null);
                   }} 
                 />
               </motion.div>

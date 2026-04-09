@@ -14,8 +14,12 @@ export interface StationData {
     powerKw?: number;
     price?: number; // mock field
     status?: string; // mock field
+    count?: number;
+    availableCount?: number;
+    outOfServiceCount?: number;
   }>;
   formattedAddress?: string;
+  amenities?: string[];
 }
 
 interface StationContextType {

@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import TouristAttractionsPanel from './TouristAttractionsPanel';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, Heart, Share2, MapPin, Navigation, Phone, Calendar, Star, AlertCircle, CloudRain, Sun, Cloud, Snowflake, ShieldCheck } from 'lucide-react';
 import { useStation } from '../contexts/StationContext';
@@ -21,10 +22,12 @@ const formatConnectionType = (type: string | undefined): string => {
   if (type.includes('WALL')) return 'Priz (Wall)';
   return type.replace('EV_CONNECTOR_TYPE_', '').replace(/_/g, ' ');
 };
-export default function StationDetailsPanel({
-  onBack
-}: {
-  onBack: () => void;
+export default function StationDetailsPanel({ 
+  onBack,
+  onSelectTouristSpot 
+}: { 
+  onBack: () => void,
+  onSelectTouristSpot?: (spot: {lat: number, lng: number, name: string} | null) => void 
 }) {
   const { selectedStation } = useStation();
   const { language } = useSettings();
@@ -40,6 +43,8 @@ export default function StationDetailsPanel({
   const [reservationClicked, setReservationClicked] = useState(false);
   const reservationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const [showTouristPanel, setShowTouristPanel] = useState(false);
+
   const handleReservationClick = () => {
      setReservationClicked(true);
      if (reservationTimeoutRef.current) clearTimeout(reservationTimeoutRef.current);
@@ -53,6 +58,9 @@ export default function StationDetailsPanel({
         if (reservationTimeoutRef.current) clearTimeout(reservationTimeoutRef.current);
      };
   }, []);
+  // Nearby Amenities State
+  const [nearbyAmenities, setNearbyAmenities] = useState<string[]>([]);
+
   useEffect(() => {
     if (!selectedStation) return;
     
@@ -63,6 +71,17 @@ export default function StationDetailsPanel({
          if (data) setWeatherData(data);
       })
       .catch(err => console.error("Weather API error", err));
+      
+    // Fetch nearby amenities
+    setNearbyAmenities([]); // Reset state on new station
+    apiClient(`/stations/amenities?lat=${selectedStation.latitude}&lng=${selectedStation.longitude}`)
+      .then(res => res.json())
+      .then(result => {
+         if (result.success && result.data) {
+             setNearbyAmenities(result.data);
+         }
+      })
+      .catch(err => console.error("Amenities API error", err));
       
   }, [selectedStation]);
 
@@ -78,7 +97,8 @@ export default function StationDetailsPanel({
   };
 
   return (
-    <div className="glass-panel w-full sm:w-[420px] h-[calc(100svh-48px)] overflow-hidden flex flex-col pointer-events-auto relative mt-2 mb-4 mx-4 shadow-3xl">
+    <div className="flex pointer-events-none">
+      <div className="glass-panel w-full sm:w-[420px] h-[calc(100svh-48px)] overflow-hidden flex flex-col pointer-events-auto relative mt-2 mb-4 mx-4 shadow-3xl shrink-0">
       
       {/* Top Image Section */}
       <div className="relative h-36 shrink-0 bg-cover bg-center rounded-t-[1.3rem] overflow-hidden" style={{ backgroundImage: `url(${MOCK_COVER})` }}>
@@ -209,64 +229,87 @@ export default function StationDetailsPanel({
                <h3 className="font-semibold text-white/80">Mevcut Soketler</h3>
                <div className="flex flex-col gap-2">
                   {selectedStation.connections?.length === 0 ? (
-                     <div className="text-zinc-400 text-sm italic">Google API bağlantı soketi detayı sunmuyor.</div>
+                     <div className="text-zinc-400 text-sm italic">Soket detayı bilinmiyor.</div>
                   ) : (
-                     selectedStation.connections?.map((conn, index) => {
-                        return (
-                           <div key={index} className="flex bg-white/5 border border-white/10 p-3 rounded-2xl items-center justify-between hover:bg-white/10 transition-colors">
-                              <div className="flex items-center gap-4">
-                                 <div className="w-10 h-10 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center">
-                                    <ShieldCheck size={20} />
+                     selectedStation.connections?.flatMap((conn, connIndex) => {
+                        const count = conn.count || 1;
+                        
+                        return Array.from({ length: count }).map((_, i) => {
+                           let isAvailable = true;
+                           let statusText = "Bilinmiyor"; // varsayılan
+                           let statusColorClass = "text-zinc-400";
+                           let statusBgClass = "bg-zinc-400";
+                           let showPulse = false;
+
+                           // availableCount varsa ve null değilse kesin bilgiye göre renklendiriyoruz
+                           if (conn.availableCount !== undefined && conn.availableCount !== null) {
+                              isAvailable = i < conn.availableCount;
+                              if (isAvailable) {
+                                 statusText = "Müsait";
+                                 statusColorClass = "text-emerald-400";
+                                 statusBgClass = "bg-emerald-400";
+                                 showPulse = true;
+                              } else {
+                                 statusText = "Dolu/Servis Dışı";
+                                 statusColorClass = "text-red-500";
+                                 statusBgClass = "bg-red-500";
+                                 showPulse = false;
+                              }
+                           }
+
+                           return (
+                              <div key={`${connIndex}-${i}`} className="flex bg-white/5 border border-white/10 p-3 rounded-2xl items-center justify-between hover:bg-white/10 transition-colors">
+                                 <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center">
+                                       <ShieldCheck size={20} />
+                                    </div>
+                                    <div className="flex flex-col">
+                                       <span className="text-xs text-white/50">Soket {count > 1 ? i + 1 : ''}</span>
+                                       <span className="font-bold">{formatConnectionType(conn.connectionType || conn.currentType)}</span>
+                                    </div>
+                                    <div className="flex flex-col">
+                                       <span className="text-xs text-white/50">Güç</span>
+                                       <span className="font-bold">{conn.powerKw ? `${conn.powerKw} kW` : 'Bilinmiyor'}</span>
+                                    </div>
                                  </div>
-                                 <div className="flex flex-col">
-                                    <span className="text-xs text-white/50">Soket</span>
-                                    <span className="font-bold">{formatConnectionType(conn.connectionType || conn.currentType)}</span>
-                                 </div>
-                                 <div className="flex flex-col">
-                                    <span className="text-xs text-white/50">Güç</span>
-                                    <span className="font-bold">{conn.powerKw ? `${conn.powerKw} kW` : 'Bilinmiyor'}</span>
+                                 <div className="flex flex-col items-end">
+                                    <span className={`text-[10px] ${statusColorClass} flex items-center gap-1 font-bold`}>
+                                       <div className={`w-1.5 h-1.5 rounded-full ${statusBgClass} ${showPulse ? 'animate-pulse' : ''}`} /> {statusText}
+                                    </span>
+                                    <div className="font-mono mt-0.5">
+                                       <span className="font-bold text-lg">7,99₺</span>
+                                       <span className="text-xs text-white/50"> /kWh</span>
+                                    </div>
                                  </div>
                               </div>
-                              <div className="flex flex-col items-end">
-                                 <span className="text-[10px] text-emerald-400 flex items-center gap-1 font-bold">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Müsait
-                                 </span>
-                                 <div className="font-mono mt-0.5">
-                                    <span className="font-bold text-lg">7,99₺</span>
-                                    <span className="text-xs text-white/50"> /kWh</span>
-                                 </div>
-                              </div>
-                           </div>
-                        );
+                           );
+                        });
                      })
                   )}
                </div>
             </div>
 
-            {/* Amenities (Şarj Cihazı Özellikleri) Mock */}
-            <div className="flex flex-col gap-3">
-               <h3 className="font-semibold text-white/80">Şarj Cihazı Özellikleri</h3>
-               <div className="grid grid-cols-2 gap-y-2 gap-x-4">
-                  <div className="flex items-center gap-2 text-sm text-zinc-300">
-                     <div className="w-1.5 h-1.5 bg-blue-400 rounded-full" /> Tuvalet
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-zinc-300">
-                     <div className="w-1.5 h-1.5 bg-blue-400 rounded-full" /> AVM
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-zinc-300">
-                     <div className="w-1.5 h-1.5 bg-blue-400 rounded-full" /> ATM
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-zinc-300">
-                     <div className="w-1.5 h-1.5 bg-blue-400 rounded-full" /> Restoran
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-zinc-300">
-                     <div className="w-1.5 h-1.5 bg-blue-400 rounded-full" /> Oyun Parkı
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-zinc-300">
-                     <div className="w-1.5 h-1.5 bg-blue-400 rounded-full" /> Dinlenme Tesisi
+            {/* Amenities (Şarj Noktası Çevresindeki İmkanlar) */}
+            {nearbyAmenities.length > 0 && (
+               <div className="flex flex-col gap-3">
+                  <h3 className="font-semibold text-white/80">Yürüme Mesafesindeki İmkanlar</h3>
+                  <div className="grid grid-cols-2 gap-y-2 gap-x-4">
+                     {nearbyAmenities.map((amenity, idx) => (
+                        <div key={idx} className="flex items-center gap-2 text-sm text-zinc-300">
+                           <div className="w-1.5 h-1.5 bg-blue-400 rounded-full" /> {amenity}
+                        </div>
+                     ))}
                   </div>
                </div>
-            </div>
+            )}
+
+            {/* Tourist Attractions Quick Button */}
+            <button 
+               onClick={() => setShowTouristPanel(!showTouristPanel)}
+               className="mt-1 w-full bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 font-semibold py-3 rounded-xl border border-indigo-500/30 transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
+            >
+               🗺️ Çevredeki Turistik Yerleri Keşfet
+            </button>
 
             {/* Kampanyalar Mock */}
             <div className="flex flex-col gap-3 mt-4">
@@ -305,6 +348,17 @@ export default function StationDetailsPanel({
             
         </div>
       </div>
+      </div>
+
+      <AnimatePresence>
+        {showTouristPanel && (
+           <TouristAttractionsPanel 
+             station={selectedStation} 
+             onSelectTouristSpot={onSelectTouristSpot}
+             onClose={() => setShowTouristPanel(false)} 
+           />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

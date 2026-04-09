@@ -1,4 +1,4 @@
-import { Minus, Plus, LocateFixed, Car, Zap, Check } from "lucide-react";
+import { Minus, Plus, LocateFixed, Car, Zap, Check, Layers } from "lucide-react";
 import { useMap } from "@vis.gl/react-google-maps";
 import { cn } from "@/lib/utils";
 import { translations } from "../lib/translations";
@@ -118,6 +118,16 @@ const MapControls = memo(({
           title={t.locateMe}
         >
           <LocateFixed size={18} />
+        </button>
+        
+        <div className="w-px h-4 bg-white/20 mx-0.5" />
+
+        <button 
+          onClick={handleToggleLayers}
+          className="w-8 h-8 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all cursor-pointer flex items-center justify-center"
+          title="Katman Değiştir"
+        >
+          <Layers size={18} />
         </button>
         
         <div className="w-px h-4 bg-white/20 mx-0.5" />

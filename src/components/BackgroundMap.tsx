@@ -4,10 +4,12 @@ import StationsLayer from './StationsLayer';
 
 const BackgroundMap = memo(({ 
   userLocation, 
+  selectedTouristSpot,
   mapStyle = [],
   showTraffic = true
 }: { 
   userLocation: {lat: number, lng: number} | null,
+  selectedTouristSpot?: {lat: number, lng: number, name: string} | null,
   mapStyle?: google.maps.MapTypeStyle[],
   showTraffic?: boolean
 }) => {
@@ -55,6 +57,17 @@ const BackgroundMap = memo(({
       >
         {userLocation && (
           <Marker position={userLocation} />
+        )}
+        {selectedTouristSpot && (
+          <Marker 
+             position={{lat: selectedTouristSpot.lat, lng: selectedTouristSpot.lng}}
+             title={selectedTouristSpot.name}
+             label={{
+                  text: selectedTouristSpot.name,
+                  color: "#ffffff",
+                  className: "mt-8 font-bold drop-shadow-md text-[13px] bg-zinc-900/90 px-2.5 py-1 rounded-xl border border-white/20 whitespace-nowrap",
+             }}
+          />
         )}
         <StationsLayer />
       </Map>
