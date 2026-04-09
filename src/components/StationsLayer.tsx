@@ -1,73 +1,76 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMap } from '@vis.gl/react-google-maps';
-
-import { MarkerClusterer, SuperClusterAlgorithm, type Renderer, type Cluster, type ClusterStats } from '@googlemaps/markerclusterer';
+import Supercluster from 'supercluster';
 import { apiClient } from '../lib/apiClient';
 import { useSettings } from '../contexts/SettingsContext';
 import { useStation } from '../contexts/StationContext';
 
+// ─── Types ──────────────────────────────────────────────────────────────────────
 
-function createLiquidGlassClusterSvg(count: number, scale: number): string {
-  const r = scale / 2;
-  const contentSize = scale + 24; // Extra space for shadow
-  const cx = contentSize / 2;
-  const cy = contentSize / 2;
-  
-  return [
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${contentSize} ${contentSize}" width="${contentSize}" height="${contentSize}">`,
-    '<defs>',
-    '<linearGradient id="lg-bg" x1="0%" y1="0%" x2="100%" y2="100%">',
-    '<stop offset="0%" stop-color="rgba(255,255,255,0.4)" />',
-    '<stop offset="100%" stop-color="rgba(255,255,255,0.1)" />',
-    '</linearGradient>',
-    '<linearGradient id="lg-border" x1="0%" y1="0%" x2="100%" y2="100%">',
-    '<stop offset="0%" stop-color="rgba(255,255,255,0.8)" />',
-    '<stop offset="100%" stop-color="rgba(255,255,255,0.2)" />',
-    '</linearGradient>',
-    '<filter id="lg-shadow" x="-50%" y="-50%" width="200%" height="200%">',
-    '<feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#000000" flood-opacity="0.2"/>',
-    '</filter>',
-    '</defs>',
-    `<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#lg-bg)" filter="url(#lg-shadow)" />`,
-    `<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#lg-bg)" stroke="url(#lg-border)" stroke-width="1.5" />`,
-    `<text x="${cx}" y="${cy + 1}" fill="#ffffff" font-family="system-ui, sans-serif" font-weight="800" font-size="${scale * 0.38}px" text-anchor="middle" alignment-baseline="central">${count}</text>`,
-    '</svg>'
-  ].join('');
+interface OcmStation {
+  id: string;
+  latitude: number;
+  longitude: number;
+  title?: string;
+  usageTypeTitle?: string;
 }
+
+interface GoogleStation {
+  id: string | number;
+  latitude: number;
+  longitude: number;
+  title?: string;
+  connections?: Array<{
+    connectionType?: string;
+    currentType?: string;
+    powerKw?: number;
+  }>;
+  statusType?: string;
+  usageType?: string;
+  [key: string]: any;
+}
+
+interface ClusterHitArea {
+  x: number;
+  y: number;
+  r: number;
+  clusterId: number;
+  lat: number;
+  lng: number;
+  count: number;
+}
+
+// ─── Google Pin SVG Generator ───────────────────────────────────────────────────
 
 function createLiquidGlassPinSvg(types: string[], title?: string, isGoogle: boolean = true): { svg: string, width: number } {
   const contentSizeHeight = 120;
   
   if (types.length === 0 && (!isGoogle)) {
-      // Fallback tiny dot for unknown stations
-      const contentSize = 120;
-      return {
-        svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${contentSize} ${contentSize}" width="${contentSize}" height="${contentSize}"><defs><filter id="drop-shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000" flood-opacity="0.3"/></filter></defs><circle cx="60" cy="90" r="5" fill="#334155" stroke="#ffffff" stroke-width="1.5" filter="url(#drop-shadow)"/></svg>`,
-        width: contentSize
-      };
+    const contentSize = 120;
+    return {
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${contentSize} ${contentSize}" width="${contentSize}" height="${contentSize}"><defs><filter id="drop-shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000" flood-opacity="0.3"/></filter></defs><circle cx="60" cy="90" r="5" fill="#334155" stroke="#ffffff" stroke-width="1.5" filter="url(#drop-shadow)"/></svg>`,
+      width: contentSize
+    };
   }
 
-  // Calculate widths dynamically
   let typesWidth = 10;
   if (types.length === 1) typesWidth = 24;
   if (types.length === 2) typesWidth = 52;
   if (types.length === 3) typesWidth = 80;
       
   const displayTitle = title ? (title.length > 25 ? title.substring(0, 23) + '...' : title) : '';
-  // Modern web font char width approx
   const titleWidth = displayTitle ? displayTitle.length * 6.5 : 0; 
   
   const hasBoth = types.length > 0 && displayTitle.length > 0;
   const gap = hasBoth ? 12 : 0;
 
   let w = typesWidth + titleWidth + gap + 16;
-  if (w < 40) w = 40; // minimum width
+  if (w < 40) w = 40;
   
-  const contentSizeWidth = w + 60; // Room for shadow & dynamic expansion expansion width
+  const contentSizeWidth = w + 60;
   const cx = contentSizeWidth / 2;
   const cy = 90;
 
-  // Create solid tooltip shape
   const r = 8;
   const h = 26;
   const th = 8;
@@ -91,52 +94,50 @@ function createLiquidGlassPinSvg(types: string[], title?: string, isGoogle: bool
   `;
 
   let innerHtml = '';
-  // Align text relative to the left of the shape
   const boxLeft = cx - w/2 + 8;
   let currentX = boxLeft;
   
-  // If we only have types (not expanded), we can just center them exactly for perfection
   if (!displayTitle && types.length > 0) {
+    let typeTextSvg = '';
+    types.forEach((type, index) => {
+      let color = '#ffffff';
+      if (type === 'AC') color = '#22c55e';
+      if (type === 'DC') color = '#f59e0b';
+      if (type === 'HPC') color = '#ec4899';
+      if (type === 'EV') color = '#3b82f6';
+      
+      typeTextSvg += `<tspan fill="${color}">${type}</tspan>`;
+      if (index < types.length - 1) {
+        typeTextSvg += `<tspan fill="#64748b"> | </tspan>`;
+      }
+    });
+    innerHtml += `<text x="${cx}" y="${boxTop + h/2 + 4.5}" font-family="system-ui, sans-serif" font-weight="900" font-size="11px" text-anchor="middle">${typeTextSvg}</text>`;
+  } else {
+    if (displayTitle) {
+      innerHtml += `<text x="${currentX}" y="${boxTop + h/2 + 4.5}" fill="#f8fafc" font-family="system-ui, sans-serif" font-weight="600" font-size="11px">${displayTitle}</text>`;
+      currentX += titleWidth + gap;
+      
+      if (types.length > 0) {
+        innerHtml += `<line x1="${currentX - Math.max(gap/2, 4)}" y1="${boxTop + 6}" x2="${currentX - Math.max(gap/2, 4)}" y2="${boxBottom - 6}" stroke="#334155" stroke-width="1.5" />`;
+      }
+    }
+
+    if (types.length > 0) {
       let typeTextSvg = '';
       types.forEach((type, index) => {
         let color = '#ffffff';
         if (type === 'AC') color = '#22c55e';
         if (type === 'DC') color = '#f59e0b';
         if (type === 'HPC') color = '#ec4899';
-        if (type === 'EV') color = '#3b82f6'; // Blue
+        if (type === 'EV') color = '#3b82f6';
         
         typeTextSvg += `<tspan fill="${color}">${type}</tspan>`;
         if (index < types.length - 1) {
           typeTextSvg += `<tspan fill="#64748b"> | </tspan>`;
         }
       });
-      innerHtml += `<text x="${cx}" y="${boxTop + h/2 + 4.5}" font-family="system-ui, sans-serif" font-weight="900" font-size="11px" text-anchor="middle">${typeTextSvg}</text>`;
-  } else {
-      if (displayTitle) {
-          innerHtml += `<text x="${currentX}" y="${boxTop + h/2 + 4.5}" fill="#f8fafc" font-family="system-ui, sans-serif" font-weight="600" font-size="11px">${displayTitle}</text>`;
-          currentX += titleWidth + gap;
-          
-          if (types.length > 0) {
-            innerHtml += `<line x1="${currentX - Math.max(gap/2, 4)}" y1="${boxTop + 6}" x2="${currentX - Math.max(gap/2, 4)}" y2="${boxBottom - 6}" stroke="#334155" stroke-width="1.5" />`;
-          }
-      }
-
-      if (types.length > 0) {
-          let typeTextSvg = '';
-          types.forEach((type, index) => {
-            let color = '#ffffff';
-            if (type === 'AC') color = '#22c55e';
-            if (type === 'DC') color = '#f59e0b';
-            if (type === 'HPC') color = '#ec4899';
-            if (type === 'EV') color = '#3b82f6'; // Blue for Generic
-            
-            typeTextSvg += `<tspan fill="${color}">${type}</tspan>`;
-            if (index < types.length - 1) {
-              typeTextSvg += `<tspan fill="#64748b"> | </tspan>`;
-            }
-          });
-          innerHtml += `<text x="${currentX}" y="${boxTop + h/2 + 4.5}" font-family="system-ui, sans-serif" font-weight="900" font-size="11px">${typeTextSvg}</text>`;
-      }
+      innerHtml += `<text x="${currentX}" y="${boxTop + h/2 + 4.5}" font-family="system-ui, sans-serif" font-weight="900" font-size="11px">${typeTextSvg}</text>`;
+    }
   }
 
   let strokeColor = '#ffffff';
@@ -144,9 +145,9 @@ function createLiquidGlassPinSvg(types: string[], title?: string, isGoogle: bool
     if (types[0] === 'AC') strokeColor = '#22c55e';
     else if (types[0] === 'DC') strokeColor = '#f59e0b';
     else if (types[0] === 'HPC') strokeColor = '#ec4899';
-    else if (types[0] === 'EV') strokeColor = '#3b82f6'; // Blue
+    else if (types[0] === 'EV') strokeColor = '#3b82f6';
   } else if (types.length > 1) {
-    strokeColor = '#e2e8f0'; // slate-200 for combos
+    strokeColor = '#e2e8f0';
   }
 
   const svg = [
@@ -164,17 +165,18 @@ function createLiquidGlassPinSvg(types: string[], title?: string, isGoogle: bool
   return { svg, width: contentSizeWidth };
 }
 
-  const COMBO_KEYS = [
-    [],
-    ['AC'],
-    ['DC'],
-    ['HPC'],
-    ['AC', 'DC'],
-    ['AC', 'HPC'],
-    ['DC', 'HPC'],
-    ['AC', 'DC', 'HPC'],
-    ['EV']
-  ];
+// Pre-cache default pin SVGs for Google markers
+const COMBO_KEYS = [
+  [],
+  ['AC'],
+  ['DC'],
+  ['HPC'],
+  ['AC', 'DC'],
+  ['AC', 'HPC'],
+  ['DC', 'HPC'],
+  ['AC', 'DC', 'HPC'],
+  ['EV']
+];
 
 const PIN_SVGS: Record<string, { url: string, width: number }> = {};
 COMBO_KEYS.forEach(combo => {
@@ -185,113 +187,326 @@ COMBO_KEYS.forEach(combo => {
   };
 });
 
-// SVG Cluster Renderer using Legacy Marker to preserve MapId local styling
-class VectorLiquidGlassRenderer implements Renderer {
-  render(cluster: Cluster, stats: ClusterStats, map: google.maps.Map): google.maps.Marker {
-    const count = cluster.count;
+// ─── Helpers ────────────────────────────────────────────────────────────────────
 
-    const scale = Math.min(45 + (count / Math.max(stats.clusters.markers.max, 1)) * 15, 65);
-    const contentSize = scale + 24;
+function extractTypes(connections?: GoogleStation['connections']): string[] {
+  const types = new Set<string>();
+  if (!connections || !Array.isArray(connections)) return [];
 
-    const svg = createLiquidGlassClusterSvg(count, scale);
+  connections.forEach((c) => {
+    if (c.currentType === 'HPC' || c.currentType === 'DC' || c.currentType === 'AC') {
+      types.add(c.currentType);
+    } else {
+      const t = (c.currentType || c.connectionType || '').toUpperCase();
+      const pwr = typeof c.powerKw === 'number' ? c.powerKw : 0;
+      if (t.includes('HPC') || t.includes('CHADEMO') || t.includes('TESLA')) types.add('HPC');
+      else if (t.includes('DC') || t.includes('CCS') || pwr > 22) types.add('DC');
+      else if (t.includes('AC') || t.includes('TYPE') || t.includes('J1772') || t.includes('WALL') || (pwr > 0 && pwr <= 22)) types.add('AC');
+    }
+  });
 
-    return new google.maps.Marker({
-      position: cluster.position,
-      zIndex: Number(google.maps.Marker.MAX_ZINDEX) + count,
-      icon: {
-        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
-        scaledSize: new google.maps.Size(contentSize, contentSize),
-        anchor: new google.maps.Point(contentSize / 2, contentSize / 2),
-      },
-      title: count + ' İstasyon'
-    });
-  }
+  return Array.from(types).sort();
 }
+
+// ─── Canvas Cluster Overlay ─────────────────────────────────────────────────────
+// Tek bir Canvas katmanında tüm küme baloncuklarını çizer.
+// DOM element sayısı: 0 (vs. eski yaklaşımda ~50-100 google.maps.Marker)
+
+function createClusterCanvasOverlay(
+  map: google.maps.Map,
+  supercluster: Supercluster
+) {
+  class ClusterCanvas extends google.maps.OverlayView {
+    private canvas: HTMLCanvasElement | null = null;
+    private _hitAreas: ClusterHitArea[] = [];
+
+    onAdd() {
+      this.canvas = document.createElement('canvas');
+      this.canvas.style.position = 'absolute';
+      this.canvas.style.pointerEvents = 'none'; // Harita etkileşimini engellemez
+      const panes = this.getPanes();
+      panes?.overlayLayer.appendChild(this.canvas);
+    }
+
+    draw() {
+      if (!this.canvas) return;
+      const projection = this.getProjection();
+      const mapObj = this.getMap() as google.maps.Map;
+      if (!projection || !mapObj) return;
+
+      const bounds = mapObj.getBounds();
+      const zoom = mapObj.getZoom();
+      if (!bounds || zoom == null) return;
+
+      const sw = bounds.getSouthWest();
+      const ne = bounds.getNorthEast();
+
+      const swPx = projection.fromLatLngToDivPixel(sw);
+      const nePx = projection.fromLatLngToDivPixel(ne);
+      if (!swPx || !nePx) return;
+
+      const width = Math.abs(nePx.x - swPx.x);
+      const height = Math.abs(swPx.y - nePx.y);
+      const left = Math.min(swPx.x, nePx.x);
+      const top = Math.min(swPx.y, nePx.y);
+
+      const dpr = window.devicePixelRatio || 1;
+      this.canvas.style.left = left + 'px';
+      this.canvas.style.top = top + 'px';
+      this.canvas.style.width = width + 'px';
+      this.canvas.style.height = height + 'px';
+      this.canvas.width = Math.ceil(width * dpr);
+      this.canvas.height = Math.ceil(height * dpr);
+
+      const ctx = this.canvas.getContext('2d');
+      if (!ctx) return;
+
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, width, height);
+
+      // SuperCluster — kümeleri hesapla
+      const clusters = supercluster.getClusters(
+        [sw.lng(), sw.lat(), ne.lng(), ne.lat()],
+        Math.floor(zoom)
+      );
+
+      this._hitAreas = [];
+
+      let maxCount = 1;
+      for (const c of clusters) {
+        if (c.properties.cluster) {
+          const cnt = c.properties.point_count || 1;
+          if (cnt > maxCount) maxCount = cnt;
+        }
+      }
+
+      for (const cluster of clusters) {
+        if (!cluster.properties.cluster) continue;
+
+        const [lng, lat] = cluster.geometry.coordinates;
+        const point = projection.fromLatLngToDivPixel(
+          new google.maps.LatLng(lat, lng)
+        );
+        if (!point) continue;
+
+        const x = point.x - left;
+        const y = point.y - top;
+
+        const count = cluster.properties.point_count || 0;
+        const scale = Math.min(45 + (count / maxCount) * 15, 65);
+        const r = scale / 2;
+
+        // ── Gölge ──
+        ctx.save();
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
+        ctx.shadowBlur = 12;
+        ctx.shadowOffsetY = 5;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(160, 175, 200, 0.3)';
+        ctx.fill();
+        ctx.restore();
+
+        // ── Cam arka plan ──
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(200, 210, 230, 0.28)';
+        ctx.fill();
+
+        // ── Kenar çizgisi ──
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // ── Üst ışık yansıması (glassmorphism) ──
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.clip();
+        const grad = ctx.createLinearGradient(x - r, y - r, x + r, y + r);
+        grad.addColorStop(0, 'rgba(255, 255, 255, 0.25)');
+        grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.05)');
+        grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(x - r, y - r, r * 2, r * 2);
+        ctx.restore();
+
+        // ── Sayı metni ──
+        ctx.save();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `800 ${scale * 0.38}px system-ui, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+        ctx.shadowBlur = 4;
+        ctx.fillText(String(count), x, y + 1);
+        ctx.restore();
+
+        // Hit-test alanı kaydet
+        this._hitAreas.push({
+          x, y, r,
+          clusterId: cluster.properties.cluster_id as number,
+          lat, lng, count
+        });
+      }
+    }
+
+    /** Verilen LatLng'de bir küme var mı? */
+    getClusterAt(latLng: google.maps.LatLng): ClusterHitArea | null {
+      const projection = this.getProjection();
+      if (!projection) return null;
+
+      const mapObj = this.getMap() as google.maps.Map;
+      const bounds = mapObj?.getBounds();
+      if (!bounds) return null;
+
+      const swPx = projection.fromLatLngToDivPixel(bounds.getSouthWest());
+      const nePx = projection.fromLatLngToDivPixel(bounds.getNorthEast());
+      if (!swPx || !nePx) return null;
+
+      const left = Math.min(swPx.x, nePx.x);
+      const top = Math.min(swPx.y, nePx.y);
+
+      const px = projection.fromLatLngToDivPixel(latLng);
+      if (!px) return null;
+
+      const clickX = px.x - left;
+      const clickY = px.y - top;
+
+      for (const area of this._hitAreas) {
+        const dx = clickX - area.x;
+        const dy = clickY - area.y;
+        if (dx * dx + dy * dy <= area.r * area.r) {
+          return area;
+        }
+      }
+      return null;
+    }
+
+    onRemove() {
+      if (this.canvas) {
+        this.canvas.parentNode?.removeChild(this.canvas);
+        this.canvas = null;
+      }
+      this._hitAreas = [];
+    }
+
+    destroy() {
+      this.setMap(null);
+    }
+  }
+
+  const overlay = new ClusterCanvas();
+  overlay.setMap(map);
+  return overlay;
+}
+
+// ─── Component ──────────────────────────────────────────────────────────────────
 
 export default function StationsLayer() {
   const map = useMap();
   const { stationFilters } = useSettings();
   const { setSelectedStation } = useStation();
-  const clustererRef = useRef<MarkerClusterer | null>(null);
-  const markersRef = useRef<{ [key: string]: google.maps.Marker }>({});
-  const [stations, setStations] = useState<any[]>([]);
 
-  const sourceRef = useRef<'ocm' | 'google'>('ocm');
+  const [ocmStations, setOcmStations] = useState<OcmStation[]>([]);
+  const [googleStations, setGoogleStations] = useState<GoogleStation[]>([]);
+
+  const superclusterRef = useRef<Supercluster | null>(null);
+  const canvasOverlayRef = useRef<ReturnType<typeof createClusterCanvasOverlay> | null>(null);
+  const googleMarkersRef = useRef<{ [key: string]: google.maps.Marker }>({});
   const activeMarkerIdRef = useRef<string | null>(null);
+  const sourceRef = useRef<'ocm' | 'google'>('ocm');
+  const abortRef = useRef<AbortController | null>(null);
 
-  // Initialize Clusterer
+  // Son fetch edilen geniş bounds — küçük pan'larda yeniden API çağrısı yapma
+  const lastFetchedBoundsRef = useRef<{ sw: { lat: number, lng: number }, ne: { lat: number, lng: number }, zoom: number } | null>(null);
+
+  // ─── Initialize SuperCluster ──────────────────────────────────────────────────
+
   useEffect(() => {
-    if (!map) return;
-    
-    const clusterer = new MarkerClusterer({
-      map,
-      // radius: 180 çok agresifti, yaklaşıldığında ayrışmayı engelliyordu. 60 doğal bir değer.
-      // maxZoom: 13 -> Zoom level 14 ve sonrasında (şehir/mahalle içi) kümelemeyi ŞARTSIZ İPTAL ET. 
-      // Mahallede tüm istasyonlar tekil cam pinler olarak parlasın.
-      algorithm: new SuperClusterAlgorithm({ radius: 60, maxZoom: 13 }),
-      renderer: new VectorLiquidGlassRenderer()
+    superclusterRef.current = new Supercluster({
+      radius: 80,
+      maxZoom: 14,
+      minPoints: 2,
     });
-    
-    clustererRef.current = clusterer;
+    return () => { superclusterRef.current = null; };
+  }, []);
 
-    // React StrictMode veya component yeniden mount olduğunda (HMR),
-    // eski harita üzerinde kalan "hayalet" (ghost) markerleri ve kümeleri temizle!
-    return () => {
-      clusterer.clearMarkers(); // Kümelerden temizle
-      clusterer.setMap(null); // Haritadan tamamen sök
-      
-      // Kümelenmemiş tekil marker'ların harita üzerindeki kalıntılarını sök
-      Object.values(markersRef.current).forEach(m => m.setMap(null));
-      markersRef.current = {};
-      
-      if (clustererRef.current === clusterer) {
-        clustererRef.current = null;
-      }
-    };
-  }, [map]);
+  // ─── Single Idle Listener: Load Data ──────────────────────────────────────────
 
-  // Handle Viewport changes
   useEffect(() => {
     if (!map) return;
 
     let timeoutId: ReturnType<typeof setTimeout>;
+
+    /** Viewport mevcut fetched bounds içinde mi? */
+    const isWithinFetchedBounds = (sw: google.maps.LatLng, ne: google.maps.LatLng, zoom: number): boolean => {
+      const last = lastFetchedBoundsRef.current;
+      if (!last) return false;
+      if (Math.floor(zoom) !== last.zoom) return false; // Zoom değiştiyse yeniden fetch
+      return (
+        sw.lat() >= last.sw.lat &&
+        sw.lng() >= last.sw.lng &&
+        ne.lat() <= last.ne.lat &&
+        ne.lng() <= last.ne.lng
+      );
+    };
 
     const loadStations = async () => {
       const bounds = map.getBounds();
       const zoom = map.getZoom() || 6;
       if (!bounds) return;
 
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+
       const sw = bounds.getSouthWest();
       const ne = bounds.getNorthEast();
 
+      const currentSource = zoom >= 10 ? 'google' : 'ocm';
+      const sourceChanged = sourceRef.current !== currentSource;
+      if (sourceChanged) sourceRef.current = currentSource;
+
       try {
-        // AŞAMA 2: Hybrid Archi - Zoom 10 ve üzerindeyken Canlı Google Places API'yi çağır
-        const currentSource = zoom >= 10 ? 'google' : 'ocm';
-        const endpoint = currentSource === 'google' ? '/stations/google' : '/stations/base';
-        
-        const sourceChanged = sourceRef.current !== currentSource;
-        if (sourceChanged) {
-          sourceRef.current = currentSource;
-        }
+        if (currentSource === 'ocm') {
+          // ── OCM: Akıllı Fetch — küçük pan'larda yeniden çekme ──
+          if (!sourceChanged && isWithinFetchedBounds(sw, ne, zoom)) return;
 
-        const url = `${endpoint}?swLat=${sw.lat()}&swLng=${sw.lng()}&neLat=${ne.lat()}&neLng=${ne.lng()}`;
-        
-        const res = await apiClient(url);
-        const data = await res.json();
+          // Viewport'u %35 genişlet → küçük pan'larda yeniden fetch gerekmez
+          const latPad = (ne.lat() - sw.lat()) * 0.35;
+          const lngPad = (ne.lng() - sw.lng()) * 0.35;
+          const padSw = { lat: sw.lat() - latPad, lng: sw.lng() - lngPad };
+          const padNe = { lat: ne.lat() + latPad, lng: ne.lng() + lngPad };
 
-        if (data.success && data.data) {
-          setStations((prev) => {
-            // Kaynak değiştiyse (OCM <-> Google geçişi) önceki verileri TEMİZLE!
-            const prevMap = sourceChanged ? new Map() : new Map(prev.map((s: any) => [String(s.id), s]));
-            
-            data.data.forEach((s: any) => {
-              prevMap.set(String(s.id), { ...s, isGoogle: currentSource === 'google' });
-            });
-            return Array.from(prevMap.values());
-          });
+          const url = `/stations/base?swLat=${padSw.lat}&swLng=${padSw.lng}&neLat=${padNe.lat}&neLng=${padNe.lng}&zoom=${zoom}`;
+          const res = await apiClient(url, { signal: controller.signal });
+          if (controller.signal.aborted) return;
+          const data = await res.json();
+
+          if (data.success && data.data) {
+            lastFetchedBoundsRef.current = { sw: padSw, ne: padNe, zoom: Math.floor(zoom) };
+            setOcmStations(data.data);
+            if (sourceChanged) setGoogleStations([]);
+          }
+        } else {
+          // ── Google: Normal viewport fetch ──
+          const url = `/stations/google?swLat=${sw.lat()}&swLng=${sw.lng()}&neLat=${ne.lat()}&neLng=${ne.lng()}`;
+          const res = await apiClient(url, { signal: controller.signal });
+          if (controller.signal.aborted) return;
+          const data = await res.json();
+
+          if (data.success && data.data) {
+            lastFetchedBoundsRef.current = null; // Google için bounds cache yok
+            setGoogleStations(data.data);
+            if (sourceChanged) setOcmStations([]);
+          }
         }
-      } catch (err) {
-        console.error('Failed to load stations from Backend/Google', err);
+      } catch (err: any) {
+        if (err?.name === 'AbortError') return;
+        console.error('Failed to load stations', err);
       }
     };
 
@@ -299,177 +514,220 @@ export default function StationsLayer() {
 
     const listenerIdle = map.addListener('idle', () => {
       clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        loadStations();
-      }, 500);
+      timeoutId = setTimeout(loadStations, 800);
     });
 
     return () => {
       google.maps.event.removeListener(listenerIdle);
       clearTimeout(timeoutId);
+      abortRef.current?.abort();
     };
   }, [map]);
 
-  // Sync markers with Clusterer
+  // ─── Canvas Overlay: OCM clusters ─────────────────────────────────────────────
+
   useEffect(() => {
-    if (!clustererRef.current || !map) return;
+    if (!map || !superclusterRef.current) return;
 
-    // noDraw=true: önce sessizce tüm eski marker'ları kaldır, sonra yenilerini ekle, 
-    // böylece kümeleme motoru (MarkerClusterer) arada boş bir kare çizmez.
-    clustererRef.current.clearMarkers(true); // true = noDraw, henüz haritayı güncelleme
-    Object.values(markersRef.current).forEach(m => m.setMap(null));
-    markersRef.current = {};
-    activeMarkerIdRef.current = null; // Filtre/zoom değişiminde açık kalanı temizle
+    // Eski overlay'i yok et
+    canvasOverlayRef.current?.destroy();
+    canvasOverlayRef.current = null;
 
-    const newMarkers: google.maps.Marker[] = [];
+    if (ocmStations.length === 0) return;
 
-    stations.forEach((st: any) => {
-      if (st.latitude === 0 && st.longitude === 0) return;
-
-      const strId = String(st.id);
-      const isGoogle = st.isGoogle === true;
-      const types = new Set<string>();
-
-      if (st.connections && Array.isArray(st.connections)) {
-        st.connections.forEach((c: any) => {
-          if (c.currentType === 'HPC' || c.currentType === 'DC' || c.currentType === 'AC') {
-             types.add(c.currentType);
-          } else {
-             // Fallback for OCM or unmapped
-             const t = (c.currentType || c.connectionType || '').toUpperCase();
-             const pwr = typeof c.powerKw === 'number' ? c.powerKw : 0;
-             if (t.includes('HPC') || t.includes('CHADEMO') || t.includes('TESLA')) types.add('HPC');
-             else if (t.includes('DC') || t.includes('CCS') || pwr > 22) types.add('DC');
-             else if (t.includes('AC') || t.includes('TYPE') || t.includes('J1772') || t.includes('WALL') || (pwr > 0 && pwr <= 22)) types.add('AC');
-          }
-        });
-      }
-      
-      let hasMatch = false;
-      if (stationFilters.length === 0) {
-        hasMatch = true; // Hiç filtre yoksa tümünü göster
-      } else if (types.size === 0) {
-        hasMatch = false; // Filtre var ama istasyonda veri yoksa gizle
-      } else {
-        hasMatch = Array.from(types).some(t => stationFilters.includes(t));
-      }
-
-      if (hasMatch) {
-        let comboArr = Array.from(types).sort();
-        // Eğer boş bir Google istasyonuysa (Google API bağlantı tiplerini döndürememişse)
-        if (comboArr.length === 0 && isGoogle) {
-           comboArr = ['EV']; // Fallback generic tab
+    // GeoJSON noktalarına dönüştür (DOM operasyonu YOK)
+    const points: Supercluster.PointFeature<{ id: string }>[] = ocmStations
+      .filter(s => s.latitude !== 0 || s.longitude !== 0)
+      .map(s => ({
+        type: 'Feature' as const,
+        properties: { id: String(s.id) },
+        geometry: {
+          type: 'Point' as const,
+          coordinates: [s.longitude, s.latitude]
         }
+      }));
 
-        const svgKey = comboArr.join('_');
-        
-        let iconUrl = '';
-        let iconWidth = 120;
-        
-        if (isGoogle) {
-          const defaultData = PIN_SVGS[svgKey] || PIN_SVGS[''];
-          iconUrl = defaultData.url;
-          iconWidth = defaultData.width;
-        } else {
-          iconUrl = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+    superclusterRef.current.load(points);
+
+    // Canvas overlay oluştur — 0 DOM element ile kümeleme
+    canvasOverlayRef.current = createClusterCanvasOverlay(map, superclusterRef.current);
+
+    return () => {
+      canvasOverlayRef.current?.destroy();
+      canvasOverlayRef.current = null;
+    };
+  }, [ocmStations, map]);
+
+  // ─── Cluster Click + Cursor: Map event listeners ──────────────────────────────
+
+  useEffect(() => {
+    if (!map) return;
+
+    // Küme baloncuğuna tıklayınca zoom in
+    const clickListener = map.addListener('click', (e: google.maps.MapMouseEvent) => {
+      if (!e.latLng || !canvasOverlayRef.current || !superclusterRef.current) return;
+
+      const hit = canvasOverlayRef.current.getClusterAt(e.latLng);
+      if (hit) {
+        const expansionZoom = superclusterRef.current.getClusterExpansionZoom(hit.clusterId);
+        if (expansionZoom != null) {
+          map.setZoom(Math.min(expansionZoom, 20));
+          map.panTo({ lat: hit.lat, lng: hit.lng });
         }
-
-        const marker = new google.maps.Marker({
-          position: { lat: st.latitude, lng: st.longitude },
-          title: '', // Native (OS) tooltipi kapat
-          visible: true, 
-          opacity: isGoogle ? 1 : 0, // OCM ise tekil markerları şeffaf yap
-          clickable: isGoogle,
-          icon: {
-            url: iconUrl,
-            scaledSize: new google.maps.Size(iconWidth, 120),
-            anchor: new google.maps.Point(iconWidth / 2, 90)
-          }
-        });
-
-        if (isGoogle) {
-          // Collapse fonksiyonunu tanımlayıp marker içerisine atıyoruz
-          marker.set('collapse', () => {
-             marker.setIcon({
-                url: iconUrl,
-                scaledSize: new google.maps.Size(iconWidth, 120),
-                anchor: new google.maps.Point(iconWidth / 2, 90)
-             });
-             marker.setZIndex(undefined);
-          });
-
-          marker.addListener('click', () => {
-            // Eğer tıkızlanan marker zaten açıksa, kapat ve çık
-            if (activeMarkerIdRef.current === strId) {
-                marker.get('collapse')();
-                activeMarkerIdRef.current = null;
-                setSelectedStation(null); // Deselect on collapse
-                return;
-            }
-
-            // Başka bir marker açıksa onu kapat
-            if (activeMarkerIdRef.current) {
-                const prevMarker = markersRef.current[activeMarkerIdRef.current];
-                if (prevMarker && typeof prevMarker.get('collapse') === 'function') {
-                    prevMarker.get('collapse')();
-                }
-            }
-
-            // Yeni tıklananı genişlet
-            const displayTitle = st.title || 'Şarj İstasyonu';
-            const expanded = createLiquidGlassPinSvg(comboArr, displayTitle, true);
-            marker.setIcon({
-               url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(expanded.svg),
-               scaledSize: new google.maps.Size(expanded.width, 120),
-               anchor: new google.maps.Point(expanded.width / 2, 90)
-            });
-            marker.setZIndex(Number(google.maps.Marker.MAX_ZINDEX) + 999);
-            
-            activeMarkerIdRef.current = strId;
-            setSelectedStation(st); // Dispatch to context!
-            
-            // Haritayı kaydır (flyTo) ve biraz yakınlaş
-            if (map) {
-                map.panTo({ lat: st.latitude, lng: st.longitude });
-                // Animasyonlu akıcı geçiş için panTo ile kayıyor
-                if (map.getZoom()! < 14) {
-                    map.setZoom(14);
-                }
-            }
-          });
-        }
-
-        markersRef.current[strId] = marker;
-        newMarkers.push(marker);
       }
     });
 
-    // clearMarkers(true) ile çizim ertelenmişti, şimdi addMarkers() ile tek seferde çiz.
-    // Marker yoksa bile boş diziyle çağırarak kümeleme motorunu tetikliyoruz.
-    clustererRef.current.addMarkers(newMarkers);
-  }, [stations, map, stationFilters, setSelectedStation]);
+    // Küme üstünde imleç → pointer
+    const moveListener = map.addListener('mousemove', (e: google.maps.MapMouseEvent) => {
+      if (!e.latLng || !canvasOverlayRef.current) return;
+      const hit = canvasOverlayRef.current.getClusterAt(e.latLng);
+      map.setOptions({ draggableCursor: hit ? 'pointer' : '' });
+    });
 
-  // Haritada scroll, pan, zoom veya click yapıldığında açık olanı kapatıyoruz
+    return () => {
+      google.maps.event.removeListener(clickListener);
+      google.maps.event.removeListener(moveListener);
+    };
+  }, [map]);
+
+  // ─── Google Pins: Diff-Based Marker Sync ─────────────────────────────────────
+
+  useEffect(() => {
+    if (!map) return;
+
+    const currentIds = new Set<string>();
+
+    googleStations.forEach((st) => {
+      if (st.latitude === 0 && st.longitude === 0) return;
+
+      const strId = String(st.id);
+      const types = extractTypes(st.connections);
+
+      let hasMatch = false;
+      if (stationFilters.length === 0) {
+        hasMatch = true;
+      } else if (types.length === 0) {
+        hasMatch = stationFilters.includes('EV') || stationFilters.length === 0;
+      } else {
+        hasMatch = types.some(t => stationFilters.includes(t));
+      }
+
+      if (!hasMatch) return;
+      currentIds.add(strId);
+
+      if (googleMarkersRef.current[strId]) return;
+
+      let comboArr = types;
+      if (comboArr.length === 0) comboArr = ['EV'];
+
+      const svgKey = comboArr.join('_');
+      const defaultData = PIN_SVGS[svgKey] || PIN_SVGS['EV'];
+      const iconUrl = defaultData.url;
+      const iconWidth = defaultData.width;
+
+      const marker = new google.maps.Marker({
+        position: { lat: st.latitude, lng: st.longitude },
+        map,
+        title: '',
+        visible: true,
+        clickable: true,
+        icon: {
+          url: iconUrl,
+          scaledSize: new google.maps.Size(iconWidth, 120),
+          anchor: new google.maps.Point(iconWidth / 2, 90)
+        }
+      });
+
+      marker.set('collapse', () => {
+        marker.setIcon({
+          url: iconUrl,
+          scaledSize: new google.maps.Size(iconWidth, 120),
+          anchor: new google.maps.Point(iconWidth / 2, 90)
+        });
+        marker.setZIndex(undefined);
+      });
+
+      marker.addListener('click', () => {
+        if (activeMarkerIdRef.current === strId) {
+          marker.get('collapse')();
+          activeMarkerIdRef.current = null;
+          setSelectedStation(null);
+          return;
+        }
+
+        if (activeMarkerIdRef.current) {
+          const prevMarker = googleMarkersRef.current[activeMarkerIdRef.current];
+          if (prevMarker && typeof prevMarker.get('collapse') === 'function') {
+            prevMarker.get('collapse')();
+          }
+        }
+
+        const displayTitle = st.title || 'Şarj İstasyonu';
+        const expanded = createLiquidGlassPinSvg(comboArr, displayTitle, true);
+        marker.setIcon({
+          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(expanded.svg),
+          scaledSize: new google.maps.Size(expanded.width, 120),
+          anchor: new google.maps.Point(expanded.width / 2, 90)
+        });
+        marker.setZIndex(Number(google.maps.Marker.MAX_ZINDEX) + 999);
+
+        activeMarkerIdRef.current = strId;
+        setSelectedStation({ ...st, id: strId, title: st.title || '' });
+
+        if (map) {
+          map.panTo({ lat: st.latitude, lng: st.longitude });
+          if (map.getZoom()! < 14) {
+            map.setZoom(14);
+          }
+        }
+      });
+
+      googleMarkersRef.current[strId] = marker;
+    });
+
+    Object.keys(googleMarkersRef.current).forEach(id => {
+      if (!currentIds.has(id)) {
+        googleMarkersRef.current[id].setMap(null);
+        delete googleMarkersRef.current[id];
+      }
+    });
+
+    if (activeMarkerIdRef.current && !googleMarkersRef.current[activeMarkerIdRef.current]) {
+      activeMarkerIdRef.current = null;
+    }
+  }, [googleStations, map, stationFilters, setSelectedStation]);
+
+  // ─── Collapse active marker on drag/zoom/click ────────────────────────────────
+
   useEffect(() => {
     if (!map) return;
     const hideTooltip = () => {
-        if (activeMarkerIdRef.current) {
-            const m = markersRef.current[activeMarkerIdRef.current];
-            if (m && typeof m.get('collapse') === 'function') m.get('collapse')();
-            activeMarkerIdRef.current = null;
-        }
+      if (activeMarkerIdRef.current) {
+        const m = googleMarkersRef.current[activeMarkerIdRef.current];
+        if (m && typeof m.get('collapse') === 'function') m.get('collapse')();
+        activeMarkerIdRef.current = null;
+      }
     };
     
     const l1 = map.addListener('dragstart', hideTooltip);
     const l2 = map.addListener('zoom_changed', hideTooltip);
-    const l3 = map.addListener('click', hideTooltip);
     
     return () => {
       google.maps.event.removeListener(l1);
       google.maps.event.removeListener(l2);
-      google.maps.event.removeListener(l3);
     };
   }, [map]);
+
+  // ─── Cleanup on unmount ───────────────────────────────────────────────────────
+
+  useEffect(() => {
+    return () => {
+      canvasOverlayRef.current?.destroy();
+      canvasOverlayRef.current = null;
+      Object.values(googleMarkersRef.current).forEach(m => m.setMap(null));
+      googleMarkersRef.current = {};
+    };
+  }, []);
 
   return null;
 }
