@@ -16,7 +16,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUserState] = useState<any>(() => {
     const saved = localStorage.getItem('iyontree_user');
-    return saved ? JSON.parse(saved) : null;
+    if (!saved) return null;
+    try {
+      return JSON.parse(saved);
+    } catch {
+      // Bozuk localStorage verisi — temizle ve null dön
+      localStorage.removeItem('iyontree_user');
+      return null;
+    }
   });
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMessage, setAuthMessage] = useState('');
