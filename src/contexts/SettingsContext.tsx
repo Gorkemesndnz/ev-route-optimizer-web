@@ -69,7 +69,21 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   };
 
   const getMapStyle = () => {
-    return darkMapStyle;
+    switch (mapStyleKey) {
+      case 'light':
+        return lightMapStyle;
+      case 'dark':
+        return darkMapStyle;
+      case 'satellite':
+        return []; // Satellite modunda özel stil yok
+      case 'system': {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        return prefersDark ? darkMapStyle : lightMapStyle;
+      }
+      case 'default':
+      default:
+        return darkMapStyle;
+    }
   };
 
   return (
