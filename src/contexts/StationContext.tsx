@@ -20,6 +20,7 @@ export interface StationData {
   }>;
   formattedAddress?: string;
   amenities?: string[];
+  contactTelephone?: string;
 }
 
 interface StationContextType {

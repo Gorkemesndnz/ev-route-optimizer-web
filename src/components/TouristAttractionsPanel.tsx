@@ -71,7 +71,7 @@ export default function TouristAttractionsPanel({
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: -20, opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className="glass-panel w-full sm:w-[380px] h-[calc(100svh-48px)] overflow-hidden flex flex-col pointer-events-auto mt-2 mb-4 mr-4 shadow-3xl"
+      className="glass-panel w-full sm:w-[380px] h-full overflow-hidden flex flex-col pointer-events-auto shadow-3xl shrink-0"
     >
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-white/10 shrink-0">
@@ -81,9 +81,9 @@ export default function TouristAttractionsPanel({
         </div>
         <button 
           onClick={onClose}
-          className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/20 transition-all"
+          className="text-white/50 hover:text-white transition-colors p-1"
         >
-          <X size={18} />
+          <X size={20} />
         </button>
       </div>
 

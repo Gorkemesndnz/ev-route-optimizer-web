@@ -49,10 +49,20 @@ function App() {
   // İstasyon seçildiğinde sol paneli aç
   useEffect(() => {
     if (selectedStation) {
-      if (activeView !== 'station_details') {
-        setPreviousView(activeView);
-        setActiveView('station_details');
-      }
+      setActiveView(prev => {
+        if (prev !== 'station_details') {
+          setPreviousView(prev);
+          return 'station_details';
+        }
+        return prev;
+      });
+    } else {
+      setActiveView(prev => {
+        if (prev === 'station_details') {
+           return 'main';
+        }
+        return prev;
+      });
     }
   }, [selectedStation]);
 
@@ -133,7 +143,7 @@ function App() {
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: -100, opacity: 0 }}
                 transition={{ type: "tween", ease: "easeInOut", duration: 0.3 }}
-                className="relative z-40 pointer-events-none"
+                className="relative z-40 pointer-events-none h-full"
               >
                 <StationDetailsPanel 
                   onSelectTouristSpot={setSelectedTouristSpot}
@@ -266,7 +276,12 @@ function App() {
 
         {/* Modals */}
         <AuthModal 
-          onLogin={(user) => { setCurrentUser(user); setActiveView('account'); }}
+          onLogin={(user) => { 
+            setCurrentUser(user); 
+            if (activeView !== 'station_details') {
+              setActiveView('account'); 
+            }
+          }}
         />
 
         {/* Right General Menu */}

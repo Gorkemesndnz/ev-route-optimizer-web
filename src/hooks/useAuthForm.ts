@@ -230,6 +230,9 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
           if (onLogin) onLogin(clonedData);
           if (onClose) onClose();
         } else {
+          setPassword('');
+          setConfirmPassword('');
+          setAuthError('');
           setAuthStep('reset_password');
         }
       } else {
@@ -321,6 +324,9 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
               setAuthError('');
               // Show success message briefly before redirecting or closing
               alert(language === 'tr' ? "Şifreniz başarıyla yenilendi!" : "Password successfully reset!");
+              
+              isSubmittingRef.current = false;
+              setIsLoading(false);
               handlePasswordSubmit();
               return true;
           } else {
