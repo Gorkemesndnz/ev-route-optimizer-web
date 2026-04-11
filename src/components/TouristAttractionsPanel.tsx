@@ -51,6 +51,7 @@ export default function TouristAttractionsPanel({
     if (onSelectTouristSpot) {
       onSelectTouristSpot({ lat, lng, name });
     }
+    onClose();
   };
 
   const formatDuration = (seconds: number) => {

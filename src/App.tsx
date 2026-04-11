@@ -89,17 +89,14 @@ function App() {
 
         {/* Map Blur Overlay */}
         <AnimatePresence>
-          {activeView !== 'main' && (
+          {activeView !== 'main' && activeView !== 'station_details' && (
             <motion.div
               key="map-blur"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              onClick={() => {
-                if (activeView === 'station_details') setSelectedStation(null);
-                setActiveView('main');
-              }}
+              onClick={() => setActiveView('main')}
               className="fixed inset-0 bg-black/40 backdrop-blur-sm z-30 pointer-events-auto cursor-pointer"
             />
           )}
