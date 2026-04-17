@@ -1,9 +1,9 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import TouristAttractionsPanel from './TouristAttractionsPanel';
 import ReviewStationPanel from './ReviewStationPanel';
 import ReportIssuePanel from './ReportIssuePanel';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, Heart, Share2, MapPin, Navigation, Phone, Calendar, Star, AlertCircle, CloudRain, Sun, Cloud, Snowflake, ShieldCheck } from 'lucide-react';
+import { ChevronLeft, Heart, Plus, Share2, MapPin, Navigation, Phone, Calendar, Star, AlertCircle, CloudRain, Sun, Cloud, Snowflake, CloudDrizzle, Wind, ShieldCheck, Loader2, Pencil, Trash } from 'lucide-react';
 import { useStation } from '../contexts/StationContext';
 import { translations } from '../lib/translations';
 import { useSettings } from '../contexts/SettingsContext';
@@ -25,6 +25,41 @@ const formatConnectionType = (type: string | undefined): string => {
    if (type.includes('WALL')) return 'Priz (Wall)';
    return type.replace('EV_CONNECTOR_TYPE_', '').replace(/_/g, ' ');
 };
+// Haversine formula — kuş uçuşu mesafe hesabı (km)
+function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+   const R = 6371;
+   const dLat = (lat2 - lat1) * Math.PI / 180;
+   const dLon = (lon2 - lon1) * Math.PI / 180;
+   const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Mesafe formatlama
+function formatDistance(km: number): string {
+   if (km < 1) return `${Math.round(km * 1000)}m`;
+   if (km < 10) return `${km.toFixed(1)}km`;
+   return `${Math.round(km)}km`;
+}
+
+// Review response interface
+interface ReviewData {
+   id: string;
+   userId: string;
+   userFullName: string;
+   userInitials: string;
+   rating: number;
+   comment?: string;
+   tags: string[];
+   photos?: string[];
+   createdAt: string;
+}
+
+interface RatingSummary {
+   averageRating: number;
+   totalReviews: number;
+   reviews: ReviewData[];
+}
+
 export default function StationDetailsPanel({
    onBack,
    onSelectTouristSpot
@@ -53,6 +88,32 @@ export default function StationDetailsPanel({
 
    const [showPhone, setShowPhone] = useState(false);
 
+   // Geolocation / Distance State
+   const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
+   const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'pending'>('pending');
+
+   // Reviews State
+   const [ratingSummary, setRatingSummary] = useState<RatingSummary | null>(null);
+   const [reviewsLoading, setReviewsLoading] = useState(false);
+   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+   const [editingReview, setEditingReview] = useState<ReviewData | null>(null);
+
+   const handleDeleteReview = async (reviewId: string) => {
+      if (!window.confirm("Değerlendirmeyi silmek istediğinize emin misiniz?")) return;
+      try {
+         const res = await apiClient(`/reviews/${reviewId}`, { method: 'DELETE' });
+         if (res.ok) {
+            if (selectedStation) fetchReviews(selectedStation.id);
+         } else {
+            const data = await res.json();
+            alert(data.message || "Silme işlemi başarısız oldu.");
+         }
+      } catch (err) {
+         console.error(err);
+         alert("Bağlantı hatası yaşandı.");
+      }
+   };
+
    const handlePhoneClick = (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
@@ -75,19 +136,53 @@ export default function StationDetailsPanel({
    // Nearby Amenities State
    const [nearbyAmenities, setNearbyAmenities] = useState<string[]>([]);
 
+   // Geolocation — konum izni al
+   useEffect(() => {
+      if (!navigator.geolocation) {
+         setLocationPermission('denied');
+         return;
+      }
+      navigator.geolocation.getCurrentPosition(
+         (pos) => {
+            setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+            setLocationPermission('granted');
+         },
+         () => {
+            setLocationPermission('denied');
+         },
+         { enableHighAccuracy: false, timeout: 5000, maximumAge: 300000 }
+      );
+   }, []);
+
+   // Reviews fetch fonksiyonu — ReviewStationPanel kapandığında yeniden çekmek için
+   const fetchReviews = useCallback((stationId: string) => {
+      setReviewsLoading(true);
+      apiClient(`/reviews/${stationId}`)
+         .then(res => res.json())
+         .then(result => {
+            if (result.success && result.data) {
+               setRatingSummary(result.data);
+            }
+         })
+         .catch(err => console.error("Reviews API error", err))
+         .finally(() => setReviewsLoading(false));
+   }, []);
+
    useEffect(() => {
       if (!selectedStation) return;
 
       // Fetch real-time weather on panel open
+      setWeatherData(null);
       apiClient(`/weather?lat=${selectedStation.latitude}&lng=${selectedStation.longitude}`)
          .then(res => res.json())
-         .then(data => {
-            if (data) setWeatherData(data);
+         .then(result => {
+            if (result.success && result.data) setWeatherData(result.data);
+            else if (result.tempCelsius !== undefined) setWeatherData(result); // fallback
          })
          .catch(err => console.error("Weather API error", err));
 
       // Fetch nearby amenities
-      setNearbyAmenities([]); // Reset state on new station
+      setNearbyAmenities([]);
       apiClient(`/stations/amenities?lat=${selectedStation.latitude}&lng=${selectedStation.longitude}`)
          .then(res => res.json())
          .then(result => {
@@ -97,17 +192,45 @@ export default function StationDetailsPanel({
          })
          .catch(err => console.error("Amenities API error", err));
 
-   }, [selectedStation]);
+      // Fetch reviews
+      fetchReviews(selectedStation.id);
+
+   }, [selectedStation, fetchReviews]);
 
    if (!selectedStation) return null;
+
+   // Mesafe hesaplama
+   const distanceToStation = (userLocation && selectedStation)
+      ? haversineDistance(userLocation.lat, userLocation.lng, selectedStation.latitude, selectedStation.longitude)
+      : null;
 
    // Map OpenWeather iconCode to Lucide React icons
    const getWeatherIcon = (code: string) => {
       if (!code) return <Cloud size={20} className="text-zinc-400" />;
       if (code.includes('01')) return <Sun size={20} className="text-amber-400" />;
-      if (code.includes('09') || code.includes('10')) return <CloudRain size={20} className="text-blue-300" />;
+      if (code.includes('02')) return <Cloud size={20} className="text-amber-300" />;
+      if (code.includes('03') || code.includes('04')) return <Cloud size={20} className="text-zinc-300" />;
+      if (code.includes('09')) return <CloudDrizzle size={20} className="text-blue-300" />;
+      if (code.includes('10')) return <CloudRain size={20} className="text-blue-300" />;
+      if (code.includes('11')) return <CloudRain size={20} className="text-yellow-300" />;
       if (code.includes('13')) return <Snowflake size={20} className="text-blue-100" />;
+      if (code.includes('50')) return <Wind size={20} className="text-zinc-400" />;
       return <Cloud size={20} className="text-zinc-300" />;
+   };
+
+   // Tarih formatlama (review için)
+   const formatRelativeDate = (dateStr: string) => {
+      const now = new Date();
+      const date = new Date(dateStr);
+      const diffMs = now.getTime() - date.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMins / 60);
+      const diffDays = Math.floor(diffHours / 24);
+      if (diffMins < 1) return language === 'tr' ? 'Az önce' : 'Just now';
+      if (diffMins < 60) return `${diffMins} ${language === 'tr' ? 'dk önce' : 'min ago'}`;
+      if (diffHours < 24) return `${diffHours} ${language === 'tr' ? 'saat önce' : 'hours ago'}`;
+      if (diffDays < 30) return `${diffDays} ${language === 'tr' ? 'gün önce' : 'days ago'}`;
+      return date.toLocaleDateString('tr-TR');
    };
 
    return (
@@ -138,14 +261,14 @@ export default function StationDetailsPanel({
                      <div>
                         <h2 className="text-xl font-bold text-white leading-tight drop-shadow-md line-clamp-2">{selectedStation.title}</h2>
                         <div className="flex items-center gap-1 mt-0.5">
-                           {/* 0 Stars Mock Rating */}
                            <div className="flex text-zinc-500 drop-shadow-sm">
-                              <Star size={14} className="fill-transparent" />
-                              <Star size={14} className="fill-transparent" />
-                              <Star size={14} className="fill-transparent" />
-                              <Star size={14} className="fill-transparent" />
-                              <Star size={14} className="fill-transparent" />
-                              <span className="text-white ml-1 text-xs font-medium">0.0 <span className="text-zinc-300 font-normal">(0 {language === 'tr' ? 'değerlendirme' : 'reviews'})</span></span>
+                              {[1, 2, 3, 4, 5].map((star) => {
+                                 const avg = ratingSummary?.averageRating || 0;
+                                 const isFull = avg >= star;
+                                 const isHalf = !isFull && avg >= star - 0.5;
+                                 return <Star key={star} size={14} className={isFull ? 'fill-amber-400 text-amber-400' : isHalf ? 'fill-amber-400/50 text-amber-400' : 'fill-transparent'} />;
+                              })}
+                              <span className="text-white ml-1 text-xs font-medium">{(ratingSummary?.averageRating || 0).toFixed(1)} <span className="text-zinc-300 font-normal">({ratingSummary?.totalReviews || 0} {language === 'tr' ? 'değerlendirme' : 'reviews'})</span></span>
                            </div>
                         </div>
                      </div>
@@ -180,15 +303,17 @@ export default function StationDetailsPanel({
                      </div>
                      <div className="flex items-center gap-3 shrink-0">
                         {weatherData && (
-                           <div className="flex flex-col items-center">
+                           <div className="flex flex-col items-center" title={weatherData.description}>
                               {getWeatherIcon(weatherData.iconCode)}
                               <span className="text-[10px] text-zinc-300 font-bold mt-0.5">{Math.round(weatherData.tempCelsius)}°C</span>
                            </div>
                         )}
-                        <div className="flex flex-col items-center">
-                           <MapPin size={18} className="text-emerald-400" />
-                           <span className="text-[10px] text-emerald-400 font-bold mt-0.5 text-center">2km</span>
-                        </div>
+                        {locationPermission === 'granted' && distanceToStation !== null && (
+                           <div className="flex flex-col items-center">
+                              <MapPin size={18} className="text-emerald-400" />
+                              <span className="text-[10px] text-emerald-400 font-bold mt-0.5 text-center">{formatDistance(distanceToStation)}</span>
+                           </div>
+                        )}
                         <button 
                            onClick={() => {
                               if (!currentUser) {
@@ -433,35 +558,117 @@ export default function StationDetailsPanel({
                      </div>
                   </div>
 
-                  {/* Değerlendirmeler Mock */}
+                  {/* Değerlendirmeler */}
                   <div className="flex flex-col gap-3">
-                     <h3 className="font-semibold text-white/80">Değerlendirmeler</h3>
-                     <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col gap-2">
-                        <div className="flex justify-between items-start">
-                           <div className="flex items-center gap-3">
-                              <img src="https://ui-avatars.com/api/?name=Ge+Sen&background=random" className="w-10 h-10 rounded-full" alt="avatar" />
-                              <div>
-                                 <p className="font-semibold text-sm">Görkem Esendeniz</p>
-                                 <p className="text-xs text-zinc-500">2 gün önce</p>
-                              </div>
-                           </div>
-                           <div className="flex text-amber-500">
-                              <Star size={12} className="fill-amber-500" />
-                              <Star size={12} className="fill-amber-500" />
-                              <Star size={12} className="fill-amber-500" />
-                              <Star size={12} className="fill-amber-500" />
-                              <Star size={12} className="fill-transparent" />
-                           </div>
+                     <h3 className="font-semibold text-white/80">{language === 'tr' ? 'Değerlendirmeler' : 'Reviews'}</h3>
+                     {reviewsLoading ? (
+                        <div className="flex items-center justify-center py-6">
+                           <Loader2 size={24} className="animate-spin text-blue-400" />
                         </div>
-                        <p className="text-sm text-zinc-300 mt-1">
-                           Keyifli ve sakin bir tesis. Hem çok iyi dinlendik, hem de aracımızı hızlıca tam şarj edebildik. Tekrar uğrayacağım.
-                        </p>
-                     </div>
+                     ) : !ratingSummary || ratingSummary.totalReviews === 0 ? (
+                        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 text-center">
+                           <p className="text-zinc-400 text-sm">{language === 'tr' ? 'Henüz değerlendirme yok. İlk değerlendiren siz olun!' : 'No reviews yet. Be the first to review!'}</p>
+                        </div>
+                     ) : (
+                        ratingSummary.reviews.slice(0, 5).map((review) => (
+                           <div key={review.id} className="bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col gap-2 relative">
+                              {currentUser?.id === review.userId && (
+                                 <div className="absolute top-3 right-3 flex items-center gap-1 z-10">
+                                    <button 
+                                       onClick={() => {
+                                          setEditingReview(review);
+                                          setShowReviewPanel(true);
+                                       }}
+                                       className="p-1.5 bg-black/40 hover:bg-black/80 rounded-md text-zinc-300 hover:text-white transition-colors"
+                                       title="Düzenle"
+                                    >
+                                       <Pencil size={14} />
+                                    </button>
+                                    <button 
+                                       onClick={() => handleDeleteReview(review.id)}
+                                       className="p-1.5 bg-black/40 hover:bg-rose-500/80 rounded-md text-zinc-300 hover:text-white transition-colors"
+                                       title="Sil"
+                                    >
+                                       <Trash size={14} />
+                                    </button>
+                                 </div>
+                              )}
+                              <div className="flex justify-between items-start">
+                                 <div className="flex items-center gap-3">
+                                    <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(review.userInitials)}&background=random`} className="w-10 h-10 rounded-full" alt="avatar" />
+                                    <div>
+                                       <p className="font-semibold text-sm">{review.userFullName}</p>
+                                       <p className="text-xs text-zinc-500">{formatRelativeDate(review.createdAt)}</p>
+                                    </div>
+                                 </div>
+                                 <div className="flex text-amber-500">
+                                    {[1, 2, 3, 4, 5].map(s => (
+                                       <Star key={s} size={12} className={review.rating >= s ? 'fill-amber-500' : 'fill-transparent'} />
+                                    ))}
+                                 </div>
+                              </div>
+                              {review.comment && (
+                                 <p className="text-sm text-zinc-300 mt-1">{review.comment}</p>
+                              )}
+                              {review.tags && review.tags.length > 0 && (
+                                 <div className="flex flex-wrap gap-1 mt-1">
+                                    {review.tags.map((tag, i) => (
+                                       <span key={i} className="text-[10px] bg-white/10 text-zinc-300 px-2 py-0.5 rounded-md">{tag}</span>
+                                    ))}
+                                 </div>
+                              )}
+                              {review.photos && review.photos.length > 0 && (
+                                 <div className="flex gap-2 mt-2">
+                                    {review.photos.map((photo, i) => (
+                                       <button 
+                                          key={i} 
+                                          onClick={() => setSelectedPhoto(photo)}
+                                          className="w-14 h-14 rounded-lg overflow-hidden border border-white/10 hover:border-white/40 transition-all cursor-zoom-in shrink-0 relative group"
+                                       >
+                                          <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors z-10 pointer-events-none" />
+                                          <img src={photo} alt="Review" className="w-full h-full object-cover relative z-0" />
+                                       </button>
+                                    ))}
+                                 </div>
+                              )}
+                           </div>
+                        ))
+                     )}
                   </div>
 
                </div>
             </div>
          </div>
+
+         {/* Lightbox Modal */}
+         <AnimatePresence>
+            {selectedPhoto && (
+               <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setSelectedPhoto(null)}
+                  className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 cursor-zoom-out"
+               >
+                  <motion.img
+                     initial={{ scale: 0.9, opacity: 0 }}
+                     animate={{ scale: 1, opacity: 1 }}
+                     exit={{ scale: 0.9, opacity: 0 }}
+                     transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                     src={selectedPhoto}
+                     alt="Enlarged review photo"
+                     className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
+                     onClick={(e) => e.stopPropagation()}
+                  />
+                  <button 
+                     onClick={() => setSelectedPhoto(null)} 
+                     className="absolute top-6 right-6 p-2 bg-black/50 hover:bg-black/80 rounded-full text-white transition-colors"
+                  >
+                     <Plus className="rotate-45" size={24} />
+                  </button>
+               </motion.div>
+            )}
+         </AnimatePresence>
 
          <AnimatePresence>
             {showTouristPanel && (
@@ -474,7 +681,13 @@ export default function StationDetailsPanel({
             {showReviewPanel && (
                <ReviewStationPanel
                   station={selectedStation}
-                  onClose={() => setShowReviewPanel(false)}
+                  initialReviewData={editingReview}
+                  onClose={() => {
+                     setShowReviewPanel(false);
+                     setEditingReview(null);
+                     // Review paneli kapanınca güncel listeyi çek
+                     if (selectedStation) fetchReviews(selectedStation.id);
+                  }}
                />
             )}
             {showReportIssuePanel && (

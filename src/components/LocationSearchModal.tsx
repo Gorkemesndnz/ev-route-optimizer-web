@@ -237,14 +237,14 @@ export function LocationSearchModal({
                    <button 
                      key={pred.placeId} 
                      onClick={() => handleSelectPrediction(pred.placeId)}
-                     className="w-full max-w-full overflow-hidden flex items-center gap-4 p-4 rounded-2xl hover:bg-white/5 text-left transition-all group"
+                     className="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-white/5 text-left transition-all group overflow-hidden"
                     >
                      <div className="w-11 h-11 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors shrink-0">
                        <MapPin size={22} className="text-white/30 group-hover:text-blue-400 transition-colors" />
                      </div>
-                     <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
-                       <span className="block truncate w-full text-white/90 font-semibold text-[15px]">{pred.structuredFormatting?.mainText || pred.description}</span>
-                       <span className="block truncate w-full text-white/40 text-[13px] font-normal">{pred.structuredFormatting?.secondaryText || 'Türkiye'}</span>
+                     <div className="flex flex-col min-w-0 flex-1">
+                       <span className="block truncate text-white/90 font-semibold text-[15px]">{pred.structuredFormatting?.mainText || pred.description}</span>
+                       <span className="block truncate text-white/40 text-[13px] font-normal">{pred.structuredFormatting?.secondaryText || 'Türkiye'}</span>
                      </div>
                    </button>
                  ))}

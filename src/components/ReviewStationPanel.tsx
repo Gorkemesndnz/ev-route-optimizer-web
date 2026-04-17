@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { X, Star, Camera, UploadCloud, CheckCircle2 } from 'lucide-react';
 import type { StationData } from '../contexts/StationContext';
+import { apiClient } from '../lib/apiClient';
 
 const AMENITY_TAGS = [
   "💳 ATM", "🚻 Tuvalet", "🛍️ AVM", "☕ Kafe", "🍔 Restoran", "🛒 Market", "📶 Wi-Fi"
@@ -13,18 +14,22 @@ const ISSUE_TAGS = [
 
 export default function ReviewStationPanel({
   station,
+  initialReviewData,
   onClose
 }: {
   station: StationData;
+  initialReviewData?: any; // To allow passing the existing review data
   onClose: () => void;
 }) {
-  const [rating, setRating] = useState<number>(0);
+  const [rating, setRating] = useState<number>(initialReviewData?.rating || 0);
   const [hoverRating, setHoverRating] = useState<number>(0);
-  const [reviewText, setReviewText] = useState("");
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [photos, setPhotos] = useState<string[]>([]);
+  const [reviewText, setReviewText] = useState(initialReviewData?.comment || "");
+  const [selectedTags, setSelectedTags] = useState<string[]>(initialReviewData?.tags || []);
+  const [photos, setPhotos] = useState<string[]>(initialReviewData?.photos || []);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const toggleTag = (tag: string) => {
     if (selectedTags.includes(tag)) {
@@ -34,23 +39,79 @@ export default function ReviewStationPanel({
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (rating === 0) return;
     setIsSubmitting(true);
-    // Simulate API call
-    setTimeout(() => {
+    setErrorMessage("");
+
+    try {
+      const res = await apiClient('/reviews', {
+        method: 'POST',
+        body: {
+          stationId: String(station.id),
+          stationTitle: station.title,
+          rating,
+          comment: reviewText.trim() || null,
+          tags: selectedTags.length > 0 ? selectedTags : null,
+          photos: photos.length > 0 ? photos : null
+        }
+      });
+
+      // Handle non-JSON responses (e.g. 401 redirect, 500 HTML error page)
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        if (res.status === 401) {
+          setErrorMessage("Oturumunuz sona ermiş. Lütfen tekrar giriş yapın.");
+        } else {
+          setErrorMessage(`Sunucu hatası (${res.status}). Lütfen tekrar deneyin.`);
+        }
+        return;
+      }
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setIsSuccess(true);
+        setTimeout(() => {
+          onClose();
+        }, 2000);
+      } else {
+        setErrorMessage(data.message || `Değerlendirme gönderilemedi (${res.status}).`);
+      }
+    } catch (err: any) {
+      console.error("Review submit error", err);
+      setErrorMessage(err?.message || "Bağlantı hatası. Lütfen tekrar deneyin.");
+    } finally {
       setIsSubmitting(false);
-      setIsSuccess(true);
-      setTimeout(() => {
-        onClose();
-      }, 2000);
-    }, 1000);
+    }
   };
 
-  // Mock function for adding photos
+  // Real file picker for photos
   const handleAddPhoto = () => {
     if (photos.length >= 3) return;
-    setPhotos([...photos, `https://images.unsplash.com/photo-1620060935399-${Math.floor(Math.random() * 10000)}?q=80&w=150&auto=format&fit=crop`]);
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    Array.from(files).slice(0, 3 - photos.length).forEach(file => {
+      if (!file.type.startsWith("image/")) return;
+      if (file.size > 5 * 1024 * 1024) return; // 5MB limit
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const dataUrl = ev.target?.result as string;
+        if (dataUrl) {
+          setPhotos(prev => [...prev, dataUrl].slice(0, 3));
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Reset so same file can be picked again
+    e.target.value = "";
   };
 
   if (isSuccess) {
@@ -86,7 +147,7 @@ export default function ReviewStationPanel({
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-white/10 shrink-0">
         <div className="flex flex-col">
-          <h2 className="text-lg font-bold text-white">Değerlendirme Yaz</h2>
+          <h2 className="text-lg font-bold text-white">{initialReviewData ? "Değerlendirmeyi Düzenle" : "Değerlendirme Yaz"}</h2>
           <p className="text-xs text-white/50">{station.title} hakkında görüşlerini paylaş</p>
         </div>
         <button 
@@ -137,6 +198,14 @@ export default function ReviewStationPanel({
           <label className="text-sm font-semibold text-zinc-300 flex items-center gap-2">
             <Camera size={16} /> Fotoğraf Ekle <span className="text-zinc-500 font-normal">({photos.length}/3)</span>
           </label>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={handleFileChange}
+          />
           <div className="flex gap-3">
             {photos.map((url, idx) => (
               <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden group">
@@ -205,6 +274,9 @@ export default function ReviewStationPanel({
 
       {/* Footer Action */}
       <div className="p-4 border-t border-white/10 shrink-0">
+        {errorMessage && (
+          <p className="text-red-400 text-xs text-center mb-2">{errorMessage}</p>
+        )}
         <button
           onClick={handleSubmit}
           disabled={rating === 0 || isSubmitting}
@@ -216,6 +288,8 @@ export default function ReviewStationPanel({
         >
           {isSubmitting ? (
             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          ) : initialReviewData ? (
+            'Değerlendirmeyi Düzenle'
           ) : (
             'Değerlendirmeyi Gönder'
           )}
