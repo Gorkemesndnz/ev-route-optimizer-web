@@ -1,6 +1,7 @@
 import { Map, Marker, useMap } from '@vis.gl/react-google-maps';
 import { useEffect, useRef, memo } from 'react';
 import StationsLayer from './StationsLayer';
+import { useSettings } from '../contexts/SettingsContext';
 
 const BackgroundMap = memo(({ 
   userLocation, 
@@ -14,13 +15,15 @@ const BackgroundMap = memo(({
   showTraffic?: boolean
 }) => {
   const map = useMap();
+  const { mapStyleKey } = useSettings();
   const trafficLayerRef = useRef<google.maps.TrafficLayer | null>(null);
 
   useEffect(() => {
     if (map) {
       map.setOptions({ styles: mapStyle });
+      map.setMapTypeId(mapStyleKey === 'satellite' ? 'hybrid' : 'roadmap');
     }
-  }, [map, mapStyle]);
+  }, [map, mapStyle, mapStyleKey]);
 
   useEffect(() => {
     if (!map) return;

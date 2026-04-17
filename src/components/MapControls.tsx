@@ -78,7 +78,7 @@ const MapControls = memo(({
   };
 
   const handleToggleLayers = () => {
-    const styles: ('default' | 'light' | 'dark' | 'satellite')[] = ['default', 'light', 'dark', 'satellite'];
+    const styles: ('dark' | 'satellite')[] = ['dark', 'satellite'];
     const currentIndex = styles.indexOf(currentStyle as any);
     const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % styles.length;
     const nextStyle = styles[nextIndex];

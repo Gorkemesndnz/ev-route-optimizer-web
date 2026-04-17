@@ -238,9 +238,9 @@ export default function StationDetailsPanel({
          <div className="glass-panel w-full sm:w-[420px] h-full overflow-hidden flex flex-col pointer-events-auto relative shadow-3xl shrink-0">
 
             {/* Top Image Section */}
-            <div className="relative h-36 shrink-0 bg-cover bg-center rounded-t-[1.3rem] overflow-hidden" style={{ backgroundImage: `url(${MOCK_COVER})` }}>
-               {/* Gradient Overlay for Top Controls */}
-               <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80 pointer-events-none" />
+            <div className="relative h-36 shrink-0 rounded-t-[1.3rem] overflow-hidden">
+               {/* Subtle Gradient Overlay for Text Readability */}
+               <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent pointer-events-none" />
 
                {/* Actions bar */}
                <div className="absolute top-4 left-4 flex gap-2">
@@ -572,27 +572,6 @@ export default function StationDetailsPanel({
                      ) : (
                         ratingSummary.reviews.slice(0, 5).map((review) => (
                            <div key={review.id} className="bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col gap-2 relative">
-                              {currentUser?.id === review.userId && (
-                                 <div className="absolute top-3 right-3 flex items-center gap-1 z-10">
-                                    <button 
-                                       onClick={() => {
-                                          setEditingReview(review);
-                                          setShowReviewPanel(true);
-                                       }}
-                                       className="p-1.5 bg-black/40 hover:bg-black/80 rounded-md text-zinc-300 hover:text-white transition-colors"
-                                       title="Düzenle"
-                                    >
-                                       <Pencil size={14} />
-                                    </button>
-                                    <button 
-                                       onClick={() => handleDeleteReview(review.id)}
-                                       className="p-1.5 bg-black/40 hover:bg-rose-500/80 rounded-md text-zinc-300 hover:text-white transition-colors"
-                                       title="Sil"
-                                    >
-                                       <Trash size={14} />
-                                    </button>
-                                 </div>
-                              )}
                               <div className="flex justify-between items-start">
                                  <div className="flex items-center gap-3">
                                     <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(review.userInitials)}&background=random`} className="w-10 h-10 rounded-full" alt="avatar" />
@@ -607,18 +586,8 @@ export default function StationDetailsPanel({
                                     ))}
                                  </div>
                               </div>
-                              {review.comment && (
-                                 <p className="text-sm text-zinc-300 mt-1">{review.comment}</p>
-                              )}
-                              {review.tags && review.tags.length > 0 && (
-                                 <div className="flex flex-wrap gap-1 mt-1">
-                                    {review.tags.map((tag, i) => (
-                                       <span key={i} className="text-[10px] bg-white/10 text-zinc-300 px-2 py-0.5 rounded-md">{tag}</span>
-                                    ))}
-                                 </div>
-                              )}
                               {review.photos && review.photos.length > 0 && (
-                                 <div className="flex gap-2 mt-2">
+                                 <div className="flex gap-2 mt-2 mb-1">
                                     {review.photos.map((photo, i) => (
                                        <button 
                                           key={i} 
@@ -629,6 +598,37 @@ export default function StationDetailsPanel({
                                           <img src={photo} alt="Review" className="w-full h-full object-cover relative z-0" />
                                        </button>
                                     ))}
+                                 </div>
+                              )}
+                              {review.comment && (
+                                 <p className="text-sm text-zinc-300 mt-1">{review.comment}</p>
+                              )}
+                              {review.tags && review.tags.length > 0 && (
+                                 <div className="flex flex-wrap gap-1 mt-1">
+                                    {review.tags.map((tag, i) => (
+                                       <span key={i} className="text-[10px] bg-white/10 text-zinc-300 px-2 py-0.5 rounded-md">{tag}</span>
+                                    ))}
+                                 </div>
+                              )}
+                              {currentUser?.id === review.userId && (
+                                 <div className="flex justify-end items-center gap-2 mt-2 pt-2 border-t border-white/5">
+                                    <button 
+                                       onClick={() => {
+                                          setEditingReview(review);
+                                          setShowReviewPanel(true);
+                                       }}
+                                       className="py-1 px-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-md text-zinc-300 hover:text-white transition-colors flex items-center gap-1.5 text-xs font-medium"
+                                       title="Düzenle"
+                                    >
+                                       <Pencil size={12} /> Düzenle
+                                    </button>
+                                    <button 
+                                       onClick={() => handleDeleteReview(review.id)}
+                                       className="py-1 px-3 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-md text-rose-400 hover:text-rose-300 transition-colors flex items-center gap-1.5 text-xs font-medium"
+                                       title="Sil"
+                                    >
+                                       <Trash size={12} /> Sil
+                                    </button>
                                  </div>
                               )}
                            </div>
@@ -648,7 +648,7 @@ export default function StationDetailsPanel({
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   onClick={() => setSelectedPhoto(null)}
-                  className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 cursor-zoom-out"
+                  className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 cursor-zoom-out pointer-events-auto"
                >
                   <motion.img
                      initial={{ scale: 0.9, opacity: 0 }}

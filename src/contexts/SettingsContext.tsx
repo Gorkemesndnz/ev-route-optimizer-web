@@ -4,8 +4,8 @@ import { lightMapStyle, darkMapStyle } from "../lib/mapStyles";
 interface SettingsContextType {
   language: 'tr' | 'en';
   setLanguage: (lang: 'tr' | 'en') => void;
-  mapStyleKey: 'default' | 'light' | 'dark' | 'satellite' | 'system';
-  setMapStyleKey: (key: 'default' | 'light' | 'dark' | 'satellite' | 'system') => void;
+  mapStyleKey: 'dark' | 'satellite';
+  setMapStyleKey: (key: 'dark' | 'satellite') => void;
   getMapStyle: () => any[];
   showTraffic: boolean;
   setShowTraffic: (show: boolean) => void;
@@ -26,10 +26,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     return (saved === 'en' || saved === 'tr') ? saved : 'tr';
   });
   
-  const [mapStyleKey, setMapStyleKey] = useState<'default' | 'light' | 'dark' | 'satellite' | 'system'>(() => {
+  const [mapStyleKey, setMapStyleKey] = useState<'dark' | 'satellite'>(() => {
     const saved = localStorage.getItem('iyontree_map_style');
-    const valid = ['default', 'light', 'dark', 'satellite', 'system'];
-    return (saved && valid.includes(saved)) ? (saved as any) : 'system';
+    const valid = ['dark', 'satellite'];
+    return (saved && valid.includes(saved)) ? (saved as any) : 'dark';
   });
 
   const [showTraffic, setShowTraffic] = useState(false);
@@ -70,17 +70,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   const getMapStyle = () => {
     switch (mapStyleKey) {
-      case 'light':
-        return lightMapStyle;
-      case 'dark':
-        return darkMapStyle;
       case 'satellite':
         return []; // Satellite modunda özel stil yok
-      case 'system': {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        return prefersDark ? darkMapStyle : lightMapStyle;
-      }
-      case 'default':
+      case 'dark':
       default:
         return darkMapStyle;
     }

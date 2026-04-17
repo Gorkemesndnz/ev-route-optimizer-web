@@ -96,9 +96,22 @@ export default function ReviewStationPanel({
     const files = e.target.files;
     if (!files) return;
 
-    Array.from(files).slice(0, 3 - photos.length).forEach(file => {
+    const availableSlots = 3 - photos.length;
+    
+    if (files.length > availableSlots) {
+      setErrorMessage("En fazla 3 fotoğraf ekleyebilirsiniz. Fazla seçilenler yoksayıldı.");
+      setTimeout(() => setErrorMessage(""), 4000);
+    } else {
+      setErrorMessage("");
+    }
+
+    Array.from(files).slice(0, availableSlots).forEach(file => {
       if (!file.type.startsWith("image/")) return;
-      if (file.size > 5 * 1024 * 1024) return; // 5MB limit
+      if (file.size > 5 * 1024 * 1024) {
+        setErrorMessage("Bazı fotoğraflar 5MB sınırını aştığı için yüklenemedi.");
+        setTimeout(() => setErrorMessage(""), 4000);
+        return;
+      }
 
       const reader = new FileReader();
       reader.onload = (ev) => {
