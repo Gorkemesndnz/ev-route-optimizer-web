@@ -75,7 +75,7 @@ export default function GeneralMenu({
     {
       title: t.preferences,
       items: [
-        { id: 'appearance', icon: <Moon size={18} />, label: t.appearance, value: mapStyleKey === 'dark' ? t.dark : (mapStyleKey === 'light' ? t.light : t.system), onClick: () => handleMenuClick('appearance') },
+        { id: 'appearance', icon: <Moon size={18} />, label: t.appearance, value: mapStyleKey === 'dark' ? t.dark : t.satellite, onClick: () => handleMenuClick('appearance') },
         { id: 'language', icon: <Globe size={18} />, label: t.language, value: language === 'tr' ? 'Türkçe' : 'English', onClick: () => handleMenuClick('language') },
         { id: 'units', icon: <Ruler size={18} />, label: t.units, value: units, onClick: () => handleMenuClick('units') },
         { id: 'energy', icon: <Zap size={18} />, label: t.energyConsumption, value: energyCons, onClick: () => handleMenuClick('energy') }
@@ -208,9 +208,8 @@ export default function GeneralMenu({
     if (activeMenu === 'appearance') {
       title = t.appearance;
       options = [
-        { id: "system", label: t.system, sub: "" },
         { id: "dark", label: t.dark, sub: "" },
-        { id: "light", label: t.light, sub: "" }
+        { id: "satellite", label: t.satellite, sub: "" }
       ];
       currentState = mapStyleKey;
       setFn = (val) => setMapStyleKey(val);

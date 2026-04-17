@@ -170,31 +170,56 @@ export default function StationDetailsPanel({
 
    useEffect(() => {
       if (!selectedStation) return;
+      let isCancelled = false;
 
-      // Fetch real-time weather on panel open
+      // Normalize backend response (PascalCase → camelCase)
+      const normalizeWeather = (d: any) => ({
+         tempCelsius: d.tempCelsius ?? d.TempCelsius ?? 0,
+         description: d.description ?? d.Description ?? '',
+         iconCode: d.iconCode ?? d.IconCode ?? '01d'
+      });
+
+      // Clear stale data from previous station immediately
       setWeatherData(null);
+
       apiClient(`/weather?lat=${selectedStation.latitude}&lng=${selectedStation.longitude}`)
-         .then(res => res.json())
-         .then(result => {
-            if (result.success && result.data) setWeatherData(result.data);
-            else if (result.tempCelsius !== undefined) setWeatherData(result); // fallback
+         .then(res => {
+            if (!res.ok) {
+               console.error("Weather API HTTP error:", res.status, res.statusText);
+               return null;
+            }
+            return res.json();
          })
-         .catch(err => console.error("Weather API error", err));
+         .then(result => {
+            if (isCancelled || !result) return;
+            if (result.success && result.data) {
+               setWeatherData(normalizeWeather(result.data));
+            } else if (result.tempCelsius !== undefined || result.TempCelsius !== undefined) {
+               setWeatherData(normalizeWeather(result));
+            } else {
+               console.warn("Weather API unexpected response:", result);
+            }
+         })
+         .catch(err => {
+            if (!isCancelled) console.error("Weather API error:", err);
+         });
 
       // Fetch nearby amenities
       setNearbyAmenities([]);
       apiClient(`/stations/amenities?lat=${selectedStation.latitude}&lng=${selectedStation.longitude}`)
          .then(res => res.json())
          .then(result => {
+            if (isCancelled) return;
             if (result.success && result.data) {
                setNearbyAmenities(result.data);
             }
          })
-         .catch(err => console.error("Amenities API error", err));
+         .catch(err => { if (!isCancelled) console.error("Amenities API error", err); });
 
       // Fetch reviews
       fetchReviews(selectedStation.id);
 
+      return () => { isCancelled = true; };
    }, [selectedStation, fetchReviews]);
 
    if (!selectedStation) return null;
@@ -298,7 +323,7 @@ export default function StationDetailsPanel({
                            className={`cursor-pointer transition-all ${isAddressExpanded ? '' : 'line-clamp-2'}`}
                            title={!isAddressExpanded ? "Tamamını gör" : "Daralt"}
                         >
-                           {selectedStation.formattedAddress || 'Adres bilgisi bulunamadı.'}
+                           {selectedStation.formattedAddress || t.stationDetails.addressNotFound}
                         </p>
                      </div>
                      <div className="flex items-center gap-3 shrink-0">
@@ -317,7 +342,7 @@ export default function StationDetailsPanel({
                         <button 
                            onClick={() => {
                               if (!currentUser) {
-                                 requireAuth("İstasyon hakkında sorun bildirebilmek için Giriş Yap veya Kayıt Ol");
+                                 requireAuth(t.stationDetails.requireAuthReport);
                                  return;
                               }
                               setShowReportIssuePanel(!showReportIssuePanel);
@@ -351,7 +376,7 @@ export default function StationDetailsPanel({
                         className="bg-blue-500 hover:bg-blue-600 active:scale-95 transition-all text-white font-semibold rounded-xl flex items-center justify-center gap-1 text-sm shadow-lg shadow-blue-500/20 whitespace-nowrap overflow-hidden"
                         style={{ pointerEvents: showPhone ? "none" : "auto" }}
                      >
-                        <Navigation size={16} className="shrink-0" /> <span className="truncate">Yol Tarifi</span>
+                        <Navigation size={16} className="shrink-0" /> <span className="truncate">{t.stationDetails.directions}</span>
                      </motion.button>
 
                      <motion.button
@@ -373,7 +398,7 @@ export default function StationDetailsPanel({
                                  className="flex items-center justify-center gap-2 w-full text-[15px]"
                               >
                                  <Phone size={18} className={selectedStation?.contactTelephone ? "animate-pulse" : ""} />
-                                 {selectedStation?.contactTelephone || "Telefon Yok"}
+                                 {selectedStation?.contactTelephone || t.stationDetails.noPhone}
                               </motion.div>
                            ) : (
                               <motion.div
@@ -384,7 +409,7 @@ export default function StationDetailsPanel({
                                  transition={{ duration: 0.2 }}
                                  className="flex items-center justify-center gap-1 w-full text-sm whitespace-nowrap px-4"
                               >
-                                 <Phone size={16} /> Ara
+                                 <Phone size={16} /> {t.stationDetails.call}
                               </motion.div>
                            )}
                         </AnimatePresence>
@@ -417,7 +442,7 @@ export default function StationDetailsPanel({
                                  transition={{ duration: 0.2 }}
                                  className="absolute inset-0 flex items-center justify-center"
                               >
-                                 Çok Yakında...
+                                 {t.stationDetails.comingSoon}
                               </motion.div>
                            ) : (
                               <motion.div
@@ -428,7 +453,7 @@ export default function StationDetailsPanel({
                                  transition={{ duration: 0.2 }}
                                  className="absolute inset-0 flex items-center justify-center gap-1 px-2"
                               >
-                                 <Calendar size={16} className="shrink-0" /> <span className="truncate">Rezervasyon</span>
+                                 <Calendar size={16} className="shrink-0" /> <span className="truncate">{t.stationDetails.reservation}</span>
                               </motion.div>
                            )}
                         </AnimatePresence>
@@ -438,7 +463,7 @@ export default function StationDetailsPanel({
                   <button 
                      onClick={() => {
                         if (!currentUser) {
-                           requireAuth("İstasyon Değerlendirebilmek İçin Giriş Yap veya Kayıt Ol");
+                           requireAuth(t.stationDetails.requireAuthReview);
                            return;
                         }
                         setShowReviewPanel(!showReviewPanel);
@@ -449,22 +474,22 @@ export default function StationDetailsPanel({
                      }}
                      className="w-full bg-white/10 hover:bg-white/20 border border-white/20 active:scale-[0.98] transition-all text-white/90 font-medium py-3 rounded-xl flex items-center justify-center text-sm shadow-md"
                   >
-                     Şarj Noktasını Değerlendir
+                     {t.stationDetails.rateStation}
                   </button>
 
                   {/* Sockets List */}
                   <div className="flex flex-col gap-3">
-                     <h3 className="font-semibold text-white/80">Mevcut Soketler</h3>
+                     <h3 className="font-semibold text-white/80">{t.stationDetails.availableSockets}</h3>
                      <div className="flex flex-col gap-2">
                         {selectedStation.connections?.length === 0 ? (
-                           <div className="text-zinc-400 text-sm italic">Soket detayı bilinmiyor.</div>
+                           <div className="text-zinc-400 text-sm italic">{t.stationDetails.unknownSocket}</div>
                         ) : (
                            selectedStation.connections?.flatMap((conn, connIndex) => {
                               const count = conn.count || 1;
 
                               return Array.from({ length: count }).map((_, i) => {
                                  let isAvailable = true;
-                                 let statusText = "Bilinmiyor"; // varsayılan
+                                 let statusText = t.stationDetails.unknown; // varsayılan
                                  let statusColorClass = "text-zinc-400";
                                  let statusBgClass = "bg-zinc-400";
                                  let showPulse = false;
@@ -473,12 +498,12 @@ export default function StationDetailsPanel({
                                  if (conn.availableCount !== undefined && conn.availableCount !== null) {
                                     isAvailable = i < conn.availableCount;
                                     if (isAvailable) {
-                                       statusText = "Müsait";
+                                       statusText = t.stationDetails.available;
                                        statusColorClass = "text-emerald-400";
                                        statusBgClass = "bg-emerald-400";
                                        showPulse = true;
                                     } else {
-                                       statusText = "Dolu/Servis Dışı";
+                                       statusText = t.stationDetails.unavailable;
                                        statusColorClass = "text-red-500";
                                        statusBgClass = "bg-red-500";
                                        showPulse = false;
@@ -492,12 +517,12 @@ export default function StationDetailsPanel({
                                              <ShieldCheck size={20} />
                                           </div>
                                           <div className="flex flex-col min-w-[90px]">
-                                             <span className="text-xs text-white/50">Soket {count > 1 ? i + 1 : ''}</span>
+                                             <span className="text-xs text-white/50">{t.stationDetails.socket} {count > 1 ? i + 1 : ''}</span>
                                              <span className="font-bold">{formatConnectionType(conn.connectionType || conn.currentType)}</span>
                                           </div>
                                           <div className="flex flex-col">
-                                             <span className="text-xs text-white/50">Güç</span>
-                                             <span className="font-bold">{conn.powerKw ? `${conn.powerKw} kW` : 'Bilinmiyor'}</span>
+                                             <span className="text-xs text-white/50">{t.stationDetails.power}</span>
+                                             <span className="font-bold">{conn.powerKw ? `${conn.powerKw} kW` : t.stationDetails.unknown}</span>
                                           </div>
                                        </div>
                                        <div className="flex flex-col items-end">
@@ -520,7 +545,7 @@ export default function StationDetailsPanel({
                   {/* Amenities (Şarj Noktası Çevresindeki İmkanlar) */}
                   {nearbyAmenities.length > 0 && (
                      <div className="flex flex-col gap-3">
-                        <h3 className="font-semibold text-white/80">Yürüme Mesafesindeki İmkanlar</h3>
+                        <h3 className="font-semibold text-white/80">{t.stationDetails.nearbyAmenities}</h3>
                         <div className="grid grid-cols-2 gap-y-2 gap-x-4">
                            {nearbyAmenities.map((amenity, idx) => (
                               <div key={idx} className="flex items-center gap-2 text-sm text-zinc-300">
@@ -535,7 +560,7 @@ export default function StationDetailsPanel({
                   <button
                      onClick={() => {
                         if (!currentUser) {
-                           requireAuth("Çevredeki turistik yerleri görebilmek için Giriş Yap veya Kayıt Ol");
+                           requireAuth(t.stationDetails.requireAuthTourist);
                            return;
                         }
                         setShowTouristPanel(!showTouristPanel);
@@ -546,15 +571,15 @@ export default function StationDetailsPanel({
                      }}
                      className="mt-1 w-full bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 font-semibold py-3 rounded-xl border border-indigo-500/30 transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
                   >
-                     Çevredeki Turistik Yerleri Keşfet
+                     {t.stationDetails.discoverTourist}
                   </button>
 
                   {/* Kampanyalar Mock */}
                   <div className="flex flex-col gap-3 mt-4">
-                     <h3 className="font-semibold text-white/80 shrink-0">Kampanyalar</h3>
+                     <h3 className="font-semibold text-white/80 shrink-0">{t.stationDetails.campaigns}</h3>
                      <div className="bg-gradient-to-r from-blue-600/30 to-purple-600/30 border border-blue-500/30 rounded-2xl p-4 flex flex-col gap-1">
-                        <h4 className="font-bold text-blue-200">Hafta Sonu İndirimi!</h4>
-                        <p className="text-xs text-blue-100/70">Cumartesi ve Pazar günleri yapılan tüm DC şarj işlemlerinde %10 net indirim kazanın.</p>
+                        <h4 className="font-bold text-blue-200">{t.stationDetails.weekendDiscount}</h4>
+                        <p className="text-xs text-blue-100/70">{t.stationDetails.weekendDiscountDesc}</p>
                      </div>
                   </div>
 

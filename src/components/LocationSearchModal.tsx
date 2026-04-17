@@ -106,14 +106,20 @@ export function LocationSearchModal({
       
       if (data.success && data.data) {
         const place = data.data;
-        const lat = place.latitude;
-        const lng = place.longitude;
-        const address = place.formattedAddress;
+        const lat = place.latitude ?? place.Latitude;
+        const lng = place.longitude ?? place.Longitude;
+        const address = place.formattedAddress ?? place.FormattedAddress;
         
-        onSelectLocation(item.id, address, { lat, lng });
-        saveRecentSearch(address, lat, lng);
-        setSearchValue("");
-        onClose();
+        if (lat != null && lng != null && address) {
+          onSelectLocation(item.id, address, { lat, lng });
+          saveRecentSearch(address, lat, lng);
+          setSearchValue("");
+          onClose();
+        } else {
+          console.error("Place details missing coordinates or address", place);
+        }
+      } else {
+        console.error("Place details API returned unsuccessful", data);
       }
     } catch (error) {
       console.error("Place Details failed:", error);
@@ -138,7 +144,7 @@ export function LocationSearchModal({
           setIsLocating(false);
 
           if (data.success && data.data) {
-             const address = data.data.formattedAddress;
+             const address = data.data.formattedAddress ?? data.data.FormattedAddress;
              onSelectLocation(item.id, address, { lat: latitude, lng: longitude });
              saveRecentSearch(address, latitude, longitude);
              setSearchValue("");
@@ -179,7 +185,7 @@ export function LocationSearchModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent showCloseButton={false} className="sm:max-w-[500px] p-0 overflow-hidden bg-black/40 backdrop-blur-xl border border-white/20 shadow-2xl rounded-3xl z-[100] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+      <DialogContent showCloseButton={false} className="sm:max-w-[500px] p-0 overflow-hidden bg-black/40 backdrop-blur-xl border border-white/20 shadow-2xl rounded-3xl z-[100] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-h-[90vh] flex flex-col">
         <div className="p-7 flex flex-col gap-6">
           <h3 className="text-xl font-bold text-white/90">{title}</h3>
           
@@ -229,22 +235,22 @@ export function LocationSearchModal({
             )}
           </div>
 
-          <div className="flex flex-col min-h-[240px]">
+          <div className="flex flex-col min-h-[200px] max-h-[40vh] overflow-y-auto custom-scrollbar">
              {predictions.length > 0 ? (
               <div className="flex flex-col gap-1">
                  <h4 className="text-white/20 text-xs font-bold uppercase tracking-widest mb-3 px-2">{t.searchModal.searchResults}</h4>
                  {predictions.map(pred => (
                    <button 
-                     key={pred.placeId} 
-                     onClick={() => handleSelectPrediction(pred.placeId)}
+                     key={pred.placeId || pred.place_id} 
+                     onClick={() => handleSelectPrediction(pred.placeId || pred.place_id)}
                      className="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-white/5 text-left transition-all group overflow-hidden"
                     >
                      <div className="w-11 h-11 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors shrink-0">
                        <MapPin size={22} className="text-white/30 group-hover:text-blue-400 transition-colors" />
                      </div>
                      <div className="flex flex-col min-w-0 flex-1">
-                       <span className="block truncate text-white/90 font-semibold text-[15px]">{pred.structuredFormatting?.mainText || pred.description}</span>
-                       <span className="block truncate text-white/40 text-[13px] font-normal">{pred.structuredFormatting?.secondaryText || 'Türkiye'}</span>
+                       <span className="block truncate text-white/90 font-semibold text-[15px]">{pred.structuredFormatting?.mainText || pred.structured_formatting?.main_text || pred.description}</span>
+                       <span className="block truncate text-white/40 text-[13px] font-normal">{pred.structuredFormatting?.secondaryText || pred.structured_formatting?.secondary_text || 'Türkiye'}</span>
                      </div>
                    </button>
                  ))}

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, CheckCircle2, AlertTriangle, Send } from 'lucide-react';
 import type { StationData } from '../contexts/StationContext';
+import { apiClient } from '../lib/apiClient';
 
 const ISSUE_TYPES = [
   "Güç çok düşük / Dalgalanıyor",
@@ -26,19 +27,33 @@ export default function ReportIssuePanel({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedIssue) return;
     if (selectedIssue === "Diğer" && !customIssueText.trim()) return;
     
     setIsSubmitting(true);
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const res = await apiClient('/reports', {
+        method: 'POST',
+        body: {
+          stationId: station.id,
+          issueType: selectedIssue,
+          customDescription: selectedIssue === "Diğer" ? customIssueText.trim() : null
+        }
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setIsSuccess(true);
+        setTimeout(() => { onClose(); }, 2000);
+      } else {
+        alert(data.message || "Sorun bildirimi gönderilemedi.");
+      }
+    } catch (err) {
+      console.error("Report submit error:", err);
+      alert("Bağlantı hatası yaşandı.");
+    } finally {
       setIsSubmitting(false);
-      setIsSuccess(true);
-      setTimeout(() => {
-        onClose();
-      }, 2000);
-    }, 1000);
+    }
   };
 
   if (isSuccess) {
