@@ -21,13 +21,13 @@ import {
   ChevronLeft,
   ChevronDown
 } from "lucide-react";
-import { translations } from "../lib/translations";
+import { translations } from "../../lib/translations";
 import { cn } from "@/lib/utils";
 
-import { useSettings } from "../contexts/SettingsContext";
-import { BugReportForm } from "./menu-forms/BugReportForm";
-import { SuggestionForm } from "./menu-forms/SuggestionForm";
-import { VehicleRequestForm } from "./menu-forms/VehicleRequestForm";
+import { useSettings } from "../../contexts/SettingsContext";
+import { BugReportForm } from "../menu-forms/BugReportForm";
+import { SuggestionForm } from "../menu-forms/SuggestionForm";
+import { VehicleRequestForm } from "../menu-forms/VehicleRequestForm";
 
 type MenuID = 'main'|'language'|'units'|'energy'|'appearance'|'suggestions'|'add_vehicle'|'contact'|'how_it_works'|'whats_new'|'faq'|'about'|'terms'|'privacy';
 

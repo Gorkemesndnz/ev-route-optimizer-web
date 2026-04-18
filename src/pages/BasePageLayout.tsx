@@ -2,8 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import { ChevronLeft, Moon, Sun, Globe, ArrowRight } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-import GlobalFooterLight from "../components/GlobalFooterLight";
-import CookieConsent from "../components/CookieConsent";
+import GlobalFooterLight from "../components/layout/GlobalFooterLight";
+import CookieConsent from "../components/layout/CookieConsent";
 import { useSettings } from "../contexts/SettingsContext";
 
 interface MarketingContextType {

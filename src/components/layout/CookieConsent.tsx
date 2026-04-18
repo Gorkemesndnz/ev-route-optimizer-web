@@ -2,9 +2,9 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { translations } from "../lib/translations";
+import { translations } from "../../lib/translations";
 
-import { useSettings } from "../contexts/SettingsContext";
+import { useSettings } from "../../contexts/SettingsContext";
 
 export default function CookieConsent({
   onOpenPrivacy,

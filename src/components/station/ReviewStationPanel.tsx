@@ -1,8 +1,8 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { X, Star, Camera, UploadCloud, CheckCircle2 } from 'lucide-react';
-import type { StationData } from '../contexts/StationContext';
-import { apiClient } from '../lib/apiClient';
+import type { StationData } from '../../contexts/StationContext';
+import { apiClient } from '../../lib/apiClient';
 
 const AMENITY_TAGS = [
   "💳 ATM", "🚻 Tuvalet", "🛍️ AVM", "☕ Kafe", "🍔 Restoran", "🛒 Market", "📶 Wi-Fi"

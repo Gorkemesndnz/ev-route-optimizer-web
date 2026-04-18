@@ -1,7 +1,9 @@
 import { Map, Marker, useMap } from '@vis.gl/react-google-maps';
 import { useEffect, useRef, memo } from 'react';
 import StationsLayer from './StationsLayer';
-import { useSettings } from '../contexts/SettingsContext';
+import RouteLayer from './RouteLayer';
+import { useSettings } from '../../contexts/SettingsContext';
+import { useRouteContext } from '../../contexts/RouteContext';
 
 const BackgroundMap = memo(({ 
   userLocation, 
@@ -16,6 +18,7 @@ const BackgroundMap = memo(({
 }) => {
   const map = useMap();
   const { mapStyleKey } = useSettings();
+  const { routeResult } = useRouteContext();
   const trafficLayerRef = useRef<google.maps.TrafficLayer | null>(null);
 
   useEffect(() => {
@@ -58,10 +61,10 @@ const BackgroundMap = memo(({
         styles={mapStyle}
         className="w-full h-full"
       >
-        {userLocation && (
+        {(!routeResult && userLocation) && (
           <Marker position={userLocation} />
         )}
-        {selectedTouristSpot && (
+        {(!routeResult && selectedTouristSpot) && (
           <Marker 
              position={{lat: selectedTouristSpot.lat, lng: selectedTouristSpot.lng}}
              title={selectedTouristSpot.name}
@@ -72,7 +75,8 @@ const BackgroundMap = memo(({
              }}
           />
         )}
-        <StationsLayer />
+        {!routeResult && <StationsLayer />}
+        <RouteLayer />
       </Map>
     </div>
   );

@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { Dialog, DialogContent } from "./ui/dialog";
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent } from "../ui/dialog";
 import { X, Zap, BatteryMedium, Calendar as CalendarIcon, MapPin, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useRouteContext, type RouteSettings } from "../../contexts/RouteContext";
 
 
 const CustomSwitch = ({ checked, onChange }: { checked: boolean, onChange: (val: boolean) => void }) => {
@@ -13,7 +14,7 @@ const CustomSwitch = ({ checked, onChange }: { checked: boolean, onChange: (val:
         checked ? "bg-cyan-400" : "bg-white/10 border border-white/20"
       )}
     >
-      <div 
+      <div
         className={cn(
           "w-5 h-5 rounded-full shadow-md transform transition-transform duration-300",
           checked ? "translate-x-5 bg-black" : "translate-x-0 bg-white/70"
@@ -29,20 +30,20 @@ const NativeSlider = ({ value, min, max, onChange }: { value: number, min: numbe
   const percentage = ((value - min) / (max - min)) * 100;
   return (
     <div className="relative w-full h-1.5 bg-white/20 rounded-full shadow-inner flex items-center">
-      <div 
-        className="absolute left-0 h-full bg-cyan-400 rounded-full shadow-[0_0_10px_rgba(34,211,238,0.5)] pointer-events-none transition-all duration-75" 
-        style={{ width: `${percentage}%` }} 
+      <div
+        className="absolute left-0 h-full bg-cyan-400 rounded-full shadow-[0_0_10px_rgba(34,211,238,0.5)] pointer-events-none transition-all duration-75"
+        style={{ width: `${percentage}%` }}
       />
-      <input 
-        type="range" 
-        min={min} 
-        max={max} 
-        value={value} 
+      <input
+        type="range"
+        min={min}
+        max={max}
+        value={value}
         onChange={(e) => onChange(Number(e.target.value))}
         className="absolute w-full h-full opacity-0 cursor-ew-resize z-10 m-0 p-0"
       />
-      <div 
-        className="absolute w-5 h-5 bg-white rounded-full shadow-md pointer-events-none transition-all duration-75 drop-shadow-[0_0_5px_rgba(34,211,238,0.5)] border border-cyan-400/20" 
+      <div
+        className="absolute w-5 h-5 bg-white rounded-full shadow-md pointer-events-none transition-all duration-75 drop-shadow-[0_0_5px_rgba(34,211,238,0.5)] border border-cyan-400/20"
         style={{ left: `calc(${percentage}% - (${percentage * 20 / 100}px))` }}
       />
     </div>
@@ -50,33 +51,36 @@ const NativeSlider = ({ value, min, max, onChange }: { value: number, min: numbe
 };
 
 export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
-  const [sarjSikligi, setSarjSikligi] = useState<"optimal" | "az" | "sik">("optimal");
-  const [varisSarj, setVarisSarj] = useState(20);
-  
-  // Takvim ve Saat state'leri
+  const { committedSettings, setPendingSettings, commitSettings } = useRouteContext();
+  const [localSettings, setLocalSettings] = useState<RouteSettings>(committedSettings);
+
+  useEffect(() => {
+    if (isOpen) {
+      setLocalSettings(committedSettings);
+    }
+  }, [isOpen, committedSettings]);
+
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [yolaCikisSaati, setYolaCikisSaati] = useState("10:00");
-  
-  const [istasyonVarisSarj, setIstasyonVarisSarj] = useState(10);
-  const [istasyonAyrisSarj, setIstasyonAyrisSarj] = useState(80);
-
-  const [toggles, setToggles] = useState({
-    devletOtoyollari: true,
-    feribot: false,
-    ozelOtoyollar: true,
-    ucretliOtoyollar: true,
-    kopru: true
-  });
-  
-  const [sarjTercipi, setSarjTercipi] = useState<"HPC" | "DC" | "AC" | null>("HPC");
   const [selectedLokasyonlar, setSelectedLokasyonlar] = useState<string[]>([]);
 
-  const toggleOption = (key: keyof typeof toggles) => {
-    setToggles(prev => ({ ...prev, [key]: !prev[key] }));
+  const handleApply = () => {
+    setPendingSettings(localSettings);
+    commitSettings();
+    onClose();
+  };
+
+  const handleCancel = () => {
+    setLocalSettings(committedSettings);
+    onClose();
+  };
+
+  const updateSetting = <K extends keyof RouteSettings>(key: K, value: RouteSettings[K]) => {
+    setLocalSettings(prev => ({ ...prev, [key]: value }));
   };
 
   const toggleLokasyon = (isim: string) => {
-    setSelectedLokasyonlar(prev => 
+    setSelectedLokasyonlar(prev =>
       prev.includes(isim) ? prev.filter(l => l !== isim) : [...prev, isim]
     );
   };
@@ -84,12 +88,12 @@ export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolea
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent showCloseButton={false} className="sm:max-w-[440px] w-full p-0 border border-white/20 bg-black/40 backdrop-blur-2xl shadow-2xl rounded-3xl z-[100] h-[90vh] sm:h-[80vh] flex flex-col overflow-hidden">
-        
+
         {/* Header (Sticky) */}
         <div className="flex items-center justify-between p-6 shrink-0 border-b border-white/10">
           <h2 className="text-xl font-bold text-white tracking-wide">Rota Ayarları</h2>
-          <button 
-            onClick={onClose}
+          <button
+            onClick={handleCancel}
             className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/15 flex items-center justify-center text-white/50 hover:text-white transition-all border border-transparent hover:border-white/10"
           >
             <X size={18} />
@@ -98,7 +102,7 @@ export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolea
 
         {/* Scrollable Content Body */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 gap-8 flex flex-col [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-white/20 hover:[&::-webkit-scrollbar-thumb]:bg-white/30 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent">
-          
+
           {/* GENEL ROTA AYARLARI */}
           <div className="flex flex-col gap-6">
             <h3 className="text-[13px] font-bold text-white/40 tracking-widest uppercase">Genel Rota Ayarları</h3>
@@ -111,12 +115,12 @@ export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolea
               </div>
               <div className="flex w-full bg-white/5 rounded-2xl p-1 border border-white/10 shadow-inner">
                 {(["Optimal", "Az", "Sık"] as const).map((tip) => {
-                  const val = tip.toLowerCase() as typeof sarjSikligi;
-                  const isActive = sarjSikligi === val;
+                  const val = tip.toLowerCase() as RouteSettings['chargingFrequency'];
+                  const isActive = localSettings.chargingFrequency === val;
                   return (
                     <button
                       key={val}
-                      onClick={() => setSarjSikligi(val)}
+                      onClick={() => updateSetting('chargingFrequency', val)}
                       className={cn(
                         "flex-1 py-2.5 text-center text-sm font-medium rounded-xl transition-all duration-300",
                         isActive ? "bg-cyan-400 text-black shadow-md font-semibold" : "text-white/50 hover:text-white hover:bg-white/5"
@@ -139,14 +143,14 @@ export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolea
                 {/* Elle yazılabilen % Input */}
                 <div className="flex items-center">
                   <span className="text-cyan-400 font-bold mr-0.5">%</span>
-                  <span className="w-8 text-cyan-400 font-bold text-[15px] text-center">{varisSarj}</span>
+                  <span className="w-8 text-cyan-400 font-bold text-[15px] text-center">{localSettings.arrivalSoc}</span>
                 </div>
               </div>
-              <NativeSlider 
-                value={varisSarj} 
-                min={0} 
-                max={100} 
-                onChange={setVarisSarj} 
+              <NativeSlider
+                value={localSettings.arrivalSoc}
+                min={0}
+                max={100}
+                onChange={(v) => updateSetting('arrivalSoc', v)}
               />
             </div>
 
@@ -157,14 +161,14 @@ export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolea
                 <span className="text-white font-semibold text-[15px]">Yola Çıkış Zamanı</span>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <input 
+                <input
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
                   className="w-full bg-white/5 backdrop-blur-sm rounded-xl px-4 py-3.5 text-white/70 text-sm border border-white/10 focus:outline-none focus:border-cyan-400/50 transition-all [color-scheme:dark]"
                 />
-                <input 
-                  type="time" 
+                <input
+                  type="time"
                   value={yolaCikisSaati}
                   onChange={(e) => setYolaCikisSaati(e.target.value)}
                   className="w-full bg-white/5 backdrop-blur-sm rounded-xl px-4 py-3.5 text-white/70 text-sm border border-white/10 focus:outline-none focus:border-cyan-400/50 transition-all [color-scheme:dark]"
@@ -178,26 +182,18 @@ export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolea
                 <MapPin size={18} className="text-cyan-400" />
                 <span className="text-white font-semibold text-[15px]">Yol Tercihleri</span>
               </div>
-              
+
               <div className="flex justify-between items-center">
                 <span className="text-white/80 font-medium text-[15px]">Devlet Otoyolları</span>
-                <CustomSwitch checked={toggles.devletOtoyollari} onChange={() => toggleOption('devletOtoyollari')} />
+                <CustomSwitch checked={localSettings.toggleOtoyollar} onChange={(v) => updateSetting('toggleOtoyollar', v)} />
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-white/80 font-medium text-[15px]">Feribot</span>
-                <CustomSwitch checked={toggles.feribot} onChange={() => toggleOption('feribot')} />
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-white/80 font-medium text-[15px]">Özel Otoyollar</span>
-                <CustomSwitch checked={toggles.ozelOtoyollar} onChange={() => toggleOption('ozelOtoyollar')} />
+                <CustomSwitch checked={localSettings.toggleFeribot} onChange={(v) => updateSetting('toggleFeribot', v)} />
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-white/80 font-medium text-[15px]">Ücretli Otoyollar</span>
-                <CustomSwitch checked={toggles.ucretliOtoyollar} onChange={() => toggleOption('ucretliOtoyollar')} />
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-white/80 font-medium text-[15px]">Köprü</span>
-                <CustomSwitch checked={toggles.kopru} onChange={() => toggleOption('kopru')} />
+                <CustomSwitch checked={localSettings.toggleUcretliOtoyollar} onChange={(v) => updateSetting('toggleUcretliOtoyollar', v)} />
               </div>
             </div>
           </div>
@@ -211,37 +207,37 @@ export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolea
             {/* İstasyon Şarj Limitleri */}
             <div className="flex flex-col gap-5">
               <span className="text-white font-semibold text-[15px]">İstasyon Şarj Limitleri</span>
-              
+
               <div className="flex items-center justify-between gap-6 bg-white/5 border border-white/10 p-5 rounded-2xl shadow-inner">
                 <div className="flex-1 flex flex-col gap-4">
                   <div className="flex items-center justify-between pr-2">
                     <span className="text-white/50 text-xs font-semibold uppercase tracking-wider">Varış</span>
                     <div className="flex items-center">
                       <span className="text-white font-bold text-sm">%</span>
-                      <span className="w-8 text-white font-bold text-sm text-center">{istasyonVarisSarj}</span>
+                      <span className="w-8 text-white font-bold text-sm text-center">{localSettings.stationArrivalSoc}</span>
                     </div>
                   </div>
-                  <NativeSlider 
-                    value={istasyonVarisSarj} 
-                    min={0} 
-                    max={100} 
-                    onChange={setIstasyonVarisSarj} 
+                  <NativeSlider
+                    value={localSettings.stationArrivalSoc}
+                    min={0}
+                    max={100}
+                    onChange={(v) => updateSetting('stationArrivalSoc', v)}
                   />
                 </div>
-                
+
                 <div className="flex-1 flex flex-col gap-4 border-l border-white/5 pl-6">
                   <div className="flex items-center justify-between pr-2">
                     <span className="text-white/50 text-xs font-semibold uppercase tracking-wider">Ayrılış</span>
                     <div className="flex items-center">
                       <span className="text-white font-bold text-sm">%</span>
-                      <span className="w-8 text-white font-bold text-sm text-center">{istasyonAyrisSarj}</span>
+                      <span className="w-8 text-white font-bold text-sm text-center">{localSettings.stationDepartureSoc}</span>
                     </div>
                   </div>
-                  <NativeSlider 
-                    value={istasyonAyrisSarj} 
-                    min={0} 
-                    max={100} 
-                    onChange={setIstasyonAyrisSarj} 
+                  <NativeSlider
+                    value={localSettings.stationDepartureSoc}
+                    min={0}
+                    max={100}
+                    onChange={(v) => updateSetting('stationDepartureSoc', v)}
                   />
                 </div>
               </div>
@@ -251,12 +247,12 @@ export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolea
             <div className="flex flex-col gap-4 overflow-hidden relative">
               <span className="text-white font-semibold text-[15px]">İstasyon Markaları</span>
               <div className="relative">
-                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 text-sm">🔍</span>
-                 <input type="text" placeholder="Marka Seç" className="w-full bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl py-3.5 pl-11 pr-4 text-sm text-white focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all shadow-inner" />
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 text-sm">🔍</span>
+                <input type="text" placeholder="Marka Seç" className="w-full bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl py-3.5 pl-11 pr-4 text-sm text-white focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all shadow-inner" />
               </div>
               <div className="mt-1 w-full pl-0.5">
                 <span className="text-white/40 text-[12px] font-medium mb-3 block">Sık tercih edilenler</span>
-                
+
                 {/* 4 4 Alt alta dizilecek Grid yapısı */}
                 <div className="grid grid-cols-4 gap-2.5 w-full">
                   {['ZES', 'Eşarj', 'Sharz', 'Trugo', 'Voltrun', 'Tesla', 'Wat', 'DB'].map((brand) => (
@@ -272,20 +268,20 @@ export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolea
             <div className="flex flex-col gap-3">
               <span className="text-white font-semibold text-[15px]">İstasyon Şarj Tercihleri</span>
               <div className="flex gap-2.5">
-                 {(['HPC', 'DC', 'AC'] as const).map(tip => (
-                   <button 
-                     key={tip}
-                     onClick={() => setSarjTercipi(tip)}
-                     className={cn(
-                       "flex-1 py-3 rounded-xl text-sm font-semibold border transition-all duration-300",
-                       sarjTercipi === tip 
-                         ? "bg-cyan-400 text-black shadow-[0_0_15px_rgba(34,211,238,0.3)] border-cyan-400" 
-                         : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10 hover:text-white"
-                     )}
-                   >
-                     {tip}
-                   </button>
-                 ))}
+                {(['HPC', 'DC', 'AC'] as const).map(tip => (
+                  <button
+                    key={tip}
+                    onClick={() => updateSetting('chargerSpeedPref', tip as any)}
+                    className={cn(
+                      "flex-1 py-3 rounded-xl text-sm font-semibold border transition-all duration-300",
+                      localSettings.chargerSpeedPref === tip
+                        ? "bg-cyan-400 text-black shadow-[0_0_15px_rgba(34,211,238,0.3)] border-cyan-400"
+                        : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10 hover:text-white"
+                    )}
+                  >
+                    {tip}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -303,14 +299,14 @@ export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolea
                 ].map((item) => {
                   const isActive = selectedLokasyonlar.includes(item.id);
                   return (
-                    <button 
+                    <button
                       key={item.id}
                       onClick={() => toggleLokasyon(item.id)}
                       className={cn(
                         "flex flex-col flex-1 items-center justify-center p-4 gap-2 rounded-2xl border transition-all duration-300 shadow-sm",
-                        isActive 
-                           ? "border-cyan-400/50 bg-cyan-400/10 text-cyan-400" 
-                           : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 text-white/50"
+                        isActive
+                          ? "border-cyan-400/50 bg-cyan-400/10 text-cyan-400"
+                          : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 text-white/50"
                       )}
                     >
                       <span className={cn("text-2xl mb-1 transition-all duration-300", isActive ? "scale-110 drop-shadow-md" : "opacity-50 grayscale")}>{item.icon}</span>
@@ -321,14 +317,14 @@ export default function RouteSettingsModal({ isOpen, onClose }: { isOpen: boolea
               </div>
             </div>
           </div>
-          
+
         </div>
 
         {/* Footer (Sticky) */}
         <div className="p-5 shrink-0 bg-black/40 border-t border-white/10 backdrop-blur-xl z-[50]">
-           <button onClick={onClose} className="w-full bg-cyan-400 hover:bg-cyan-300 text-black font-bold py-4 rounded-2xl transition-all duration-200 active:scale-[0.98] shadow-[0_0_15px_rgba(34,211,238,0.3)]">
-             Ayarları Uygula
-           </button>
+          <button onClick={handleApply} className="w-full bg-cyan-400 hover:bg-cyan-300 text-black font-bold py-4 rounded-2xl transition-all duration-200 active:scale-[0.98] shadow-[0_0_15px_rgba(34,211,238,0.3)]">
+            Ayarları Uygula
+          </button>
         </div>
 
       </DialogContent>

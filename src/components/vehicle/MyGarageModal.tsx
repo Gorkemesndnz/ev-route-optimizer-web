@@ -1,10 +1,10 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import { Search, Edit2, Trash2, Plus, CarFront, Check } from "lucide-react";
-import { Button } from "./ui/button";
-import { useVehicle } from "../contexts/VehicleContext";
-import { useSettings } from "../contexts/SettingsContext";
-import { translations } from "../lib/translations";
-import type { Vehicle } from "../types/vehicle";
+import { Button } from "../ui/button";
+import { useVehicle } from "../../contexts/VehicleContext";
+import { useSettings } from "../../contexts/SettingsContext";
+import { translations } from "../../lib/translations";
+import type { Vehicle } from "../../types/vehicle";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 

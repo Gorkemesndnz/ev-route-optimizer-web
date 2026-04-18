@@ -1,5 +1,5 @@
 import { Instagram, Linkedin, Github, Twitter } from "lucide-react";
-import { useMarketing } from "../pages/BasePageLayout";
+import { useMarketing } from "../../pages/BasePageLayout";
 
 export default function GlobalFooterLight() {
   const { language } = useMarketing();

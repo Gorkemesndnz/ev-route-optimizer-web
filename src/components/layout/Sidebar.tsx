@@ -32,12 +32,13 @@ interface Location {
   coords?: any;
 }
 
-import { LocationItem } from "./LocationItem";
-import { LocationSearchModal } from "./LocationSearchModal";
-import { translations } from "../lib/translations";
+import { LocationItem } from "../route/LocationItem";
+import { LocationSearchModal } from "../route/LocationSearchModal";
+import { translations } from "../../lib/translations";
 
-import { useAuth } from "../contexts/AuthContext";
-import { useSettings } from "../contexts/SettingsContext";
+import { useAuth } from "../../contexts/AuthContext";
+import { useSettings } from "../../contexts/SettingsContext";
+import { useRouteContext } from "../../contexts/RouteContext";
 
 const Sidebar = memo(({
   onOpenRouteSettings,
@@ -47,9 +48,10 @@ const Sidebar = memo(({
   const { language } = useSettings();
   const { currentUser, requireAuth } = useAuth();
   const t = translations[language];
+  const { planRoute, cancelRoute, isPlanning, error } = useRouteContext();
   const [locations, setLocations] = useState([
-    { id: "start", type: "start", value: "" },
-    { id: "dest", type: "destination", value: "" },
+    { id: "start", type: "start", value: "" } as Location,
+    { id: "dest", type: "destination", value: "" } as Location,
   ]);
 
   const [activeSearchItem, setActiveSearchItem] = useState(null);
@@ -264,18 +266,38 @@ const Sidebar = memo(({
       </div>
 
       {/* Primary Action Row */}
+      {error && (
+        <div className="bg-red-500/20 text-red-200 border border-red-500/50 p-3 rounded-xl text-sm leading-relaxed mb-1 shadow-sm">
+          {error}
+        </div>
+      )}
       <div className="flex gap-3">
         <button
           onClick={onOpenRouteSettings}
-          className="p-3 bg-white/10 hover:bg-white/20 rounded-2xl text-white transition-all"
+          className="p-3 bg-white/10 hover:bg-white/20 rounded-2xl text-white transition-all flex items-center justify-center"
         >
           <Settings size={20} />
         </button>
-        <button
-          className="flex-1 py-3 bg-white text-black font-semibold rounded-2xl hover:bg-gray-200 transition-all flex justify-center items-center gap-2"
-        >
-          {t.planRoute}
-        </button>
+        
+        {isPlanning ? (
+          <button
+            onClick={cancelRoute}
+            className="flex-1 py-3 bg-red-500 text-white font-semibold rounded-2xl hover:bg-red-400 transition-all flex justify-center items-center overflow-hidden relative shadow-lg"
+          >
+            <div className="absolute inset-0 bg-white/20 animate-pulse" />
+            <span className="relative z-10 flex items-center gap-2">
+              İptal Et
+            </span>
+          </button>
+        ) : (
+          <button
+            onClick={() => planRoute(locations)}
+            disabled={locations.length < 2 || locations.some(l => !l.coords)}
+            className="flex-1 py-3 bg-white text-black font-semibold rounded-2xl hover:bg-gray-200 disabled:opacity-50 disabled:bg-gray-400/50 disabled:text-white/50 transition-all flex justify-center items-center shadow-md active:scale-[0.98]"
+          >
+            {t.planRoute}
+          </button>
+        )}
       </div>
 
       {activeSearchItem && (

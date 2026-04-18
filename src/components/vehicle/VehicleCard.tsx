@@ -1,7 +1,7 @@
 import { CarFront, Battery, ArrowLeftRight, Settings, Plus } from "lucide-react";
-import { Button } from "./ui/button";
+import { Button } from "../ui/button";
 import { memo, useCallback } from "react";
-import { translations } from "../lib/translations";
+import { translations } from "../../lib/translations";
 
 const NativeSlider = ({ value, min, max, onChange }: { value: number, min: number, max: number, onChange: (v: number) => void }) => {
   const percentage = ((value - min) / (max - min)) * 100;
@@ -27,8 +27,8 @@ const NativeSlider = ({ value, min, max, onChange }: { value: number, min: numbe
   );
 };
 
-import { useVehicle } from "../contexts/VehicleContext";
-import { useSettings } from "../contexts/SettingsContext";
+import { useVehicle } from "../../contexts/VehicleContext";
+import { useSettings } from "../../contexts/SettingsContext";
 
 const VehicleCard = memo(({ 
   onOpenGarage, 

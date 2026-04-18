@@ -1,10 +1,10 @@
 import { Minus, Plus, LocateFixed, Car, Zap, Check, Layers } from "lucide-react";
 import { useMap } from "@vis.gl/react-google-maps";
 import { cn } from "@/lib/utils";
-import { translations } from "../lib/translations";
+import { translations } from "../../lib/translations";
 import { memo, useState, useRef, useEffect } from "react";
 
-import { useSettings } from "../contexts/SettingsContext";
+import { useSettings } from "../../contexts/SettingsContext";
 
 const MapControls = memo(({ 
   onLocateUser, 

@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { ChevronLeft, ShieldCheck, FileText, Scale, Copyright, Lock, AlertTriangle, Zap, Cpu } from "lucide-react";
-import { translations } from "../lib/translations";
-import GlobalFooter from "./GlobalFooter";
+import { translations } from "../../lib/translations";
+import GlobalFooter from "../layout/GlobalFooter";
 
 export default function TermsView({ 
   language, 

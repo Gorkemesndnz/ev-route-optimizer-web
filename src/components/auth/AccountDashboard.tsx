@@ -2,15 +2,15 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { translations } from "../lib/translations";
-import { useAuth } from "../contexts/AuthContext";
-import { useVehicle } from "../contexts/VehicleContext";
-import { useSettings } from "../contexts/SettingsContext";
+import { translations } from "../../lib/translations";
+import { useAuth } from "../../contexts/AuthContext";
+import { useVehicle } from "../../contexts/VehicleContext";
+import { useSettings } from "../../contexts/SettingsContext";
 
 // Sub-components
-import AccountOverviewTab from "./account/AccountOverviewTab";
-import AccountProfileTab from "./account/AccountProfileTab";
-import AccountPricesTab from "./account/AccountPricesTab";
+import AccountOverviewTab from "../account/AccountOverviewTab";
+import AccountProfileTab from "../account/AccountProfileTab";
+import AccountPricesTab from "../account/AccountPricesTab";
 
 export default function AccountDashboard({
   onClose,

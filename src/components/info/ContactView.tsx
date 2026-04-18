@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, Mail, Instagram, Linkedin, Github, Twitter, CheckCircle, Send, MapPin } from "lucide-react";
-import { translations } from "../lib/translations";
+import { translations } from "../../lib/translations";
 import { cn } from "@/lib/utils";
-import GlobalFooter from "./GlobalFooter";
-import { contactSchema } from "../lib/validation";
+import GlobalFooter from "../layout/GlobalFooter";
+import { contactSchema } from "../../lib/validation";
 import { z } from "zod";
-import CustomSelect from "./ui/CustomSelect";
+import CustomSelect from "../ui/CustomSelect";
 
 export default function ContactView({ 
   language, 

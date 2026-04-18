@@ -1,16 +1,16 @@
 import { X, ChevronLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { translations } from "../lib/translations";
-import { useAuthForm } from "../hooks/useAuthForm";
+import { translations } from "../../lib/translations";
+import { useAuthForm } from "../../hooks/useAuthForm";
 
-import EmailStep from "./auth/EmailStep";
-import PasswordStep from "./auth/PasswordStep";
-import RegisterStep from "./auth/RegisterStep";
-import VerifyEmailStep from "./auth/VerifyEmailStep";
-import ResetPasswordStep from "./auth/ResetPasswordStep";
+import EmailStep from "./EmailStep";
+import PasswordStep from "./PasswordStep";
+import RegisterStep from "./RegisterStep";
+import VerifyEmailStep from "./VerifyEmailStep";
+import ResetPasswordStep from "./ResetPasswordStep";
 
-import { useAuth } from "../contexts/AuthContext";
-import { useSettings } from "../contexts/SettingsContext";
+import { useAuth } from "../../contexts/AuthContext";
+import { useSettings } from "../../contexts/SettingsContext";
 
 export default function AuthModal({ 
   onLogin,

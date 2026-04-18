@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, MapPin, Search } from 'lucide-react';
 import { useMap } from '@vis.gl/react-google-maps';
-import type { StationData } from '../contexts/StationContext';
-import { apiClient } from '../lib/apiClient';
+import type { StationData } from '../../contexts/StationContext';
+import { apiClient } from '../../lib/apiClient';
 
 interface Attraction {
   id: string;

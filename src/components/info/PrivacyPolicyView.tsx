@@ -1,7 +1,7 @@
 import { ChevronLeft, Shield, Lock, Eye, Database, Share2, Info, Scale } from "lucide-react";
 import { motion } from "framer-motion";
-import { translations } from "../lib/translations";
-import GlobalFooter from "./GlobalFooter";
+import { translations } from "../../lib/translations";
+import GlobalFooter from "../layout/GlobalFooter";
 
 export default function PrivacyPolicyView({ 
   language = 'tr',

@@ -1,17 +1,17 @@
 import { APIProvider } from "@vis.gl/react-google-maps";
-import BackgroundMap from "./components/BackgroundMap";
-import Sidebar from "./components/Sidebar";
-import VehicleCard from "./components/VehicleCard";
-import RouteSettingsView from "./components/RouteSettingsView";
-import GarageView from "./components/GarageView";
-import AddVehicleView from "./components/AddVehicleView";
-import VehicleSettingsView from "./components/VehicleSettingsView";
-import MapControls from "./components/MapControls";
-import AuthModal from "./components/AuthModal";
-import AccountDashboard from "./components/AccountDashboard";
-import CookieConsent from "./components/CookieConsent";
-import GeneralMenu from "./components/GeneralMenu";
-import StationDetailsPanel from "./components/StationDetailsPanel";
+import BackgroundMap from "./components/map/BackgroundMap";
+import Sidebar from "./components/layout/Sidebar";
+import VehicleCard from "./components/vehicle/VehicleCard";
+import RouteSettingsView from "./components/route/RouteSettingsView";
+import GarageView from "./components/vehicle/GarageView";
+import AddVehicleView from "./components/vehicle/AddVehicleView";
+import VehicleSettingsView from "./components/vehicle/VehicleSettingsView";
+import MapControls from "./components/map/MapControls";
+import AuthModal from "./components/auth/AuthModal";
+import AccountDashboard from "./components/auth/AccountDashboard";
+import CookieConsent from "./components/layout/CookieConsent";
+import GeneralMenu from "./components/layout/GeneralMenu";
+import StationDetailsPanel from "./components/station/StationDetailsPanel";
 import { LogOut } from "lucide-react";
 import { translations } from "./lib/translations";
 import { AnimatePresence, motion } from "framer-motion";
@@ -82,7 +82,7 @@ function App() {
   }
 
   return (
-    <APIProvider apiKey={API_KEY}>
+    <APIProvider apiKey={API_KEY} libraries={["geometry", "places"]}>
       <div className="relative w-screen h-[100svh] overflow-hidden bg-zinc-950">
         {/* 1. Background Map */}
         <BackgroundMap 

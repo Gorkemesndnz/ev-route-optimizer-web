@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import { Dialog, DialogContent } from "./ui/dialog";
+import { Dialog, DialogContent } from "../ui/dialog";
 import { Clock, Search, MapPin, X, Loader2, Target } from "lucide-react";
-import { useSettings } from "../contexts/SettingsContext";
-import { translations } from "../lib/translations";
-import { useDebounce } from "../hooks/useDebounce";
-import { apiClient } from "../lib/apiClient";
+import { useSettings } from "../../contexts/SettingsContext";
+import { translations } from "../../lib/translations";
+import { useDebounce } from "../../hooks/useDebounce";
+import { apiClient } from "../../lib/apiClient";
 
 export function LocationSearchModal({ 
   isOpen, 

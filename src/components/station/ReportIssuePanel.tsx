@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, CheckCircle2, AlertTriangle, Send } from 'lucide-react';
-import type { StationData } from '../contexts/StationContext';
-import { apiClient } from '../lib/apiClient';
+import type { StationData } from '../../contexts/StationContext';
+import { apiClient } from '../../lib/apiClient';
 
 const ISSUE_TYPES = [
   "Güç çok düşük / Dalgalanıyor",

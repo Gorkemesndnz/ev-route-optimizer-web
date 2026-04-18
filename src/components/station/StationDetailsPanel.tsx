@@ -4,11 +4,11 @@ import ReviewStationPanel from './ReviewStationPanel';
 import ReportIssuePanel from './ReportIssuePanel';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, Heart, Plus, Share2, MapPin, Navigation, Phone, Calendar, Star, AlertCircle, CloudRain, Sun, Cloud, Snowflake, CloudDrizzle, Wind, ShieldCheck, Loader2, Pencil, Trash } from 'lucide-react';
-import { useStation } from '../contexts/StationContext';
-import { translations } from '../lib/translations';
-import { useSettings } from '../contexts/SettingsContext';
-import { apiClient } from '../lib/apiClient';
-import { useAuth } from '../contexts/AuthContext';
+import { useStation } from '../../contexts/StationContext';
+import { translations } from '../../lib/translations';
+import { useSettings } from '../../contexts/SettingsContext';
+import { apiClient } from '../../lib/apiClient';
+import { useAuth } from '../../contexts/AuthContext';
 
 const MOCK_COVER = "https://images.unsplash.com/photo-1620060935399-6e3e1ffb1046?q=80&w=600&auto=format&fit=crop";
 const MOCK_LOGO = "https://ui-avatars.com/api/?name=ZES&background=0f172a&color=fff&bold=true";

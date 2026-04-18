@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ChevronLeft, Zap, BatteryMedium, Calendar as CalendarIcon, MapPin, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { translations } from "../lib/translations";
+import { translations } from "../../lib/translations";
 
 const CustomSwitch = ({ checked, onChange }: { checked: boolean, onChange: (val: boolean) => void }) => {
   return (
@@ -46,7 +46,7 @@ const NativeSlider = ({ value, min, max, onChange }: { value: number, min: numbe
   );
 };
 
-import { useSettings } from "../contexts/SettingsContext";
+import { useSettings } from "../../contexts/SettingsContext";
 
 export default function RouteSettingsView({ 
   onBack, 

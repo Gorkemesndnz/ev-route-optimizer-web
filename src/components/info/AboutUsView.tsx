@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { ChevronLeft, Info, Sparkles, Target, Users } from "lucide-react";
-import { translations } from "../lib/translations";
-import GlobalFooter from "./GlobalFooter";
+import { translations } from "../../lib/translations";
+import GlobalFooter from "../layout/GlobalFooter";
 
 export default function AboutUsView({ 
   language, 

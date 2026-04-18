@@ -1,5 +1,5 @@
 import { Instagram, Linkedin, Github, Twitter } from "lucide-react";
-import { translations } from "../lib/translations";
+import { translations } from "../../lib/translations";
 
 export default function GlobalFooter({ 
   language, 

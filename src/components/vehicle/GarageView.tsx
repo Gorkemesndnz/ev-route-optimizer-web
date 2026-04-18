@@ -1,11 +1,11 @@
 import { useState, useCallback } from "react";
 import { ArrowLeft, Plus, CheckCircle2, Circle, Trash2, CarFront, Edit2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { translations } from "../lib/translations";
+import { translations } from "../../lib/translations";
 
-import { useVehicle } from "../contexts/VehicleContext";
-import { useSettings } from "../contexts/SettingsContext";
-import type { Vehicle } from "../types/vehicle";
+import { useVehicle } from "../../contexts/VehicleContext";
+import { useSettings } from "../../contexts/SettingsContext";
+import type { Vehicle } from "../../types/vehicle";
 
 export default function GarageView({
   onAddVehicle,

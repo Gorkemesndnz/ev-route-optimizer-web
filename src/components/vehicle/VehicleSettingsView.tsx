@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ChevronLeft, Users, Thermometer as Thermostat, Weight, Gauge, Zap, Cog, CarFront, PlugZap } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { translations } from "../lib/translations";
+import { translations } from "../../lib/translations";
 
 const CustomSwitch = ({ checked, onChange }: { checked: boolean, onChange: (val: boolean) => void }) => {
   return (
@@ -22,8 +22,8 @@ const CustomSwitch = ({ checked, onChange }: { checked: boolean, onChange: (val:
   );
 };
 
-import { useSettings } from "../contexts/SettingsContext";
-import { useVehicle } from "../contexts/VehicleContext";
+import { useSettings } from "../../contexts/SettingsContext";
+import { useVehicle } from "../../contexts/VehicleContext";
 
 export default function VehicleSettingsView({ 
   onBack,

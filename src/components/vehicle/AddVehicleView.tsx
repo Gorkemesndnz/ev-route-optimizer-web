@@ -1,7 +1,7 @@
 import { ArrowLeft, Search, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
-import type { Vehicle } from "../types/vehicle";
-import { translations } from "../lib/translations";
+import type { Vehicle } from "../../types/vehicle";
+import { translations } from "../../lib/translations";
 
 interface BrandModel {
   model: string;
@@ -16,8 +16,8 @@ interface Brand {
   models: BrandModel[];
 }
 
-import { useSettings } from "../contexts/SettingsContext";
-import { useVehicle } from "../contexts/VehicleContext";
+import { useSettings } from "../../contexts/SettingsContext";
+import { useVehicle } from "../../contexts/VehicleContext";
 import { useEffect, useState as useReactState } from "react";
 
 export default function AddVehicleView({ 
@@ -35,7 +35,7 @@ export default function AddVehicleView({
   const t = translations[language];
 
   useEffect(() => {
-    import("../lib/apiClient").then(({ apiClient }) => {
+    import("../../lib/apiClient").then(({ apiClient }) => {
       apiClient("/EvCatalog/brands")
       .then(res => res.json())
       .then(data => {
