@@ -70,9 +70,9 @@ const defaultSettings: RouteSettings = {
   stationArrivalSoc: 10,
   stationDepartureSoc: 80,
   chargerSpeedPref: 'any',
-  toggleFeribot: false,
-  toggleUcretliOtoyollar: false,
-  toggleOtoyollar: false,
+  toggleFeribot: true,        // true = feribotlara izin ver (varsayılan)
+  toggleUcretliOtoyollar: true, // true = ücretli otoyollara izin ver (varsayılan)
+  toggleOtoyollar: true,       // true = otoyollara izin ver (varsayılan)
 };
 
 const RouteContext = createContext<RouteContextValue | undefined>(undefined);
@@ -147,23 +147,61 @@ export const RouteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         toggleOtoyollar: committedSettings.toggleOtoyollar,
       };
 
+      console.log('🚀 [RouteContext] Rota planlanıyor...', { payload });
+
       const res = await apiClient('/Route/plan', {
         method: 'POST',
         body: payload,
         signal: abortControllerRef.current.signal,
       });
 
+      console.log('📡 [RouteContext] HTTP yanıtı:', { status: res.status, ok: res.ok });
+
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        console.error("400 Error Payload:", data);
+        console.error('❌ [RouteContext] API hata yanıtı:', data);
         const errorMsg = data.title || data.message || data.error || (data.errors ? JSON.stringify(data.errors) : `Sunucu hatası: HTTP ${res.status}`);
         throw new Error(errorMsg);
       }
 
       const data: RouteResultDto = await res.json();
+      
+      // 🔍 Tam detaylı debug log
+      console.log('📦 [RouteContext] Gelen routeResult:', JSON.stringify(data, null, 2).substring(0, 3000));
+      console.log('📊 [RouteContext] Analiz:', {
+        status: data.status,
+        total_distance_km: data.total_distance_km,
+        total_duration_min: data.total_duration_min,
+        legs_count: data.legs?.length ?? 0,
+        legs_with_polyline: data.legs?.filter(l => l.polyline && l.polyline.length > 0).length ?? 0,
+        charging_stops_count: data.charging_stops?.length ?? 0,
+        overview_polyline: data.overview_polyline ? `${data.overview_polyline.length} chars` : 'YOK',
+      });
+      
+      // Her leg'i ayrı logla
+      data.legs?.forEach((leg, i) => {
+        console.log(`  🚗 Leg[${i}]:`, {
+          from: leg.from_location,
+          to: leg.to_location,
+          polyline: leg.polyline ? `${leg.polyline.length} chars` : 'YOK ⚠️',
+          distance: leg.distance_km,
+          soc: `${leg.start_soc}% → ${leg.end_soc}%`
+        });
+      });
+      
+      data.charging_stops?.forEach((stop, i) => {
+        console.log(`  ⚡ Stop[${i}]:`, {
+          name: stop.station_name,
+          coords: `${stop.lat}, ${stop.lon}`,
+          soc: `${stop.arrival_soc}% → ${stop.departure_soc}%`
+        });
+      });
+
       setRouteResult(data);
+      console.log('✅ [RouteContext] routeResult state güncellendi!');
     } catch (e: unknown) {
       if (e instanceof DOMException && e.name === 'AbortError') return;
+      console.error('💥 [RouteContext] Hata:', e);
       setError(e instanceof Error ? e.message : 'Rota hesaplanamadı.');
     } finally {
       setIsPlanning(false);

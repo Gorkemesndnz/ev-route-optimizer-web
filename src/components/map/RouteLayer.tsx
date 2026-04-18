@@ -4,87 +4,121 @@ import { useRouteContext } from '../../contexts/RouteContext';
 
 export default function RouteLayer() {
   const map = useMap();
+  const routesLib = useMapsLibrary('routes');
   const geometryLib = useMapsLibrary('geometry');
   const { routeResult } = useRouteContext();
-  const polylineRef = useRef<google.maps.Polyline | null>(null);
+  
+  const directionsService = useRef<google.maps.DirectionsService | null>(null);
+  const directionsRenderer = useRef<google.maps.DirectionsRenderer | null>(null);
 
   const [startCoord, setStartCoord] = useState<{lat: number, lng: number} | null>(null);
   const [endCoord, setEndCoord] = useState<{lat: number, lng: number} | null>(null);
 
-  // Polyline çizimi
+  // Directions Service ve Renderer İlklemesi
   useEffect(() => {
-    console.log("RouteLayer routeResult:", routeResult);
-    console.log("RouteLayer map:", !!map, "geometryLib:", !!geometryLib);
-    
-    if (!map || !geometryLib) return;
+    if (!routesLib || !map) return;
+    if (!directionsService.current) {
+      directionsService.current = new routesLib.DirectionsService();
+    }
+    if (!directionsRenderer.current) {
+      directionsRenderer.current = new routesLib.DirectionsRenderer({
+        suppressMarkers: true, // Kendi marker'larımızı koyacağız
+        preserveViewport: true, // Biz kendimiz fitBounds yapacağız offset'li
+        polylineOptions: {
+          strokeColor: '#3b82f6',
+          strokeOpacity: 0.9,
+          strokeWeight: 6,
+          zIndex: 50
+        }
+      });
+    }
+    // Haritaya set etmeyi garanti altına al
+    directionsRenderer.current.setMap(map);
+  }, [routesLib, map]);
 
-    // RouteResult yoksa veya polyline yoksa temizle
-    if (!routeResult || (!routeResult.overview_polyline && !routeResult.legs?.length)) {
-      if (polylineRef.current) {
-        polylineRef.current.setMap(null);
-        polylineRef.current = null;
-      }
+  // Rota çizimi (Directions API kullanarak yollara oturtma)
+  useEffect(() => {
+    if (!map || !routesLib || !geometryLib || !directionsService.current || !directionsRenderer.current) return;
+
+    if (!routeResult || (!routeResult.overview_polyline && (!routeResult.legs || routeResult.legs.length === 0))) {
+      directionsRenderer.current.setDirections(null);
       setStartCoord(null);
       setEndCoord(null);
       return;
     }
 
     try {
+      // Başlangıç ve Bitiş koordinatlarını polyline şifresinden çöz (Backend RouteLegDto'da TypeScript olarak eksik olduğu için)
+      let originCoord = { lat: 0, lng: 0 };
+      let destCoord = { lat: 0, lng: 0 };
+      
       let path: google.maps.LatLng[] = [];
-
-      // Varsa tüm rotayı temsil eden overview_polyline kullan (daha performanslı)
       if (routeResult.overview_polyline) {
         path = geometryLib.encoding.decodePath(routeResult.overview_polyline);
-      } 
-      // Yoksa her bacağın (leg) kendi polyline'ını birleştir
-      else if (routeResult.legs && routeResult.legs.length > 0) {
-        routeResult.legs.forEach(leg => {
-          if (leg.polyline) {
-            const decoded = geometryLib.encoding.decodePath(leg.polyline);
-            path.push(...decoded);
-          }
+      } else if (routeResult.legs && routeResult.legs.length > 0) {
+        routeResult.legs.forEach((leg: any) => {
+          if (leg.polyline) path.push(...geometryLib.encoding.decodePath(leg.polyline));
         });
       }
 
-      if (path.length === 0) return;
-
-      if (!polylineRef.current) {
-        polylineRef.current = new google.maps.Polyline({
-          strokeColor: '#3b82f6', // Mavi
-          strokeOpacity: 0.9,
-          strokeWeight: 6,
-          geodesic: true,
-          zIndex: 50 // marker'ların altında ama haritanın üstünde
-        });
-      }
-
-      polylineRef.current.setPath(path);
-      polylineRef.current.setMap(map);
-
-      // Başlangıç ve bitiş koordinatlarını kaydet (ekran marker'ları için)
       if (path.length > 0) {
         const first = path[0];
         const last = path[path.length - 1];
-        setStartCoord({ lat: first.lat(), lng: first.lng() });
-        setEndCoord({ lat: last.lat(), lng: last.lng() });
+        originCoord = { lat: first.lat(), lng: first.lng() };
+        destCoord = { lat: last.lat(), lng: last.lng() };
+      } else {
+        return; // Geçerli bir rota yok
+      }
+      
+      setStartCoord(originCoord);
+      setEndCoord(destCoord);
+
+      // Şarj İstasyonları ve Waypoint'ler (Ara duraklar)
+      const waypoints = [];
+      
+      // Varsa kullanıcının manuel eklediği waypoint'ler (örn: şehirler)
+      if ((routeResult as any).via_waypoints && (routeResult as any).via_waypoints.length > 0) {
+        (routeResult as any).via_waypoints.forEach((wp: any) => {
+           waypoints.push({ location: { lat: wp.lat, lng: wp.lon }, stopover: true });
+        });
       }
 
-      // Haritayı rotaya odakla
-      const bounds = new google.maps.LatLngBounds();
-      path.forEach(p => bounds.extend(p));
-      map.fitBounds(bounds, { top: 60, bottom: 60, left: 60, right: 400 });
+      // Ayrıca şarj durakları
+      if (routeResult.charging_stops && routeResult.charging_stops.length > 0) {
+        routeResult.charging_stops.forEach(stop => {
+           waypoints.push({ location: { lat: stop.lat, lng: stop.lon }, stopover: true });
+        });
+      }
 
+      // Google Directions API'den yola oturtulmuş (snapped to road) rotayı iste
+      directionsService.current.route({
+        origin: originCoord,
+        destination: destCoord,
+        waypoints: waypoints,
+        travelMode: google.maps.TravelMode.DRIVING
+      }, (response, status) => {
+        if (status === 'OK' && response) {
+          directionsRenderer.current?.setDirections(response);
+          
+          // Haritayı özel padding ile odaklar
+          const bounds = new google.maps.LatLngBounds();
+          const routePath = response.routes[0].overview_path;
+          routePath.forEach(p => bounds.extend(p));
+          map.fitBounds(bounds, { top: 50, bottom: 50, left: 50, right: 450 });
+        } else {
+          console.error('Directions request failed:', status);
+        }
+      });
     } catch (e) {
-      console.error('Error decoding polyline:', e);
+      console.error('Error rendering directions:', e);
     }
-
-  }, [map, geometryLib, routeResult]);
+  }, [map, routesLib, routeResult]);
 
   // Unmount temizliği
   useEffect(() => {
     return () => {
-      if (polylineRef.current) {
-        polylineRef.current.setMap(null);
+      if (directionsRenderer.current) {
+        directionsRenderer.current.setMap(null);
       }
     };
   }, []);
