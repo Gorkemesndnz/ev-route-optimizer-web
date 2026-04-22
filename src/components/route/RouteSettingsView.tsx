@@ -47,32 +47,38 @@ const NativeSlider = ({ value, min, max, onChange }: { value: number, min: numbe
 };
 
 import { useSettings } from "../../contexts/SettingsContext";
+import { useRouteContext } from "../../contexts/RouteContext";
 
-export default function RouteSettingsView({ 
-  onBack, 
-}: { 
+export default function RouteSettingsView({
+  onBack,
+}: {
   onBack: () => void,
 }) {
   const { language } = useSettings();
   const t = translations[language];
-  const [sarjSikligi, setSarjSikligi] = useState<"optimal" | "az" | "sik">("optimal");
-  const [varisSarj, setVarisSarj] = useState(20);
-  
+  const { pendingSettings, setPendingSettings, commitSettings } = useRouteContext();
+
+  const [sarjSikligi, setSarjSikligi] = useState<"optimal" | "az" | "sik">(pendingSettings.chargingFrequency);
+  const [varisSarj, setVarisSarj] = useState(pendingSettings.arrivalSoc);
+
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [yolaCikisSaati, setYolaCikisSaati] = useState("10:00");
-  
-  const [istasyonVarisSarj, setIstasyonVarisSarj] = useState(10);
-  const [istasyonAyrisSarj, setIstasyonAyrisSarj] = useState(80);
+
+  const [istasyonVarisSarj, setIstasyonVarisSarj] = useState(pendingSettings.stationArrivalSoc);
+  const [istasyonAyrisSarj, setIstasyonAyrisSarj] = useState(pendingSettings.stationDepartureSoc);
 
   const [toggles, setToggles] = useState({
-    devletOtoyollari: true,
-    feribot: false,
+    devletOtoyollari: pendingSettings.toggleOtoyollar,
+    feribot: pendingSettings.toggleFeribot,
     ozelOtoyollar: true,
-    ucretliOtoyollar: true,
+    ucretliOtoyollar: pendingSettings.toggleUcretliOtoyollar,
     kopru: true
   });
-  
-  const [sarjTercipi, setSarjTercipi] = useState<"HPC" | "DC" | "AC" | null>("HPC");
+
+  const chargerPref = pendingSettings.chargerSpeedPref;
+  const [sarjTercipi, setSarjTercipi] = useState<"HPC" | "DC" | "AC" | null>(
+    chargerPref === 'any' ? null : chargerPref
+  );
   const [selectedLokasyonlar, setSelectedLokasyonlar] = useState<string[]>([]);
 
   const toggleOption = (key: keyof typeof toggles) => {
@@ -298,9 +304,25 @@ export default function RouteSettingsView({
       </div>
 
       <div className="px-6 py-5 shrink-0 bg-transparent border-t border-white/10 z-50">
-         <button onClick={onBack} className="w-full bg-cyan-400 hover:bg-cyan-300 text-black font-bold py-4 rounded-2xl transition-all duration-200 active:scale-[0.98] shadow-[0_0_15px_rgba(34,211,238,0.3)]">
-           {language === 'tr' ? 'Ayarları Uygula' : 'Apply Settings'}
-         </button>
+        <button
+          onClick={() => {
+            setPendingSettings({
+              chargingFrequency: sarjSikligi,
+              arrivalSoc: varisSarj,
+              stationArrivalSoc: istasyonVarisSarj,
+              stationDepartureSoc: istasyonAyrisSarj,
+              chargerSpeedPref: sarjTercipi ?? 'any',
+              toggleFeribot: toggles.feribot,
+              toggleUcretliOtoyollar: toggles.ucretliOtoyollar,
+              toggleOtoyollar: toggles.devletOtoyollari,
+            });
+            commitSettings();
+            onBack();
+          }}
+          className="w-full bg-cyan-400 hover:bg-cyan-300 text-black font-bold py-4 rounded-2xl transition-all duration-200 active:scale-[0.98] shadow-[0_0_15px_rgba(34,211,238,0.3)]"
+        >
+          {language === 'tr' ? 'Ayarları Uygula' : 'Apply Settings'}
+        </button>
       </div>
     </div>
   );

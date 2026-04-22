@@ -13,32 +13,105 @@ export interface RouteSettings {
   toggleOtoyollar: boolean;
 }
 
+// ============================================================
+// FastAPI MultiStopRouteResponse ↔ .NET RouteResultDto aynası
+// ============================================================
+
+export interface WeatherInfo {
+  temp_c: number;
+  condition: string;
+  wind_speed_mps: number;
+  wind_direction_deg: number;
+  precipitation_prob: number;
+}
+
+export interface RouteInsight {
+  type: string;         // warning | info | tip | saving
+  title: string;
+  message: string;
+  icon: string;
+  relevance_score: number;
+}
+
+export interface ConnectorInfo {
+  plug_type: string;
+  charger_type: string; // AC | DC | HPC
+  power_kw: number;
+  status: string;       // Available | Occupied | Unknown | OutOfOrder
+  price_per_kwh?: number | null;
+  currency: string;
+}
+
+export interface StationAmenity {
+  has_toilet: boolean;
+  has_food: boolean;
+  has_wifi: boolean;
+  has_shopping: boolean;
+  has_parking: boolean;
+  is_24_7: boolean;
+}
+
 export interface RouteLegDto {
-  from_location?: string;
-  to_location?: string;
+  from_location?: string | null;
+  to_location?: string | null;
+  from_lat?: number | null;
+  from_lon?: number | null;
+  to_lat?: number | null;
+  to_lon?: number | null;
   distance_km: number;
   duration_min: number;
+  avg_speed_kmh: number;
+  consumption_kwh: number;
+  elevation_gain_m: number;
+  elevation_loss_m: number;
   start_soc: number;
   end_soc: number;
-  polyline?: string;
+  polyline?: string | null;
 }
 
 export interface ChargingStopDto {
+  station_id?: string | null;
   station_name: string;
+  operator?: string | null;
   lat: number;
   lon: number;
+  address?: string | null;
+  rating: number;
   charge_time_min: number;
   arrival_soc: number;
   departure_soc: number;
+  energy_added_kwh: number;
+  price_per_kwh?: number | null;
+  estimated_cost?: number | null;
+  currency: string;
+  distance_from_route_km: number;
+  is_open_now?: boolean | null;
+  data_source?: string | null;
+  connectors: ConnectorInfo[];
+  amenities?: StationAmenity | null;
+  weather?: WeatherInfo | null;
 }
 
 export interface RouteResultDto {
-  status: 'success' | 'partial' | 'failed' | string;
+  status: 'success' | 'partial' | 'failed' | 'error' | string;
+  message?: string | null;
   total_distance_km: number;
   total_duration_min: number;
+  duration_without_traffic_min?: number | null;
+  traffic_ratio?: number | null;
+  consumption_kwh: number;
+  total_charging_cost: number;
+  total_regen_recovered_kwh: number;
+  total_co2_savings_kg: number;
+  route_strategy?: string | null;
+  charge_stops_count: number;
   legs: RouteLegDto[];
   charging_stops: ChargingStopDto[];
-  overview_polyline?: string;
+  overview_polyline?: string | null;
+  start_weather?: WeatherInfo | null;
+  end_weather?: WeatherInfo | null;
+  insights: RouteInsight[];
+  warning_messages: string[];
 }
 
 export interface Location {
@@ -70,9 +143,9 @@ const defaultSettings: RouteSettings = {
   stationArrivalSoc: 10,
   stationDepartureSoc: 80,
   chargerSpeedPref: 'any',
-  toggleFeribot: true,        // true = feribotlara izin ver (varsayılan)
-  toggleUcretliOtoyollar: true, // true = ücretli otoyollara izin ver (varsayılan)
-  toggleOtoyollar: true,       // true = otoyollara izin ver (varsayılan)
+  toggleFeribot: true,
+  toggleUcretliOtoyollar: true,
+  toggleOtoyollar: true,
 };
 
 const RouteContext = createContext<RouteContextValue | undefined>(undefined);
@@ -85,7 +158,7 @@ export const RouteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [error, setError] = useState<string | null>(null);
 
   const abortControllerRef = useRef<AbortController | null>(null);
-  
+
   const { selectedVehicle } = useVehicle();
 
   const commitSettings = useCallback(() => {
@@ -126,17 +199,15 @@ export const RouteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           address: l.value,
         })),
         vehicleId: selectedVehicle.id,
-        currentSoc: selectedVehicle.soc ?? 80, // Batarya yüzdesi (VehicleCard slider'ından)
-        
-        // Sürücü ayarları (VehicleSettingsView → VehicleContext → selectedVehicle)
+        currentSoc: selectedVehicle.soc ?? 80,
+
         passengers: selectedVehicle.passengers ?? 1,
         extraWeight: selectedVehicle.extraWeight ?? 0,
         climateControl: selectedVehicle.climateControl ?? true,
         drivingStyle: selectedVehicle.drivingStyle ?? 'normal',
         maxSpeed: selectedVehicle.maxSpeed ?? 130,
         refConsumption: selectedVehicle.refConsumption ?? 16.5,
-        
-        // Rota ayarları (RouteSettingsModal → committedSettings)
+
         sarjSikligi: committedSettings.chargingFrequency,
         varisSarj: committedSettings.arrivalSoc,
         istasyonVarisSarj: committedSettings.stationArrivalSoc,
@@ -165,35 +236,39 @@ export const RouteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       }
 
       const data: RouteResultDto = await res.json();
-      
-      // 🔍 Tam detaylı debug log
-      console.log('📦 [RouteContext] Gelen routeResult:', JSON.stringify(data, null, 2).substring(0, 3000));
+
       console.log('📊 [RouteContext] Analiz:', {
         status: data.status,
         total_distance_km: data.total_distance_km,
         total_duration_min: data.total_duration_min,
+        consumption_kwh: data.consumption_kwh,
+        total_charging_cost: data.total_charging_cost,
         legs_count: data.legs?.length ?? 0,
         legs_with_polyline: data.legs?.filter(l => l.polyline && l.polyline.length > 0).length ?? 0,
         charging_stops_count: data.charging_stops?.length ?? 0,
+        insights_count: data.insights?.length ?? 0,
         overview_polyline: data.overview_polyline ? `${data.overview_polyline.length} chars` : 'YOK',
       });
-      
-      // Her leg'i ayrı logla
+
       data.legs?.forEach((leg, i) => {
         console.log(`  🚗 Leg[${i}]:`, {
           from: leg.from_location,
           to: leg.to_location,
           polyline: leg.polyline ? `${leg.polyline.length} chars` : 'YOK ⚠️',
           distance: leg.distance_km,
+          consumption: leg.consumption_kwh,
           soc: `${leg.start_soc}% → ${leg.end_soc}%`
         });
       });
-      
+
       data.charging_stops?.forEach((stop, i) => {
         console.log(`  ⚡ Stop[${i}]:`, {
           name: stop.station_name,
+          operator: stop.operator,
           coords: `${stop.lat}, ${stop.lon}`,
-          soc: `${stop.arrival_soc}% → ${stop.departure_soc}%`
+          soc: `${stop.arrival_soc}% → ${stop.departure_soc}%`,
+          energy: stop.energy_added_kwh,
+          cost: stop.estimated_cost
         });
       });
 

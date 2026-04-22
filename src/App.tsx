@@ -12,6 +12,7 @@ import AccountDashboard from "./components/auth/AccountDashboard";
 import CookieConsent from "./components/layout/CookieConsent";
 import GeneralMenu from "./components/layout/GeneralMenu";
 import StationDetailsPanel from "./components/station/StationDetailsPanel";
+import RouteResultPanel from "./components/route/RouteResultPanel";
 import { LogOut } from "lucide-react";
 import { translations } from "./lib/translations";
 import { AnimatePresence, motion } from "framer-motion";
@@ -20,6 +21,7 @@ import { useSettings } from "./contexts/SettingsContext";
 import { useAuth } from "./contexts/AuthContext";
 import { useVehicle } from "./contexts/VehicleContext";
 import { useStation } from "./contexts/StationContext";
+import { useRouteContext } from "./contexts/RouteContext";
 
 function App() {
   const [activeView, setActiveView] = useState<'main' | 'settings' | 'garage' | 'add_vehicle' | 'vehicle_settings' | 'account' | 'privacy' | 'about' | 'terms' | 'station_details'>('main');
@@ -43,6 +45,8 @@ function App() {
   const {
     vehicles,
   } = useVehicle();
+
+  const { routeResult, clearRoute } = useRouteContext();
 
   const { selectedStation, setSelectedStation } = useStation();
 
@@ -124,15 +128,20 @@ function App() {
                 transition={{ type: "tween", ease: "easeInOut", duration: 0.3 }}
                 className="flex flex-col gap-6 relative z-40 pointer-events-none"
               >
-                <Sidebar 
-                  onOpenRouteSettings={() => setActiveView('settings')} 
-                />
-
-                <VehicleCard
-                  onOpenGarage={() => { setPreviousView('main'); setActiveView('garage'); }}
-                  onOpenAddVehicle={() => { setPreviousView('main'); setActiveView('add_vehicle'); }}
-                  onOpenVehicleSettings={() => { setPreviousView('main'); setActiveView('vehicle_settings'); }}
-                />
+                {routeResult ? (
+                  <RouteResultPanel onClose={clearRoute} />
+                ) : (
+                  <>
+                    <Sidebar
+                      onOpenRouteSettings={() => setActiveView('settings')}
+                    />
+                    <VehicleCard
+                      onOpenGarage={() => { setPreviousView('main'); setActiveView('garage'); }}
+                      onOpenAddVehicle={() => { setPreviousView('main'); setActiveView('add_vehicle'); }}
+                      onOpenVehicleSettings={() => { setPreviousView('main'); setActiveView('vehicle_settings'); }}
+                    />
+                  </>
+                )}
               </motion.div>
             )}
 
