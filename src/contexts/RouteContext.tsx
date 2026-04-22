@@ -129,6 +129,7 @@ export interface RouteContextValue {
   commitSettings: () => void;
 
   routeResult: RouteResultDto | null;
+  routeLocations: Location[];
   isPlanning: boolean;
   error: string | null;
 
@@ -154,6 +155,7 @@ export const RouteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [pendingSettings, setPendingSettings] = useState<RouteSettings>(defaultSettings);
   const [committedSettings, setCommittedSettings] = useState<RouteSettings>(defaultSettings);
   const [routeResult, setRouteResult] = useState<RouteResultDto | null>(null);
+  const [routeLocations, setRouteLocations] = useState<Location[]>([]);
   const [isPlanning, setIsPlanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -181,6 +183,8 @@ export const RouteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       if (validLocations.length < 2) {
         throw new Error('Geçerli bir başlangıç ve varış noktası seçmelisiniz.');
       }
+      
+      setRouteLocations(validLocations);
 
       const startLoc = validLocations[0];
       const endLoc = validLocations[validLocations.length - 1];
@@ -290,6 +294,7 @@ export const RouteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const clearRoute = useCallback(() => {
     setRouteResult(null);
+    setRouteLocations([]);
     setError(null);
     cancelRoute();
   }, [cancelRoute]);
@@ -301,6 +306,7 @@ export const RouteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       committedSettings,
       commitSettings,
       routeResult,
+      routeLocations,
       isPlanning,
       error,
       planRoute,

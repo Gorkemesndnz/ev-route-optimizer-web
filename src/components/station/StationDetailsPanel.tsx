@@ -97,6 +97,7 @@ export default function StationDetailsPanel({
    const [reviewsLoading, setReviewsLoading] = useState(false);
    const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
    const [editingReview, setEditingReview] = useState<ReviewData | null>(null);
+   const [enrichedConnections, setEnrichedConnections] = useState<any[] | null>(null);
 
    const handleDeleteReview = async (reviewId: string) => {
       if (!window.confirm("Değerlendirmeyi silmek istediğinize emin misiniz?")) return;
@@ -167,6 +168,62 @@ export default function StationDetailsPanel({
          .catch(err => console.error("Reviews API error", err))
          .finally(() => setReviewsLoading(false));
    }, []);
+
+   useEffect(() => {
+      if (!selectedStation) {
+         setEnrichedConnections(null);
+         return;
+      }
+
+      // Reset enriched data when station changes
+      setEnrichedConnections(null);
+
+      // Enrichment logic: Fetch full station data from specialized service
+      const fetchFullDetails = async () => {
+         try {
+            // Integer OCM ID → direct detail endpoint
+            const numericId = parseInt(selectedStation.id, 10);
+            if (!isNaN(numericId) && String(numericId) === selectedStation.id) {
+               const res = await apiClient(`/stations/${numericId}`);
+               if (res.ok) {
+                  const result = await res.json();
+                  if (result.success && result.data && result.data.connections) {
+                     setEnrichedConnections(result.data.connections);
+                     return;
+                  }
+               }
+            }
+
+            // Coordinate-based search (Google Place IDs and route stops)
+            // delta=0.003 ≈ 330m her yönde — rota durakları için güvenilir eşleşme sağlar
+            const delta = 0.003;
+            const swLat = selectedStation.latitude - delta;
+            const swLng = selectedStation.longitude - delta;
+            const neLat = selectedStation.latitude + delta;
+            const neLng = selectedStation.longitude + delta;
+
+            const res = await apiClient(`/stations/google?swLat=${swLat}&swLng=${swLng}&neLat=${neLat}&neLng=${neLng}`);
+            const result = await res.json();
+
+            if (result.success && result.data && Array.isArray(result.data)) {
+               const COORD_TOLERANCE = 0.003;
+               const fullStation = result.data.find((s: any) =>
+                  String(s.id) === String(selectedStation.id) ||
+                  (Math.abs(s.latitude - selectedStation.latitude) < COORD_TOLERANCE &&
+                   Math.abs(s.longitude - selectedStation.longitude) < COORD_TOLERANCE)
+               );
+
+               if (fullStation && fullStation.connections && fullStation.connections.length > 0) {
+                  setEnrichedConnections(fullStation.connections);
+               }
+            }
+         } catch (err) {
+            console.error("Enrichment fetch failed", err);
+         }
+      };
+
+      fetchFullDetails();
+   }, [selectedStation?.id]);
 
    useEffect(() => {
       if (!selectedStation) return;
@@ -281,7 +338,7 @@ export default function StationDetailsPanel({
                <div className="absolute top-16 left-4 right-4 flex items-center justify-between pointer-events-none">
                   <div className="flex gap-3 items-center pointer-events-auto">
                      <div className="w-14 h-14 rounded-2xl bg-white p-1 shadow-lg overflow-hidden shrink-0">
-                        <img src={MOCK_LOGO} alt="Brand Logo" className="w-full h-full object-cover rounded-xl" />
+                        <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent((selectedStation.title || 'S').substring(0, 3))}&background=0f172a&color=fff&bold=true`} alt="Brand Logo" className="w-full h-full object-cover rounded-xl" />
                      </div>
                      <div>
                         <h2 className="text-xl font-bold text-white leading-tight drop-shadow-md line-clamp-2">{selectedStation.title}</h2>
@@ -481,10 +538,10 @@ export default function StationDetailsPanel({
                   <div className="flex flex-col gap-3">
                      <h3 className="font-semibold text-white/80">{t.stationDetails.availableSockets}</h3>
                      <div className="flex flex-col gap-2">
-                        {selectedStation.connections?.length === 0 ? (
+                        {(!enrichedConnections && (!selectedStation.connections || selectedStation.connections.length === 0)) ? (
                            <div className="text-zinc-400 text-sm italic">{t.stationDetails.unknownSocket}</div>
                         ) : (
-                           selectedStation.connections?.flatMap((conn, connIndex) => {
+                           (enrichedConnections || selectedStation.connections || []).flatMap((conn, connIndex) => {
                               const count = conn.count || 1;
 
                               return Array.from({ length: count }).map((_, i) => {
@@ -529,9 +586,15 @@ export default function StationDetailsPanel({
                                           <span className={`text-[10px] ${statusColorClass} flex items-center gap-1 font-bold`}>
                                              <div className={`w-1.5 h-1.5 rounded-full ${statusBgClass} ${showPulse ? 'animate-pulse' : ''}`} /> {statusText}
                                           </span>
-                                          <div className="font-mono mt-0.5">
-                                             <span className="font-bold text-lg">7,99₺</span>
-                                             <span className="text-xs text-white/50"> /kWh</span>
+                                          <div className="font-mono mt-0.5 text-right">
+                                             {conn.price ? (
+                                                <>
+                                                   <span className="font-bold text-lg">{conn.price.toFixed(2)}₺</span>
+                                                   <span className="text-xs text-white/50"> /kWh</span>
+                                                </>
+                                             ) : (
+                                                <span className="text-xs text-zinc-500 font-sans">Fiyat bilinmiyor</span>
+                                             )}
                                           </div>
                                        </div>
                                     </div>
@@ -574,14 +637,7 @@ export default function StationDetailsPanel({
                      {t.stationDetails.discoverTourist}
                   </button>
 
-                  {/* Kampanyalar Mock */}
-                  <div className="flex flex-col gap-3 mt-4">
-                     <h3 className="font-semibold text-white/80 shrink-0">{t.stationDetails.campaigns}</h3>
-                     <div className="bg-gradient-to-r from-blue-600/30 to-purple-600/30 border border-blue-500/30 rounded-2xl p-4 flex flex-col gap-1">
-                        <h4 className="font-bold text-blue-200">{t.stationDetails.weekendDiscount}</h4>
-                        <p className="text-xs text-blue-100/70">{t.stationDetails.weekendDiscountDesc}</p>
-                     </div>
-                  </div>
+
 
                   {/* Değerlendirmeler */}
                   <div className="flex flex-col gap-3">

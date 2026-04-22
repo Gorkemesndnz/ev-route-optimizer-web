@@ -10,7 +10,17 @@ export function LocationItem({
   isFirst,
   isLast,
   onClickInput,
-  rightAction
+  rightAction,
+  disabled = false,
+}: {
+  id: string;
+  item: any;
+  placeholder: string;
+  isFirst: boolean;
+  isLast: boolean;
+  onClickInput?: (item: any) => void;
+  rightAction?: React.ReactNode;
+  disabled?: boolean;
 }) {
   const {
     attributes,
@@ -68,16 +78,18 @@ export function LocationItem({
           readOnly
           value={item.value}
           onClick={(e) => {
-            if (isDragging) return;
+            if (isDragging || disabled) return;
             e.stopPropagation();
             onClickInput?.(item);
           }}
           placeholder={placeholder}
           className={cn(
             "w-full rounded-2xl py-2 pl-9 pr-4 text-[15px] text-white transition-all font-medium",
-            isDragging 
-              ? "bg-white/10 border border-white/20 cursor-grabbing" 
-              : "bg-white/5 border border-white/10 placeholder-white/70 focus:outline-none focus:bg-white/10 focus:border-white/30 cursor-pointer hover:bg-white/[0.08] hover:border-white/20"
+            isDragging
+              ? "bg-white/10 border border-white/20 cursor-grabbing"
+              : disabled
+                ? "bg-white/5 border border-white/10 placeholder-white/40 cursor-not-allowed opacity-50"
+                : "bg-white/5 border border-white/10 placeholder-white/70 focus:outline-none focus:bg-white/10 focus:border-white/30 cursor-pointer hover:bg-white/[0.08] hover:border-white/20"
           )}
         />
       </div>

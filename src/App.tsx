@@ -128,20 +128,29 @@ function App() {
                 transition={{ type: "tween", ease: "easeInOut", duration: 0.3 }}
                 className="flex flex-col gap-6 relative z-40 pointer-events-none"
               >
-                {routeResult ? (
-                  <RouteResultPanel onClose={clearRoute} />
-                ) : (
-                  <>
-                    <Sidebar
-                      onOpenRouteSettings={() => setActiveView('settings')}
-                    />
-                    <VehicleCard
-                      onOpenGarage={() => { setPreviousView('main'); setActiveView('garage'); }}
-                      onOpenAddVehicle={() => { setPreviousView('main'); setActiveView('add_vehicle'); }}
-                      onOpenVehicleSettings={() => { setPreviousView('main'); setActiveView('vehicle_settings'); }}
-                    />
-                  </>
-                )}
+                <AnimatePresence mode="wait">
+                  {routeResult ? (
+                    <RouteResultPanel key="route-result" onClose={clearRoute} />
+                  ) : (
+                    <motion.div
+                      key="main-sidebar"
+                      initial={{ x: -400, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      exit={{ x: -400, opacity: 0 }}
+                      transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                      className="flex flex-col gap-6"
+                    >
+                      <Sidebar
+                        onOpenRouteSettings={() => setActiveView('settings')}
+                      />
+                      <VehicleCard
+                        onOpenGarage={() => { setPreviousView('main'); setActiveView('garage'); }}
+                        onOpenAddVehicle={() => { setPreviousView('main'); setActiveView('add_vehicle'); }}
+                        onOpenVehicleSettings={() => { setPreviousView('main'); setActiveView('vehicle_settings'); }}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             )}
 

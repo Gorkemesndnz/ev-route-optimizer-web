@@ -5,8 +5,9 @@ import {
   ArrowDownUp,
   Plus,
   Bookmark,
+  Loader2,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { memo, useCallback } from "react";
 import {
@@ -49,10 +50,25 @@ const Sidebar = memo(({
   const { currentUser, requireAuth } = useAuth();
   const t = translations[language];
   const { planRoute, cancelRoute, isPlanning, error } = useRouteContext();
-  const [locations, setLocations] = useState([
-    { id: "start", type: "start", value: "" } as Location,
-    { id: "dest", type: "destination", value: "" } as Location,
-  ]);
+
+  const LOCATIONS_KEY = 'iyontree_locations';
+  const [locations, setLocations] = useState<Location[]>(() => {
+    try {
+      const saved = localStorage.getItem(LOCATIONS_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length >= 2) return parsed;
+      }
+    } catch {}
+    return [
+      { id: 'start', type: 'start', value: '' },
+      { id: 'dest', type: 'destination', value: '' },
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem(LOCATIONS_KEY, JSON.stringify(locations));
+  }, [locations]);
 
   const [activeSearchItem, setActiveSearchItem] = useState(null);
 
@@ -177,7 +193,8 @@ const Sidebar = memo(({
                     placeholder={label}
                     isFirst={isFirst}
                     isLast={isLast}
-                    onClickInput={() => setActiveSearchItem({ ...loc, currentIndex: index, totalCount: locations.length })}
+                    disabled={isPlanning}
+                    onClickInput={() => !isPlanning && setActiveSearchItem({ ...loc, currentIndex: index, totalCount: locations.length })}
                     rightAction={
                       index === 0 && locations.length > 2 ? (
                         <motion.div
@@ -246,7 +263,8 @@ const Sidebar = memo(({
       <div className="flex justify-between items-center px-2">
         <button
           onClick={addWaypoint}
-          className="text-sm font-medium text-white/70 hover:text-white transition-colors flex items-center gap-1"
+          disabled={isPlanning}
+          className="text-sm font-medium text-white/70 hover:text-white transition-colors flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Plus size={16} /> {t.addWaypoint}
         </button>
@@ -286,6 +304,7 @@ const Sidebar = memo(({
           >
             <div className="absolute inset-0 bg-white/20 animate-pulse" />
             <span className="relative z-10 flex items-center gap-2">
+              <Loader2 size={16} className="animate-spin" />
               İptal Et
             </span>
           </button>

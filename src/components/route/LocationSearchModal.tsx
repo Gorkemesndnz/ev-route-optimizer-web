@@ -144,7 +144,7 @@ export function LocationSearchModal({
           setIsLocating(false);
 
           if (data.success && data.data) {
-             const address = data.data.formattedAddress ?? data.data.FormattedAddress;
+             const address = "Konumum";
              onSelectLocation(item.id, address, { lat: latitude, lng: longitude });
              saveRecentSearch(address, latitude, longitude);
              setSearchValue("");
