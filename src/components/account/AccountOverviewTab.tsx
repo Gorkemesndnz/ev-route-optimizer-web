@@ -2,25 +2,25 @@ import type { Vehicle } from "../../types/vehicle";
 import { motion } from "framer-motion";
 import { translations } from "../../lib/translations";
 import { Car, Battery, Zap, Navigation, Map } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
+import { useSavedRoute } from "../../contexts/SavedRouteContext";
 
 type TranslationType = typeof translations.tr;
-
-interface Route {
-  id: string | number;
-  route: string;
-  date: string;
-  duration: string;
-  energy: string;
-}
 
 interface AccountOverviewTabProps {
   t: TranslationType;
   activeVehicle: Vehicle | null;
   vehicles: Vehicle[];
   selectVehicle: (id: string) => Promise<void>;
-  mockRoutes: Route[]; // Changed from any[] to Route[]
   onChangeVehicle: () => void;
+  onOpenSavedRoute?: (id: string) => void;
+}
+
+function formatDuration(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = Math.round(minutes % 60);
+  if (h === 0) return `${m} dk`;
+  return `${h}sa ${m}dk`;
 }
 
 export default function AccountOverviewTab({
@@ -28,9 +28,16 @@ export default function AccountOverviewTab({
   activeVehicle,
   vehicles,
   selectVehicle,
-  mockRoutes,
   onChangeVehicle,
+  onOpenSavedRoute,
 }: AccountOverviewTabProps) {
+  const { savedRoutes, loadSavedRoutes } = useSavedRoute();
+
+  useEffect(() => {
+    loadSavedRoutes();
+  }, [loadSavedRoutes]);
+
+  const recentRoutes = savedRoutes.slice(0, 3);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const handleScroll = (e: React.WheelEvent<HTMLDivElement>) => {
@@ -164,16 +171,24 @@ export default function AccountOverviewTab({
         </div>
 
         <div className="flex flex-col gap-3">
-          {mockRoutes.length > 0 ? (
-            mockRoutes.map((route) => (
-              <div key={route.id} className="bg-white/5 hover:bg-white/10 transition-colors border border-white/10 rounded-2xl p-5 flex items-center justify-between group cursor-pointer">
-                <div className="flex flex-col">
-                  <span className="text-white font-semibold text-lg">{route.route}</span>
-                  <span className="text-white/50 text-sm">{route.date}</span>
+          {recentRoutes.length > 0 ? (
+            recentRoutes.map(route => (
+              <div
+                key={route.id}
+                onClick={() => onOpenSavedRoute?.(route.id)}
+                className="bg-white/5 hover:bg-white/10 transition-colors border border-white/10 rounded-2xl p-5 flex items-center justify-between group cursor-pointer"
+              >
+                <div className="flex flex-col min-w-0 flex-1 pr-3">
+                  <span className="text-white font-semibold text-base truncate">
+                    {route.startLabel} → {route.endLabel}
+                  </span>
+                  <span className="text-white/50 text-sm">
+                    {new Date(route.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </span>
                 </div>
-                <div className="flex flex-col items-end text-right">
-                  <span className="text-cyan-400 font-medium text-sm">{route.duration}</span>
-                  <span className="text-white/60 text-xs">{route.energy}</span>
+                <div className="flex flex-col items-end text-right shrink-0">
+                  <span className="text-cyan-400 font-medium text-sm">{formatDuration(route.totalDurationMin)}</span>
+                  <span className="text-white/60 text-xs">{route.consumptionKwh.toFixed(1)} kWh</span>
                 </div>
               </div>
             ))

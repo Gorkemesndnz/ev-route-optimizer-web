@@ -16,6 +16,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import { VehicleProvider } from './contexts/VehicleContext'
 import { StationProvider } from './contexts/StationContext'
 import { RouteProvider } from './contexts/RouteContext'
+import { SavedRouteProvider } from './contexts/SavedRouteContext'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -25,6 +26,7 @@ createRoot(document.getElementById('root')!).render(
           <VehicleProvider>
             <StationProvider>
               <RouteProvider>
+              <SavedRouteProvider>
                 <BrowserRouter>
                   <Routes>
                     <Route path="/" element={<App />} />
@@ -35,6 +37,7 @@ createRoot(document.getElementById('root')!).render(
                     <Route path="/home/gizlilik" element={<GizlilikPolitikasi />} />
                   </Routes>
                 </BrowserRouter>
+              </SavedRouteProvider>
               </RouteProvider>
             </StationProvider>
           </VehicleProvider>

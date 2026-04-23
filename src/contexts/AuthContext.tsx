@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 
 interface AuthContextType {
   currentUser: any;
@@ -42,6 +42,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setCurrentUser(null);
   };
+
+  useEffect(() => {
+    const handleAuthLogout = () => setCurrentUser(null);
+    window.addEventListener('auth:logout', handleAuthLogout);
+    return () => window.removeEventListener('auth:logout', handleAuthLogout);
+  }, []);
 
   const requireAuth = (message?: string) => {
     setAuthMessage(message || '');

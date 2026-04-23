@@ -15,9 +15,11 @@ import AccountPricesTab from "../account/AccountPricesTab";
 export default function AccountDashboard({
   onClose,
   onChangeVehicle,
+  onOpenSavedRoute,
 }: {
   onClose: () => void;
   onChangeVehicle: () => void;
+  onOpenSavedRoute?: (id: string) => void;
 }) {
   const { language } = useSettings();
   const { currentUser: user } = useAuth();
@@ -27,11 +29,6 @@ export default function AccountDashboard({
   const t = translations[language];
 
   if (!user) return null;
-
-  const mockRoutes = [
-    { id: 1, route: language === 'tr' ? "İstanbul -> Ankara" : "Istanbul -> Ankara", date: "12 Mar 2026", duration: language === 'tr' ? "4s 15dk" : "4h 15m", energy: "45 kWh" },
-    { id: 2, route: language === 'tr' ? "İzmir -> Bodrum" : "Izmir -> Bodrum", date: "05 Mar 2026", duration: language === 'tr' ? "2s 40dk" : "2h 40m", energy: "28 kWh" },
-  ];
 
   const mockPrices = [
     { provider: "ZES", ac: "₺8.40/kWh", dc: "₺10.50/kWh" },
@@ -104,13 +101,13 @@ export default function AccountDashboard({
         >
           <AnimatePresence mode="popLayout">
             {activeTab === 'overview' && (
-              <AccountOverviewTab 
-                t={t} 
-                activeVehicle={activeVehicle} 
+              <AccountOverviewTab
+                t={t}
+                activeVehicle={activeVehicle}
                 vehicles={vehicles}
                 selectVehicle={selectVehicle}
-                mockRoutes={mockRoutes} 
-                onChangeVehicle={onChangeVehicle} 
+                onChangeVehicle={onChangeVehicle}
+                onOpenSavedRoute={onOpenSavedRoute}
               />
             )}
 

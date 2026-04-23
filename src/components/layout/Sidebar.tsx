@@ -43,8 +43,10 @@ import { useRouteContext } from "../../contexts/RouteContext";
 
 const Sidebar = memo(({
   onOpenRouteSettings,
+  onOpenSavedRoutes,
 }: {
   onOpenRouteSettings: () => void;
+  onOpenSavedRoutes: () => void;
 }) => {
   const { language } = useSettings();
   const { currentUser, requireAuth } = useAuth();
@@ -273,8 +275,7 @@ const Sidebar = memo(({
             if (!currentUser) {
               requireAuth(t.savedRoutesPrompt);
             } else {
-              // Gelecekte eklenecek "Kayıtlı Rotalar" ekranı
-              alert(language === 'tr' ? "Kayıtlı Rotalar: Modül Yapım Aşamasında" : "Saved Routes: Module Under Construction");
+              onOpenSavedRoutes();
             }
           }}
           className="text-sm font-medium text-white/70 hover:text-white transition-colors flex items-center gap-1"

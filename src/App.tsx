@@ -13,6 +13,7 @@ import CookieConsent from "./components/layout/CookieConsent";
 import GeneralMenu from "./components/layout/GeneralMenu";
 import StationDetailsPanel from "./components/station/StationDetailsPanel";
 import RouteResultPanel from "./components/route/RouteResultPanel";
+import SavedRoutesPanel from "./components/route/SavedRoutesPanel";
 import { LogOut } from "lucide-react";
 import { translations } from "./lib/translations";
 import { AnimatePresence, motion } from "framer-motion";
@@ -24,8 +25,9 @@ import { useStation } from "./contexts/StationContext";
 import { useRouteContext } from "./contexts/RouteContext";
 
 function App() {
-  const [activeView, setActiveView] = useState<'main' | 'settings' | 'garage' | 'add_vehicle' | 'vehicle_settings' | 'account' | 'privacy' | 'about' | 'terms' | 'station_details'>('main');
-  const [previousView, setPreviousView] = useState<'main' | 'account' | 'settings' | 'garage' | 'add_vehicle' | 'vehicle_settings' | 'privacy' | 'about' | 'terms' | 'station_details'>('main');
+  const [activeView, setActiveView] = useState<'main' | 'settings' | 'garage' | 'add_vehicle' | 'vehicle_settings' | 'account' | 'privacy' | 'about' | 'terms' | 'station_details' | 'saved_routes' | 'saved_route_detail'>('main');
+  const [activeSavedRouteId, setActiveSavedRouteId] = useState<string | null>(null);
+  const [previousView, setPreviousView] = useState<'main' | 'account' | 'settings' | 'garage' | 'add_vehicle' | 'vehicle_settings' | 'privacy' | 'about' | 'terms' | 'station_details' | 'saved_routes' | 'saved_route_detail'>('main');
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [selectedTouristSpot, setSelectedTouristSpot] = useState<{lat: number, lng: number, name: string} | null>(null);
   const [isRightMenuOpen, setIsRightMenuOpen] = useState(false);
@@ -39,7 +41,7 @@ function App() {
 
   const {
     currentUser, setCurrentUser, logout,
-    setIsAuthModalOpen,
+    setIsAuthModalOpen, authMessage,
   } = useAuth();
 
   const {
@@ -47,6 +49,7 @@ function App() {
   } = useVehicle();
 
   const { routeResult, clearRoute } = useRouteContext();
+  const [currentLiveSavedRouteId, setCurrentLiveSavedRouteId] = useState<string | null>(null);
 
   const { selectedStation, setSelectedStation } = useStation();
 
@@ -130,7 +133,12 @@ function App() {
               >
                 <AnimatePresence mode="wait">
                   {routeResult ? (
-                    <RouteResultPanel key="route-result" onClose={clearRoute} />
+                    <RouteResultPanel
+                      key="route-result"
+                      onClose={() => { clearRoute(); setCurrentLiveSavedRouteId(null); }}
+                      savedRouteId={currentLiveSavedRouteId ?? undefined}
+                      onSaved={setCurrentLiveSavedRouteId}
+                    />
                   ) : (
                     <motion.div
                       key="main-sidebar"
@@ -142,6 +150,7 @@ function App() {
                     >
                       <Sidebar
                         onOpenRouteSettings={() => setActiveView('settings')}
+                        onOpenSavedRoutes={() => setActiveView('saved_routes')}
                       />
                       <VehicleCard
                         onOpenGarage={() => { setPreviousView('main'); setActiveView('garage'); }}
@@ -170,6 +179,42 @@ function App() {
                     setSelectedStation(null);
                     setSelectedTouristSpot(null);
                   }} 
+                />
+              </motion.div>
+            )}
+
+            {activeView === 'saved_routes' && (
+              <motion.div
+                key="saved_routes"
+                initial={{ x: -50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -50, opacity: 0 }}
+                transition={{ type: "tween", ease: "easeInOut", duration: 0.3 }}
+                className="relative z-40 pointer-events-none"
+              >
+                <SavedRoutesPanel
+                  onBack={() => setActiveView('main')}
+                  onSelectRoute={(id) => {
+                    setActiveSavedRouteId(id);
+                    setActiveView('saved_route_detail');
+                  }}
+                />
+              </motion.div>
+            )}
+
+            {activeView === 'saved_route_detail' && activeSavedRouteId && (
+              <motion.div
+                key="saved_route_detail"
+                initial={{ x: -50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -50, opacity: 0 }}
+                transition={{ type: "tween", ease: "easeInOut", duration: 0.3 }}
+                className="relative z-40 pointer-events-none"
+              >
+                <RouteResultPanel
+                  mode="readonly"
+                  savedRouteId={activeSavedRouteId}
+                  onClose={() => setActiveView('saved_routes')}
                 />
               </motion.div>
             )}
@@ -243,9 +288,10 @@ function App() {
                 transition={{ duration: 0.3 }}
                 className="relative z-50 pointer-events-none"
               >
-                <AccountDashboard 
+                <AccountDashboard
                   onChangeVehicle={() => { setPreviousView('account'); setActiveView('garage'); }}
                   onClose={() => setActiveView('main')}
+                  onOpenSavedRoute={(id) => { setActiveSavedRouteId(id); setActiveView('saved_route_detail'); }}
                 />
               </motion.div>
             )}
@@ -293,11 +339,11 @@ function App() {
         </div>
 
         {/* Modals */}
-        <AuthModal 
-          onLogin={(user) => { 
-            setCurrentUser(user); 
-            if (activeView !== 'station_details') {
-              setActiveView('account'); 
+        <AuthModal
+          onLogin={(user) => {
+            setCurrentUser(user);
+            if (activeView !== 'station_details' && !authMessage) {
+              setActiveView('account');
             }
           }}
         />

@@ -98,6 +98,7 @@ export default function StationDetailsPanel({
    const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
    const [editingReview, setEditingReview] = useState<ReviewData | null>(null);
    const [enrichedConnections, setEnrichedConnections] = useState<any[] | null>(null);
+   const [isEnriching, setIsEnriching] = useState(false);
 
    const handleDeleteReview = async (reviewId: string) => {
       if (!window.confirm("Değerlendirmeyi silmek istediğinize emin misiniz?")) return;
@@ -177,6 +178,7 @@ export default function StationDetailsPanel({
 
       // Reset enriched data when station changes
       setEnrichedConnections(null);
+      setIsEnriching(true);
 
       // Enrichment logic: Fetch full station data from specialized service
       const fetchFullDetails = async () => {
@@ -219,6 +221,8 @@ export default function StationDetailsPanel({
             }
          } catch (err) {
             console.error("Enrichment fetch failed", err);
+         } finally {
+            setIsEnriching(false);
          }
       };
 
@@ -538,7 +542,20 @@ export default function StationDetailsPanel({
                   <div className="flex flex-col gap-3">
                      <h3 className="font-semibold text-white/80">{t.stationDetails.availableSockets}</h3>
                      <div className="flex flex-col gap-2">
-                        {(!enrichedConnections && (!selectedStation.connections || selectedStation.connections.length === 0)) ? (
+                        {isEnriching ? (
+                           <div className="flex flex-col gap-2">
+                              {[1, 2].map(n => (
+                                 <div key={n} className="flex bg-white/5 border border-white/10 p-3 rounded-2xl items-center gap-4 animate-pulse">
+                                    <div className="w-10 h-10 rounded-full bg-white/10" />
+                                    <div className="flex flex-col gap-1.5 flex-1">
+                                       <div className="h-2.5 w-20 bg-white/10 rounded" />
+                                       <div className="h-3.5 w-16 bg-white/15 rounded" />
+                                    </div>
+                                    <div className="h-3 w-14 bg-white/10 rounded" />
+                                 </div>
+                              ))}
+                           </div>
+                        ) : (!enrichedConnections && (!selectedStation.connections || selectedStation.connections.length === 0)) ? (
                            <div className="text-zinc-400 text-sm italic">{t.stationDetails.unknownSocket}</div>
                         ) : (
                            (enrichedConnections || selectedStation.connections || []).flatMap((conn, connIndex) => {

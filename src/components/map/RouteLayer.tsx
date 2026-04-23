@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useMap, useMapsLibrary, Marker } from '@vis.gl/react-google-maps';
 import { useRouteContext } from '../../contexts/RouteContext';
+import { useStation } from '../../contexts/StationContext';
 
 export default function RouteLayer() {
   const map = useMap();
   const geometryLib = useMapsLibrary('geometry');
   const routesLib = useMapsLibrary('routes');
   const { routeResult } = useRouteContext();
+  const { setSelectedStation } = useStation();
 
   const rendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
   const polylineRef = useRef<google.maps.Polyline | null>(null);
@@ -162,6 +164,20 @@ export default function RouteLayer() {
           key={`stop-${idx}`}
           position={{ lat: stop.lat, lng: stop.lon }}
           title={stop.station_name}
+          onClick={() => setSelectedStation({
+            id: stop.station_id || `stop-${idx}`,
+            title: stop.station_name || stop.operator || 'Şarj İstasyonu',
+            latitude: stop.lat,
+            longitude: stop.lon,
+            formattedAddress: stop.address || '',
+            connections: stop.connectors?.map(c => ({
+              connectionType: c.plug_type,
+              currentType: c.charger_type,
+              powerKw: c.power_kw,
+              status: c.status,
+              count: c.count,
+            })) || [],
+          })}
           label={{
             text: `${stop.station_name} ↓%${Math.round(stop.arrival_soc)} ↑%${Math.round(stop.departure_soc)}`,
             color: '#ffffff',

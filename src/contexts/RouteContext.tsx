@@ -40,6 +40,7 @@ export interface ConnectorInfo {
   status: string;       // Available | Occupied | Unknown | OutOfOrder
   price_per_kwh?: number | null;
   currency: string;
+  count: number;
 }
 
 export interface StationAmenity {
@@ -129,6 +130,7 @@ export interface RouteContextValue {
   commitSettings: () => void;
 
   routeResult: RouteResultDto | null;
+  setRouteResult: React.Dispatch<React.SetStateAction<RouteResultDto | null>>;
   routeLocations: Location[];
   isPlanning: boolean;
   error: string | null;
@@ -203,6 +205,9 @@ export const RouteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           address: l.value,
         })),
         vehicleId: selectedVehicle.id,
+        vehicleBrand: selectedVehicle.brand,
+        vehicleModel: selectedVehicle.model,
+        vehicleVariant: selectedVehicle.variant ?? '',
         currentSoc: selectedVehicle.soc ?? 80,
 
         passengers: selectedVehicle.passengers ?? 1,
@@ -306,6 +311,7 @@ export const RouteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       committedSettings,
       commitSettings,
       routeResult,
+      setRouteResult,
       routeLocations,
       isPlanning,
       error,

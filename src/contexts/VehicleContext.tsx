@@ -25,10 +25,9 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   // Load vehicles
-  const fetchVehicles = async () => {
+  const fetchVehicles = async (user?: any) => {
     try {
-      const token = localStorage.getItem('token');
-      if (token) {
+      if (user) {
         const response = await apiClient(API_URL);
         const data = await response.json();
         if (data.success) {
@@ -53,7 +52,6 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
           else setSelectedVehicleId(null);
         }
       } else {
-        // Fallback to local
         const saved = localStorage.getItem('iyontree_vehicles');
         const parsed = saved ? JSON.parse(saved) : [];
         setVehicles(parsed);
@@ -69,12 +67,11 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
   const { currentUser } = useAuth();
 
   useEffect(() => {
-    fetchVehicles();
+    fetchVehicles(currentUser);
   }, [currentUser]);
 
   const addVehicle = async (vehicle: Vehicle) => {
-    const token = localStorage.getItem('token');
-    if (token) {
+    if (currentUser) {
       const response = await apiClient(API_URL, {
         method: 'POST',
         body: {
@@ -107,14 +104,13 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
   };
 
   const updateVehicle = async (id: string, updates: Partial<Vehicle>) => {
-    const token = localStorage.getItem('token');
     const target = vehicles.find(v => v.id === id);
     if (!target) return;
-    
+
     // Optimistic UI update
     setVehicles(prev => prev.map(v => v.id === id ? { ...v, ...updates } : v));
 
-    if (token) {
+    if (currentUser) {
       const response = await apiClient(`${API_URL}/${id}`, {
         method: 'PUT',
         body: {
@@ -144,16 +140,14 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
   };
 
   const removeVehicle = async (id: string) => {
-    const token = localStorage.getItem('token');
-    
     // Optimistic update
     setVehicles(prev => prev.filter(v => v.id !== id));
 
-    if (token) {
+    if (currentUser) {
       await apiClient(`${API_URL}/${id}`, {
         method: 'DELETE'
       });
-      await fetchVehicles();
+      await fetchVehicles(currentUser);
     } else {
       setVehicles(prev => {
         const next = prev.filter(v => v.id !== id);
@@ -171,10 +165,9 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
 
   const selectVehicle = async (id: string) => {
     setSelectedVehicleId(id);
-    const token = localStorage.getItem('token');
-    if (token) {
+    if (currentUser) {
       await updateVehicle(id, { isActive: true } as any);
-      await fetchVehicles();
+      await fetchVehicles(currentUser);
     } else {
       localStorage.setItem('iyontree_selected_vehicle_id', id);
     }
