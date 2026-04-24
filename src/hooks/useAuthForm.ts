@@ -4,8 +4,9 @@ import { useSettings } from "../contexts/SettingsContext";
 import { loginSchema, registerSchema, resetPasswordSchema } from "../lib/validation";
 import { z } from "zod";
 import { apiClient } from "../lib/apiClient";
+import { ENDPOINTS } from "../lib/endpoints";
 
-const API_URL = "http://localhost:5146/api/auth";
+
 
 export type AuthStep = 'email' | 'password' | 'register' | 'verify_email' | 'reset_password';
 
@@ -88,10 +89,9 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
       
     setIsLoading(true);
     try {
-      const response = await apiClient('/auth/check-email', {
+      const response = await apiClient(ENDPOINTS.AUTH_CHECK_EMAIL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
+        body: { email }
       });
       const data = await response.json();
 
@@ -129,7 +129,7 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
     }
 
     try {
-      const response = await apiClient('/auth/login', {
+      const response = await apiClient(ENDPOINTS.AUTH_LOGIN, {
         method: 'POST',
         body: { email, password }
       });
@@ -179,7 +179,7 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
     setIsLoading(true);
     try {
       const cleanPhone = phone.replace(/\D/g, '');
-      const response = await apiClient('/auth/register', {
+      const response = await apiClient(ENDPOINTS.AUTH_REGISTER, {
         method: 'POST',
         body: { firstName, lastName, email, phoneNumber: cleanPhone, password }
       });
@@ -274,7 +274,7 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
     isSubmittingRef.current = true;
     setIsLoading(true);
     try {
-      const response = await apiClient('/auth/forgot-password', {
+      const response = await apiClient(ENDPOINTS.AUTH_FORGOT_PASSWORD, {
           method: 'POST',
           body: { email }
       });
@@ -314,7 +314,7 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
       
       setIsLoading(true);
       try {
-          const response = await apiClient('/auth/reset-password', {
+          const response = await apiClient(ENDPOINTS.AUTH_RESET_PASSWORD, {
               method: 'POST',
               body: { email, code: otp, newPassword: password }
           });

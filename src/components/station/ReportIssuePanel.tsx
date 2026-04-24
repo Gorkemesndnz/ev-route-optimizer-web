@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { X, CheckCircle2, AlertTriangle, Send } from 'lucide-react';
 import type { StationData } from '../../contexts/StationContext';
 import { apiClient } from '../../lib/apiClient';
+import { ENDPOINTS } from '../../lib/endpoints';
 
 const ISSUE_TYPES = [
   "Güç çok düşük / Dalgalanıyor",
@@ -33,7 +34,7 @@ export default function ReportIssuePanel({
     
     setIsSubmitting(true);
     try {
-      const res = await apiClient('/reports', {
+      const res = await apiClient(ENDPOINTS.REPORTS, {
         method: 'POST',
         body: {
           stationId: station.id,

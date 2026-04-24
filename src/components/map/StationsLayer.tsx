@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useMap } from '@vis.gl/react-google-maps';
 import Supercluster from 'supercluster';
 import { apiClient } from '../../lib/apiClient';
+import { ENDPOINTS } from '../../lib/endpoints';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useStation } from '../../contexts/StationContext';
 
@@ -481,7 +482,7 @@ export default function StationsLayer() {
           const padSw = { lat: sw.lat() - latPad, lng: sw.lng() - lngPad };
           const padNe = { lat: ne.lat() + latPad, lng: ne.lng() + lngPad };
 
-          const url = `/stations/base?swLat=${padSw.lat}&swLng=${padSw.lng}&neLat=${padNe.lat}&neLng=${padNe.lng}&zoom=${zoom}`;
+          const url = `${ENDPOINTS.STATIONS_BASE}?swLat=${padSw.lat}&swLng=${padSw.lng}&neLat=${padNe.lat}&neLng=${padNe.lng}&zoom=${zoom}`;
           const res = await apiClient(url, { signal: controller.signal });
           if (controller.signal.aborted) return;
           const data = await res.json();
@@ -493,7 +494,7 @@ export default function StationsLayer() {
           }
         } else {
           // ── Google: Normal viewport fetch ──
-          const url = `/stations/google?swLat=${sw.lat()}&swLng=${sw.lng()}&neLat=${ne.lat()}&neLng=${ne.lng()}`;
+          const url = `${ENDPOINTS.STATIONS_GOOGLE}?swLat=${sw.lat()}&swLng=${sw.lng()}&neLat=${ne.lat()}&neLng=${ne.lng()}`;
           const res = await apiClient(url, { signal: controller.signal });
           if (controller.signal.aborted) return;
           const data = await res.json();

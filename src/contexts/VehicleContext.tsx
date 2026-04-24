@@ -13,9 +13,9 @@ interface VehicleContextType {
 }
 
 import { apiClient } from '../lib/apiClient';
+import { ENDPOINTS } from '../lib/endpoints';
 import { useAuth } from './AuthContext';
 
-const API_URL = "/UserVehicles";
 const DRIVER_SETTINGS_OVERLAY_KEY = 'iyontree_driver_settings_overlay';
 
 // Sürücü ayarları (passengers, climateControl, drivingStyle, maxSpeed, refConsumption,
@@ -70,7 +70,7 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
   const fetchVehicles = async (user?: any) => {
     try {
       if (user) {
-        const response = await apiClient(API_URL);
+        const response = await apiClient(ENDPOINTS.USER_VEHICLES);
         const data = await response.json();
         if (data.success) {
           const overlay = loadDriverOverlay();
@@ -116,7 +116,7 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
 
   const addVehicle = async (vehicle: Vehicle) => {
     if (currentUser) {
-      const response = await apiClient(API_URL, {
+      const response = await apiClient(ENDPOINTS.USER_VEHICLES, {
         method: 'POST',
         body: {
           brand: vehicle.brand,
@@ -130,7 +130,7 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
         }
       });
       if (response.ok) {
-        await fetchVehicles();
+        await fetchVehicles(currentUser);
       } else {
         const errorData = await response.json().catch(() => ({}));
         const errorMessage = errorData.source ? `[${errorData.source}] ${errorData.error}` : (errorData.error || "React API Çağrısı Başarısız: Sunucu Hatası.");
@@ -151,6 +151,9 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
     const target = vehicles.find(v => v.id === id);
     if (!target) return;
 
+    // Snapshot for rollback
+    const previousVehicles = [...vehicles];
+
     // Optimistic UI update
     setVehicles(prev => prev.map(v => v.id === id ? { ...v, ...updates } : v));
 
@@ -161,7 +164,7 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
     }
 
     if (currentUser) {
-      const response = await apiClient(`${API_URL}/${id}`, {
+      const response = await apiClient(`${ENDPOINTS.USER_VEHICLES}/${id}`, {
         method: 'PUT',
         body: {
           id: id,
@@ -176,6 +179,7 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
         }
       });
       if (!response.ok) {
+        setVehicles(previousVehicles); // Rollback optimistic update
         const errorData = await response.json().catch(() => ({}));
         const errorMessage = errorData.source ? `[${errorData.source}] ${errorData.error}` : (errorData.error || "React API Çağrısı Başarısız: Güncelleme.");
         throw new Error(errorMessage);
@@ -190,6 +194,9 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
   };
 
   const removeVehicle = async (id: string) => {
+    // Snapshot for rollback
+    const previousVehicles = [...vehicles];
+
     // Optimistic update
     setVehicles(prev => prev.filter(v => v.id !== id));
 
@@ -205,10 +212,15 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
     }
 
     if (currentUser) {
-      await apiClient(`${API_URL}/${id}`, {
-        method: 'DELETE'
-      });
-      await fetchVehicles(currentUser);
+      try {
+        await apiClient(`${ENDPOINTS.USER_VEHICLES}/${id}`, {
+          method: 'DELETE'
+        });
+        await fetchVehicles(currentUser);
+      } catch (e) {
+        console.error('removeVehicle API error:', e);
+        setVehicles(previousVehicles); // Rollback on failure
+      }
     } else {
       setVehicles(prev => {
         const next = prev.filter(v => v.id !== id);

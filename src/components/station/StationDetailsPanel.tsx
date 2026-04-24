@@ -8,6 +8,7 @@ import { useStation } from '../../contexts/StationContext';
 import { translations } from '../../lib/translations';
 import { useSettings } from '../../contexts/SettingsContext';
 import { apiClient } from '../../lib/apiClient';
+import { ENDPOINTS } from '../../lib/endpoints';
 import { useAuth } from '../../contexts/AuthContext';
 
 const MOCK_COVER = "https://images.unsplash.com/photo-1620060935399-6e3e1ffb1046?q=80&w=600&auto=format&fit=crop";
@@ -103,7 +104,7 @@ export default function StationDetailsPanel({
    const handleDeleteReview = async (reviewId: string) => {
       if (!window.confirm("Değerlendirmeyi silmek istediğinize emin misiniz?")) return;
       try {
-         const res = await apiClient(`/reviews/${reviewId}`, { method: 'DELETE' });
+         const res = await apiClient(ENDPOINTS.reviewDelete(reviewId), { method: 'DELETE' });
          if (res.ok) {
             if (selectedStation) fetchReviews(selectedStation.id);
          } else {
@@ -159,7 +160,7 @@ export default function StationDetailsPanel({
    // Reviews fetch fonksiyonu — ReviewStationPanel kapandığında yeniden çekmek için
    const fetchReviews = useCallback((stationId: string) => {
       setReviewsLoading(true);
-      apiClient(`/reviews/${stationId}`)
+      apiClient(ENDPOINTS.reviewsByStation(stationId))
          .then(res => res.json())
          .then(result => {
             if (result.success && result.data) {
@@ -186,7 +187,7 @@ export default function StationDetailsPanel({
             // Integer OCM ID → direct detail endpoint
             const numericId = parseInt(selectedStation.id, 10);
             if (!isNaN(numericId) && String(numericId) === selectedStation.id) {
-               const res = await apiClient(`/stations/${numericId}`);
+               const res = await apiClient(ENDPOINTS.stationDetail(numericId));
                if (res.ok) {
                   const result = await res.json();
                   if (result.success && result.data && result.data.connections) {
@@ -204,7 +205,7 @@ export default function StationDetailsPanel({
             const neLat = selectedStation.latitude + delta;
             const neLng = selectedStation.longitude + delta;
 
-            const res = await apiClient(`/stations/google?swLat=${swLat}&swLng=${swLng}&neLat=${neLat}&neLng=${neLng}`);
+            const res = await apiClient(`${ENDPOINTS.STATIONS_GOOGLE}?swLat=${swLat}&swLng=${swLng}&neLat=${neLat}&neLng=${neLng}`);
             const result = await res.json();
 
             if (result.success && result.data && Array.isArray(result.data)) {
@@ -233,17 +234,16 @@ export default function StationDetailsPanel({
       if (!selectedStation) return;
       let isCancelled = false;
 
-      // Normalize backend response (PascalCase → camelCase)
       const normalizeWeather = (d: any) => ({
-         tempCelsius: d.tempCelsius ?? d.TempCelsius ?? 0,
-         description: d.description ?? d.Description ?? '',
-         iconCode: d.iconCode ?? d.IconCode ?? '01d'
+         tempCelsius: d.tempCelsius ?? 0,
+         description: d.description ?? '',
+         iconCode: d.iconCode ?? '01d'
       });
 
       // Clear stale data from previous station immediately
       setWeatherData(null);
 
-      apiClient(`/weather?lat=${selectedStation.latitude}&lng=${selectedStation.longitude}`)
+      apiClient(`${ENDPOINTS.WEATHER}?lat=${selectedStation.latitude}&lng=${selectedStation.longitude}`)
          .then(res => {
             if (!res.ok) {
                console.error("Weather API HTTP error:", res.status, res.statusText);
@@ -267,7 +267,7 @@ export default function StationDetailsPanel({
 
       // Fetch nearby amenities
       setNearbyAmenities([]);
-      apiClient(`/stations/amenities?lat=${selectedStation.latitude}&lng=${selectedStation.longitude}`)
+      apiClient(`${ENDPOINTS.STATIONS_AMENITIES}?lat=${selectedStation.latitude}&lng=${selectedStation.longitude}`)
          .then(res => res.json())
          .then(result => {
             if (isCancelled) return;

@@ -1,8 +1,9 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import type { User } from '../types/user';
 
 interface AuthContextType {
-  currentUser: any;
-  setCurrentUser: (user: any) => void;
+  currentUser: User | null;
+  setCurrentUser: (user: User | null) => void;
   logout: () => void;
   isAuthModalOpen: boolean;
   setIsAuthModalOpen: (open: boolean) => void;
@@ -14,7 +15,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [currentUser, setCurrentUserState] = useState<any>(() => {
+  const [currentUser, setCurrentUserState] = useState<User | null>(() => {
     const saved = localStorage.getItem('iyontree_user');
     if (!saved) return null;
     try {
@@ -28,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMessage, setAuthMessage] = useState('');
 
-  const setCurrentUser = (user: any) => {
+  const setCurrentUser = (user: User | null) => {
     if (user) {
       localStorage.setItem('iyontree_user', JSON.stringify(user));
     } else {

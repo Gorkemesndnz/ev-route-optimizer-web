@@ -5,6 +5,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { translations } from "../../lib/translations";
 import { Edit2, Check, X, Loader2 } from "lucide-react";
 import { apiClient } from "../../lib/apiClient";
+import { ENDPOINTS } from "../../lib/endpoints";
 import { useSettings } from "../../contexts/SettingsContext";
 
 type TranslationType = typeof translations.tr;
@@ -15,7 +16,7 @@ interface AccountProfileTabProps {
     firstName: string;
     lastName: string;
     email: string;
-    phoneNumber: string;
+    phoneNumber?: string;
   };
 }
 
@@ -40,7 +41,7 @@ export default function AccountProfileTab({ t, user }: AccountProfileTabProps) {
     
     setIsLoading(true);
     try {
-      const response = await apiClient('/auth/profile', {
+      const response = await apiClient(ENDPOINTS.AUTH_PROFILE, {
         method: 'PUT',
         body: { firstName, lastName, email, phoneNumber: phone }
       });
@@ -71,7 +72,7 @@ export default function AccountProfileTab({ t, user }: AccountProfileTabProps) {
 
     setIsSendingOtp(true);
     try {
-      const response = await apiClient('/auth/profile/send-code', {
+      const response = await apiClient(ENDPOINTS.AUTH_PROFILE_SEND_CODE, {
         method: 'POST',
         body: { newEmail }
       });
@@ -96,7 +97,7 @@ export default function AccountProfileTab({ t, user }: AccountProfileTabProps) {
     if (emailOtp.length !== 6) return;
     setIsLoading(true);
     try {
-      const response = await apiClient('/auth/profile/verify-code', {
+      const response = await apiClient(ENDPOINTS.AUTH_PROFILE_VERIFY_CODE, {
         method: 'POST',
         body: { newEmail: email, code: emailOtp }
       });

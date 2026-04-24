@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 import { apiClient } from '../lib/apiClient';
+import { ENDPOINTS } from '../lib/endpoints';
 import type { RouteResultDto } from './RouteContext';
 
 export interface SavedRouteSummary {
@@ -23,6 +24,7 @@ export interface SavedRouteDetail extends SavedRouteSummary {
 interface SavedRouteContextValue {
   savedRoutes: SavedRouteSummary[];
   isLoading: boolean;
+  error: string | null;
   loadSavedRoutes: () => Promise<void>;
   saveRoute: (params: {
     result: RouteResultDto;
@@ -40,16 +42,19 @@ const SavedRouteContext = createContext<SavedRouteContextValue | undefined>(unde
 export const SavedRouteProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [savedRoutes, setSavedRoutes] = useState<SavedRouteSummary[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const loadSavedRoutes = useCallback(async () => {
     setIsLoading(true);
+    setError(null);
     try {
-      const res = await apiClient('/saved-routes');
+      const res = await apiClient(ENDPOINTS.SAVED_ROUTES);
       if (!res.ok) return;
       const data = await res.json();
       if (data.success) setSavedRoutes(data.data);
-    } catch {
-      // sessiz hata
+    } catch (e) {
+      console.error('loadSavedRoutes error:', e);
+      setError(e instanceof Error ? e.message : 'Kaydedilmiş rotalar yüklenemedi.');
     } finally {
       setIsLoading(false);
     }
@@ -62,7 +67,7 @@ export const SavedRouteProvider: React.FC<{ children: ReactNode }> = ({ children
     endLabel: string;
   }): Promise<string | null> => {
     try {
-      const res = await apiClient('/saved-routes', {
+      const res = await apiClient(ENDPOINTS.SAVED_ROUTES, {
         method: 'POST',
         body: {
           startLabel,
@@ -82,48 +87,50 @@ export const SavedRouteProvider: React.FC<{ children: ReactNode }> = ({ children
         return data.data.id as string;
       }
       return null;
-    } catch {
+    } catch (e) {
+      console.error('saveRoute error:', e);
       return null;
     }
   }, [loadSavedRoutes]);
 
   const getSavedRoute = useCallback(async (id: string): Promise<SavedRouteDetail | null> => {
     try {
-      const res = await apiClient(`/saved-routes/${id}`);
+      const res = await apiClient(ENDPOINTS.savedRoute(id));
       if (!res.ok) return null;
       const data = await res.json();
       return data.success ? (data.data as SavedRouteDetail) : null;
-    } catch {
+    } catch (e) {
+      console.error('getSavedRoute error:', e);
       return null;
     }
   }, []);
 
   const deleteSavedRoute = useCallback(async (id: string) => {
     try {
-      await apiClient(`/saved-routes/${id}`, { method: 'DELETE' });
+      await apiClient(ENDPOINTS.savedRoute(id), { method: 'DELETE' });
       setSavedRoutes(prev => prev.filter(r => r.id !== id));
-    } catch {
-      // sessiz hata
+    } catch (e) {
+      console.error('deleteSavedRoute error:', e);
     }
   }, []);
 
   const rateSavedRoute = useCallback(async (id: string, rating: number, comment?: string) => {
     try {
-      await apiClient(`/saved-routes/${id}/rate`, {
+      await apiClient(ENDPOINTS.savedRouteRate(id), {
         method: 'POST',
         body: { rating, comment },
       });
       setSavedRoutes(prev => prev.map(r =>
         r.id === id ? { ...r, rating, ratingComment: comment ?? null } : r
       ));
-    } catch {
-      // sessiz hata
+    } catch (e) {
+      console.error('rateSavedRoute error:', e);
     }
   }, []);
 
   return (
     <SavedRouteContext.Provider value={{
-      savedRoutes, isLoading,
+      savedRoutes, isLoading, error,
       loadSavedRoutes, saveRoute, getSavedRoute, deleteSavedRoute, rateSavedRoute,
     }}>
       {children}

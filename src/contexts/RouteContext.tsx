@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect, type ReactNode } from 'react';
 import { useVehicle } from './VehicleContext';
 import { apiClient } from '../lib/apiClient';
+import { ENDPOINTS } from '../lib/endpoints';
 
 const ROUTE_SETTINGS_STORAGE_KEY = 'iyontree_route_settings';
 
@@ -255,7 +256,7 @@ export const RouteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
       console.log('🚀 [RouteContext] Rota planlanıyor...', { payload });
 
-      const res = await apiClient('/Route/plan', {
+      const res = await apiClient(ENDPOINTS.ROUTE_PLAN, {
         method: 'POST',
         body: payload,
         signal: abortControllerRef.current.signal,

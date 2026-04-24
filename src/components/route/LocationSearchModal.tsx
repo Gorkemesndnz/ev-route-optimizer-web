@@ -5,6 +5,7 @@ import { useSettings } from "../../contexts/SettingsContext";
 import { translations } from "../../lib/translations";
 import { useDebounce } from "../../hooks/useDebounce";
 import { apiClient } from "../../lib/apiClient";
+import { ENDPOINTS } from "../../lib/endpoints";
 
 export function LocationSearchModal({ 
   isOpen, 
@@ -75,7 +76,7 @@ export function LocationSearchModal({
       const fetchPredictions = async () => {
         try {
           // Send request to proxy
-          const res = await apiClient(`/maps/autocomplete?input=${encodeURIComponent(debouncedSearchValue)}&sessionToken=${sessionToken}&language=${language}`);
+          const res = await apiClient(`${ENDPOINTS.MAPS_AUTOCOMPLETE}?input=${encodeURIComponent(debouncedSearchValue)}&sessionToken=${sessionToken}&language=${language}`);
           const data = await res.json();
           if (data.success && data.data && data.data.predictions) {
             setPredictions(data.data.predictions);
@@ -101,14 +102,14 @@ export function LocationSearchModal({
   // Get place details via .NET Proxy
   const handleSelectPrediction = async (placeId: string) => {
     try {
-      const res = await apiClient(`/maps/place-details/${placeId}?sessionToken=${sessionToken}`);
+      const res = await apiClient(`${ENDPOINTS.mapsPlaceDetails(placeId)}?sessionToken=${sessionToken}`);
       const data = await res.json();
       
       if (data.success && data.data) {
         const place = data.data;
-        const lat = place.latitude ?? place.Latitude;
-        const lng = place.longitude ?? place.Longitude;
-        const address = place.formattedAddress ?? place.FormattedAddress;
+        const lat = place.latitude;
+        const lng = place.longitude;
+        const address = place.formattedAddress;
         
         if (lat != null && lng != null && address) {
           onSelectLocation(item.id, address, { lat, lng });
@@ -139,7 +140,7 @@ export function LocationSearchModal({
       async (position) => {
         const { latitude, longitude } = position.coords;
         try {
-          const res = await apiClient(`/maps/reverse-geocode?lat=${latitude}&lng=${longitude}`);
+          const res = await apiClient(`${ENDPOINTS.MAPS_REVERSE_GEOCODE}?lat=${latitude}&lng=${longitude}`);
           const data = await res.json();
           setIsLocating(false);
 

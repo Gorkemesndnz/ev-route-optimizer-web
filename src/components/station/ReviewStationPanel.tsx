@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { X, Star, Camera, UploadCloud, CheckCircle2 } from 'lucide-react';
 import type { StationData } from '../../contexts/StationContext';
 import { apiClient } from '../../lib/apiClient';
+import { ENDPOINTS } from '../../lib/endpoints';
 
 const AMENITY_TAGS = [
   "💳 ATM", "🚻 Tuvalet", "🛍️ AVM", "☕ Kafe", "🍔 Restoran", "🛒 Market", "📶 Wi-Fi"
@@ -45,7 +46,7 @@ export default function ReviewStationPanel({
     setErrorMessage("");
 
     try {
-      const res = await apiClient('/reviews', {
+      const res = await apiClient(ENDPOINTS.REVIEWS, {
         method: 'POST',
         body: {
           stationId: String(station.id),

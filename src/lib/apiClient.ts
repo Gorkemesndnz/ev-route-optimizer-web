@@ -1,4 +1,8 @@
-const API_BASE_URL = "http://localhost:5146/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : "http://localhost:5146/api";
+
+import { ENDPOINTS } from './endpoints';
 
 export interface FetchOptions extends Omit<RequestInit, 'body'> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -87,7 +91,7 @@ export const apiClient = async (
 
       try {
         // Attempt to refresh token
-        const refreshRes = await fetch(`${API_BASE_URL}/auth/refresh-token`, {
+        const refreshRes = await fetch(`${API_BASE_URL}${ENDPOINTS.AUTH_REFRESH_TOKEN}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ refreshToken }),

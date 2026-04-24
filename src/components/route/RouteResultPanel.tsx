@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useRouteContext, type ChargingStopDto, type RouteInsight, type WeatherInfo, type RouteResultDto } from "../../contexts/RouteContext";
 import { apiClient } from "../../lib/apiClient";
+import { ENDPOINTS } from "../../lib/endpoints";
 import { useSavedRoute } from "../../contexts/SavedRouteContext";
 import RouteRatingModal from "./RouteRatingModal";
 import { useSettings } from "../../contexts/SettingsContext";
@@ -82,7 +83,7 @@ function StopCard({
   useEffect(() => {
     const id = stop.station_id;
     if (!id) return;
-    apiClient(`/reviews/${id}`)
+    apiClient(ENDPOINTS.reviewsByStation(id))
       .then(r => r.json())
       .then(result => {
         if (result.success && result.data?.totalReviews > 0) {

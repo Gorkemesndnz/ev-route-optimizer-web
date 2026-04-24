@@ -18,6 +18,7 @@ interface Brand {
 
 import { useSettings } from "../../contexts/SettingsContext";
 import { useVehicle } from "../../contexts/VehicleContext";
+import { ENDPOINTS } from "../../lib/endpoints";
 import { useEffect, useState as useReactState } from "react";
 
 export default function AddVehicleView({ 
@@ -31,19 +32,21 @@ export default function AddVehicleView({
   const { addVehicle } = useVehicle();
   const [searchTerm, setSearchTerm] = useState("");
   const [brands, setBrands] = useState<Brand[]>([]);
+  const [brandsLoading, setBrandsLoading] = useState(true);
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null);
   const t = translations[language];
 
   useEffect(() => {
     import("../../lib/apiClient").then(({ apiClient }) => {
-      apiClient("/EvCatalog/brands")
+      apiClient(ENDPOINTS.EV_CATALOG_BRANDS)
       .then(res => res.json())
       .then(data => {
         if (data.success) {
           setBrands(data.data);
         }
       })
-      .catch(console.error);
+      .catch(console.error)
+      .finally(() => setBrandsLoading(false));
     });
   }, []);
 
@@ -156,6 +159,11 @@ export default function AddVehicleView({
           ) : (
             /* Brand Grid */
             <div className="overflow-y-auto custom-scrollbar flex-1 -mr-2 pr-2">
+              {brandsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="w-6 h-6 border-2 border-white/20 border-t-cyan-400 rounded-full animate-spin" />
+                </div>
+              ) : (
               <div className="grid grid-cols-2 gap-3 pb-4">
                 {brands.map((brand) => (
                   <button
@@ -167,6 +175,7 @@ export default function AddVehicleView({
                   </button>
                 ))}
               </div>
+              )}
             </div>
           )}
         </>

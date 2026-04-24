@@ -4,6 +4,7 @@ import { X, MapPin, Search } from 'lucide-react';
 import { useMap } from '@vis.gl/react-google-maps';
 import type { StationData } from '../../contexts/StationContext';
 import { apiClient } from '../../lib/apiClient';
+import { ENDPOINTS } from '../../lib/endpoints';
 
 interface Attraction {
   id: string;
@@ -32,7 +33,7 @@ export default function TouristAttractionsPanel({
 
   useEffect(() => {
     setLoading(true);
-    apiClient(`/stations/tourist-spots?lat=${station.latitude}&lng=${station.longitude}`)
+    apiClient(`${ENDPOINTS.STATIONS_TOURIST_SPOTS}?lat=${station.latitude}&lng=${station.longitude}`)
       .then(res => res.json())
       .then(result => {
         if (result.success && result.data) {
