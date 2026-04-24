@@ -6,20 +6,14 @@ import { useStation } from '../../contexts/StationContext';
 export default function RouteLayer() {
   const map = useMap();
   const geometryLib = useMapsLibrary('geometry');
-  const routesLib = useMapsLibrary('routes');
-  const { routeResult } = useRouteContext();
+  const { routeResult, routeLocations } = useRouteContext();
   const { setSelectedStation } = useStation();
 
-  const rendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
   const polylineRef = useRef<google.maps.Polyline | null>(null);
   const [startCoord, setStartCoord] = useState<{ lat: number; lng: number } | null>(null);
   const [endCoord, setEndCoord] = useState<{ lat: number; lng: number } | null>(null);
 
   const clearAll = useCallback(() => {
-    if (rendererRef.current) {
-      rendererRef.current.setMap(null);
-      rendererRef.current = null;
-    }
     if (polylineRef.current) {
       polylineRef.current.setMap(null);
       polylineRef.current = null;
@@ -28,127 +22,55 @@ export default function RouteLayer() {
     setEndCoord(null);
   }, []);
 
-  // Polyline decode fallback: kullanılır DirectionsService başarısız olduğunda
-  const drawFallbackPolyline = useCallback(
-    (path: google.maps.LatLng[]) => {
-      if (!map || path.length === 0) return;
-
-      polylineRef.current = new google.maps.Polyline({
-        path,
-        strokeColor: '#3b82f6',
-        strokeOpacity: 0.9,
-        strokeWeight: 6,
-        zIndex: 50,
-        map,
-      });
-
-      const bounds = new google.maps.LatLngBounds();
-      path.forEach(p => bounds.extend(p));
-      map.fitBounds(bounds, { top: 80, bottom: 80, left: 80, right: 500 });
-
-      setStartCoord({ lat: path[0].lat(), lng: path[0].lng() });
-      setEndCoord({ lat: path[path.length - 1].lat(), lng: path[path.length - 1].lng() });
-    },
-    [map]
-  );
-
   useEffect(() => {
-    // routesLib yüklenene kadar bekle
-    if (!map || !routesLib) return;
+    // geometry lib yüklenene kadar bekle
+    if (!map || !geometryLib) return;
 
     clearAll();
     if (!routeResult) return;
 
     const legs = routeResult.legs ?? [];
-    const firstLeg = legs[0];
-    const lastLeg = legs[legs.length - 1];
 
-    const originLat = firstLeg?.from_lat;
-    const originLon = firstLeg?.from_lon;
-    const destLat = lastLeg?.to_lat;
-    const destLon = lastLeg?.to_lon;
-
-    // Koordinat yoksa doğrudan polyline fallback
-    if (!originLat || !originLon || !destLat || !destLon) {
-      if (!geometryLib) return;
-      const path: google.maps.LatLng[] = [];
-      if (routeResult.overview_polyline) {
-        path.push(...geometryLib.encoding.decodePath(routeResult.overview_polyline));
-      } else {
-        for (const leg of legs) {
-          if (leg.polyline) path.push(...geometryLib.encoding.decodePath(leg.polyline));
-        }
+    // Backend'in polyline'ı tüm kullanıcı duraklarını ve şarj duraklarını kapsar.
+    // DirectionsService client-side tekrar yönlendirme yaparsa kullanıcı durakları
+    // düşer — bu nedenle doğrudan backend polyline'ını decode edip çiziyoruz.
+    const path: google.maps.LatLng[] = [];
+    if (routeResult.overview_polyline) {
+      path.push(...geometryLib.encoding.decodePath(routeResult.overview_polyline));
+    } else {
+      for (const leg of legs) {
+        if (leg.polyline) path.push(...geometryLib.encoding.decodePath(leg.polyline));
       }
-      drawFallbackPolyline(path);
-      return;
     }
 
-    // Şarj durakları → waypoint (Google max 25)
-    const waypoints: google.maps.DirectionsWaypoint[] = (routeResult.charging_stops ?? [])
-      .slice(0, 25)
-      .map(stop => ({
-        location: new google.maps.LatLng(stop.lat, stop.lon),
-        stopover: true,
-      }));
+    if (path.length === 0) return;
 
-    const renderer = new google.maps.DirectionsRenderer({
-      suppressMarkers: true,
-      preserveViewport: true,
-      polylineOptions: {
-        strokeColor: '#3b82f6',
-        strokeOpacity: 0.9,
-        strokeWeight: 6,
-        zIndex: 50,
-      },
+    polylineRef.current = new google.maps.Polyline({
+      path,
+      strokeColor: '#3b82f6',
+      strokeOpacity: 0.9,
+      strokeWeight: 6,
+      zIndex: 50,
+      map,
     });
-    renderer.setMap(map);
-    rendererRef.current = renderer;
 
-    const service = new google.maps.DirectionsService();
+    const bounds = new google.maps.LatLngBounds();
+    path.forEach(p => bounds.extend(p));
+    map.fitBounds(bounds, { top: 80, bottom: 80, left: 80, right: 500 });
 
-    service.route(
-      {
-        origin: new google.maps.LatLng(originLat, originLon),
-        destination: new google.maps.LatLng(destLat, destLon),
-        waypoints,
-        travelMode: google.maps.TravelMode.DRIVING,
-        optimizeWaypoints: false,
-      },
-      (result, status) => {
-        if (status === google.maps.DirectionsStatus.OK && result) {
-          renderer.setDirections(result);
-
-          // Tüm bacakları kapsayan bounds
-          const bounds = new google.maps.LatLngBounds();
-          result.routes[0]?.legs.forEach(leg => {
-            bounds.extend(leg.start_location);
-            bounds.extend(leg.end_location);
-          });
-          map.fitBounds(bounds, { top: 80, bottom: 80, left: 80, right: 500 });
-
-          setStartCoord({ lat: originLat, lng: originLon });
-          setEndCoord({ lat: destLat, lng: destLon });
-        } else {
-          // DirectionsService başarısız → sessiz fallback
-          console.warn('[RouteLayer] DirectionsService failed:', status, '— polyline decode fallback');
-          renderer.setMap(null);
-          rendererRef.current = null;
-
-          if (geometryLib) {
-            const path: google.maps.LatLng[] = [];
-            if (routeResult.overview_polyline) {
-              path.push(...geometryLib.encoding.decodePath(routeResult.overview_polyline));
-            } else {
-              for (const leg of legs) {
-                if (leg.polyline) path.push(...geometryLib.encoding.decodePath(leg.polyline));
-              }
-            }
-            drawFallbackPolyline(path);
-          }
-        }
-      }
+    const firstLeg = legs[0];
+    const lastLeg = legs[legs.length - 1];
+    setStartCoord(
+      firstLeg?.from_lat != null && firstLeg?.from_lon != null
+        ? { lat: firstLeg.from_lat, lng: firstLeg.from_lon }
+        : { lat: path[0].lat(), lng: path[0].lng() }
     );
-  }, [map, routesLib, geometryLib, routeResult, clearAll, drawFallbackPolyline]);
+    setEndCoord(
+      lastLeg?.to_lat != null && lastLeg?.to_lon != null
+        ? { lat: lastLeg.to_lat, lng: lastLeg.to_lon }
+        : { lat: path[path.length - 1].lat(), lng: path[path.length - 1].lng() }
+    );
+  }, [map, geometryLib, routeResult, clearAll]);
 
   // Unmount cleanup
   useEffect(() => {
@@ -157,8 +79,36 @@ export default function RouteLayer() {
 
   if (!routeResult) return null;
 
+  // Kullanıcı tarafından sidebar'da eklenen ara duraklar (origin/destination hariç)
+  const userWaypoints = (routeLocations ?? []).slice(1, -1);
+
   return (
     <>
+      {userWaypoints.map((wp, idx) => (
+        wp.coords ? (
+          <Marker
+            key={`user-wp-${wp.id}`}
+            position={{ lat: wp.coords.lat, lng: wp.coords.lng }}
+            title={wp.value || `Durak ${idx + 1}`}
+            label={{
+              text: `${idx + 1}. Durak`,
+              color: '#ffffff',
+              className: 'mt-8 font-bold drop-shadow-md text-[12px] bg-amber-500/95 px-2.5 py-1 rounded-xl border border-white/20 whitespace-nowrap z-50',
+            }}
+            icon={{
+              url:
+                'data:image/svg+xml;charset=UTF-8,' +
+                encodeURIComponent(
+                  `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="#f59e0b" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><text x="12" y="16" text-anchor="middle" font-size="11" font-weight="bold" fill="white" stroke="none">${idx + 1}</text></svg>`
+                ),
+              scaledSize: new google.maps.Size(32, 32),
+              anchor: new google.maps.Point(16, 16),
+            }}
+            zIndex={95}
+          />
+        ) : null
+      ))}
+
       {routeResult.charging_stops?.map((stop, idx) => (
         <Marker
           key={`stop-${idx}`}

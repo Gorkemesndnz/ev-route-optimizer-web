@@ -1,6 +1,8 @@
-import React, { createContext, useContext, useState, useCallback, useRef, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect, type ReactNode } from 'react';
 import { useVehicle } from './VehicleContext';
 import { apiClient } from '../lib/apiClient';
+
+const ROUTE_SETTINGS_STORAGE_KEY = 'iyontree_route_settings';
 
 export interface RouteSettings {
   chargingFrequency: 'optimal' | 'az' | 'sik';
@@ -151,11 +153,35 @@ const defaultSettings: RouteSettings = {
   toggleOtoyollar: true,
 };
 
+function loadPersistedSettings(): RouteSettings {
+  if (typeof window === 'undefined') return defaultSettings;
+  try {
+    const raw = localStorage.getItem(ROUTE_SETTINGS_STORAGE_KEY);
+    if (!raw) return defaultSettings;
+    const parsed = JSON.parse(raw);
+    // Şema eklemeleri için default'larla birleştir; eski/kısmi kayıtları bozmayız.
+    return { ...defaultSettings, ...parsed };
+  } catch {
+    return defaultSettings;
+  }
+}
+
 const RouteContext = createContext<RouteContextValue | undefined>(undefined);
 
 export const RouteProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [pendingSettings, setPendingSettings] = useState<RouteSettings>(defaultSettings);
-  const [committedSettings, setCommittedSettings] = useState<RouteSettings>(defaultSettings);
+  const initialSettings = loadPersistedSettings();
+  const [pendingSettings, setPendingSettings] = useState<RouteSettings>(initialSettings);
+  const [committedSettings, setCommittedSettings] = useState<RouteSettings>(initialSettings);
+
+  // Committed ayarlar = kullanıcının onayladığı (planRoute'a gönderilecek) ayarlar.
+  // Kullanıcı manuel güncellemeden plan başına sıfırlanmamalı.
+  useEffect(() => {
+    try {
+      localStorage.setItem(ROUTE_SETTINGS_STORAGE_KEY, JSON.stringify(committedSettings));
+    } catch {
+      // quota dolu veya private mode — sessizce yut, in-memory state yeterli
+    }
+  }, [committedSettings]);
   const [routeResult, setRouteResult] = useState<RouteResultDto | null>(null);
   const [routeLocations, setRouteLocations] = useState<Location[]>([]);
   const [isPlanning, setIsPlanning] = useState(false);

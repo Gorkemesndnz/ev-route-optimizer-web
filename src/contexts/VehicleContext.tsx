@@ -16,6 +16,48 @@ import { apiClient } from '../lib/apiClient';
 import { useAuth } from './AuthContext';
 
 const API_URL = "/UserVehicles";
+const DRIVER_SETTINGS_OVERLAY_KEY = 'iyontree_driver_settings_overlay';
+
+// Sürücü ayarları (passengers, climateControl, drivingStyle, maxSpeed, refConsumption,
+// extraWeight) backend UserVehicle tablosunda kolon olarak tutulmuyor. Bunları
+// cihaz-başına bir overlay olarak localStorage'da tutup fetch'te birleştiriyoruz —
+// böylece oturum açık kullanıcıda da sayfa yenileme sonrası sıfırlanmıyorlar.
+type DriverOverlay = Partial<Pick<Vehicle,
+  'passengers' | 'extraWeight' | 'climateControl' |
+  'drivingStyle' | 'maxSpeed' | 'refConsumption' | 'preferredPlugTypes'
+>>;
+
+function loadDriverOverlay(): Record<string, DriverOverlay> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = localStorage.getItem(DRIVER_SETTINGS_OVERLAY_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveDriverOverlay(vehicleId: string, patch: DriverOverlay) {
+  try {
+    const all = loadDriverOverlay();
+    all[vehicleId] = { ...all[vehicleId], ...patch };
+    localStorage.setItem(DRIVER_SETTINGS_OVERLAY_KEY, JSON.stringify(all));
+  } catch {
+    // quota / private mode — sessizce yut
+  }
+}
+
+function pickDriverFields(updates: Partial<Vehicle>): DriverOverlay {
+  const out: DriverOverlay = {};
+  if (updates.passengers !== undefined) out.passengers = updates.passengers;
+  if (updates.extraWeight !== undefined) out.extraWeight = updates.extraWeight;
+  if (updates.climateControl !== undefined) out.climateControl = updates.climateControl;
+  if (updates.drivingStyle !== undefined) out.drivingStyle = updates.drivingStyle;
+  if (updates.maxSpeed !== undefined) out.maxSpeed = updates.maxSpeed;
+  if (updates.refConsumption !== undefined) out.refConsumption = updates.refConsumption;
+  if (updates.preferredPlugTypes !== undefined) out.preferredPlugTypes = updates.preferredPlugTypes;
+  return out;
+}
 
 const VehicleContext = createContext<VehicleContextType | undefined>(undefined);
 
@@ -31,6 +73,7 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
         const response = await apiClient(API_URL);
         const data = await response.json();
         if (data.success) {
+          const overlay = loadDriverOverlay();
           const apiVehicles = data.data.map((v: any) => ({
             id: v.id,
             brand: v.brand,
@@ -43,7 +86,8 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
             isActive: v.isActive,
             rangeWLTP: v.rangeWLTP,
             realRangeKm: v.realRangeKm,
-            maxChargingPowerKw: v.maxChargingPowerKw
+            maxChargingPowerKw: v.maxChargingPowerKw,
+            ...(overlay[v.id] ?? {}),
           }));
           setVehicles(apiVehicles);
           const active = apiVehicles.find((v: any) => v.isActive);
@@ -110,6 +154,12 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
     // Optimistic UI update
     setVehicles(prev => prev.map(v => v.id === id ? { ...v, ...updates } : v));
 
+    // Sürücü ayarlarını overlay'e yaz (backend bu kolonları tutmuyor).
+    const driverPatch = pickDriverFields(updates);
+    if (Object.keys(driverPatch).length > 0) {
+      saveDriverOverlay(id, driverPatch);
+    }
+
     if (currentUser) {
       const response = await apiClient(`${API_URL}/${id}`, {
         method: 'PUT',
@@ -142,6 +192,17 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
   const removeVehicle = async (id: string) => {
     // Optimistic update
     setVehicles(prev => prev.filter(v => v.id !== id));
+
+    // Overlay'den de temizle — vehicle ID'leri silinince bayat kalmasın.
+    try {
+      const all = loadDriverOverlay();
+      if (all[id]) {
+        delete all[id];
+        localStorage.setItem(DRIVER_SETTINGS_OVERLAY_KEY, JSON.stringify(all));
+      }
+    } catch {
+      // ignore
+    }
 
     if (currentUser) {
       await apiClient(`${API_URL}/${id}`, {

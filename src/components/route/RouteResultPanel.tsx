@@ -251,7 +251,7 @@ export default function RouteResultPanel({
 
   const timelineNodes = useMemo(() => {
     if (!routeResult) return [];
-    
+
     const nodes: any[] = [];
     let currentTime = new Date(); // Start from now
 
@@ -262,6 +262,20 @@ export default function RouteResultPanel({
       weather: routeResult.start_weather,
       soc: routeResult.legs[0]?.start_soc || 100,
       time: new Date(currentTime)
+    });
+
+    // 1b. Kullanıcı tarafından eklenen ara duraklar (origin/destination hariç)
+    // Backend legs'leri yalnızca şarj duraklarında böler; kullanıcı durakları
+    // leg sınırı oluşturmaz, bu nedenle rota üzerinde geçilecek noktalar olarak
+    // start'tan hemen sonra sıralı biçimde gösteriyoruz.
+    const userWaypoints = routeLocations.slice(1, -1);
+    userWaypoints.forEach((wp, idx) => {
+      nodes.push({
+        type: 'waypoint',
+        index: idx + 1,
+        location: wp.value,
+        coords: wp.coords,
+      });
     });
 
     routeResult.legs.forEach((leg, i) => {
@@ -298,7 +312,7 @@ export default function RouteResultPanel({
     });
 
     return nodes;
-  }, [routeResult]);
+  }, [routeResult, routeLocations]);
 
   if (mode === 'readonly' && readonlyLoading) {
     return (
@@ -451,6 +465,22 @@ export default function RouteResultPanel({
                            <div className="flex items-center gap-1.5"><Clock size={12} className="text-white/30" /> {formatDuration(node.duration)}</div>
                            <div className="w-1 h-1 rounded-full bg-white/10" />
                            <div className="flex items-center gap-1.5"><Battery size={12} className="text-white/30" /> {node.consumption.toFixed(1)} kWh</div>
+                        </div>
+                     </div>
+                  );
+               }
+
+               if (node.type === 'waypoint') {
+                  return (
+                     <div key={i} className="relative flex items-center">
+                        <div className="w-10 shrink-0 self-stretch flex justify-center items-center relative">
+                           <div className="absolute top-0 bottom-[-2px] w-[2px] bg-amber-500/60 shadow-[0_0_8px_rgba(245,158,11,0.3)] z-0"></div>
+                           <div className="relative w-2.5 h-2.5 rounded-full bg-amber-500 border-[3px] border-amber-500/20 box-content shadow-[0_0_8px_rgba(245,158,11,0.8)] z-10"></div>
+                        </div>
+                        <div className="flex-1 flex items-center gap-2 border border-amber-500/20 bg-amber-500/[0.04] px-3 py-2 rounded-xl my-1">
+                           <MapPin size={14} className="text-amber-400 shrink-0" />
+                           <span className="text-white/70 text-[11px] font-semibold shrink-0">{node.index}. Durak</span>
+                           <span className="text-white/80 text-[12px] truncate" title={node.location}>{formatShortAddress(node.location)}</span>
                         </div>
                      </div>
                   );
