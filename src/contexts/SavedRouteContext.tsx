@@ -1,25 +1,11 @@
 import React, { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
-import { apiClient } from '../lib/apiClient';
-import { ENDPOINTS } from '../lib/endpoints';
+import { savedRouteApi } from '../api/savedRouteApi';
 import type { RouteResultDto } from './RouteContext';
+import type { SavedRouteSummaryDto, SavedRouteDetailDto } from '../types/api/savedRoute';
 
-export interface SavedRouteSummary {
-  id: string;
-  startLabel: string;
-  endLabel: string;
-  totalDistanceKm: number;
-  totalDurationMin: number;
-  consumptionKwh: number;
-  totalChargingCost: number;
-  rating: number | null;
-  ratingComment: string | null;
-  createdAt: string;
-}
-
-export interface SavedRouteDetail extends SavedRouteSummary {
-  routeResultJson: string;
-  routeRequestJson: string;
-}
+// Re-export as existing aliases so consumers don't break
+export type SavedRouteSummary = SavedRouteSummaryDto;
+export type SavedRouteDetail = SavedRouteDetailDto;
 
 interface SavedRouteContextValue {
   savedRoutes: SavedRouteSummary[];
@@ -48,10 +34,8 @@ export const SavedRouteProvider: React.FC<{ children: ReactNode }> = ({ children
     setIsLoading(true);
     setError(null);
     try {
-      const res = await apiClient(ENDPOINTS.SAVED_ROUTES);
-      if (!res.ok) return;
-      const data = await res.json();
-      if (data.success) setSavedRoutes(data.data);
+      const data = await savedRouteApi.list();
+      setSavedRoutes(data);
     } catch (e) {
       console.error('loadSavedRoutes error:', e);
       setError(e instanceof Error ? e.message : 'Kaydedilmiş rotalar yüklenemedi.');
@@ -67,26 +51,18 @@ export const SavedRouteProvider: React.FC<{ children: ReactNode }> = ({ children
     endLabel: string;
   }): Promise<string | null> => {
     try {
-      const res = await apiClient(ENDPOINTS.SAVED_ROUTES, {
-        method: 'POST',
-        body: {
-          startLabel,
-          endLabel,
-          totalDistanceKm: result.total_distance_km,
-          totalDurationMin: result.total_duration_min,
-          consumptionKwh: result.consumption_kwh,
-          totalChargingCost: result.total_charging_cost,
-          routeResultJson: JSON.stringify(result),
-          routeRequestJson: JSON.stringify(request),
-        },
+      const saved = await savedRouteApi.create({
+        startLabel,
+        endLabel,
+        totalDistanceKm: result.total_distance_km,
+        totalDurationMin: result.total_duration_min,
+        consumptionKwh: result.consumption_kwh,
+        totalChargingCost: result.total_charging_cost,
+        routeResultJson: JSON.stringify(result),
+        routeRequestJson: JSON.stringify(request),
       });
-      if (!res.ok) return null;
-      const data = await res.json();
-      if (data.success) {
-        await loadSavedRoutes();
-        return data.data.id as string;
-      }
-      return null;
+      await loadSavedRoutes();
+      return saved.id;
     } catch (e) {
       console.error('saveRoute error:', e);
       return null;
@@ -95,10 +71,7 @@ export const SavedRouteProvider: React.FC<{ children: ReactNode }> = ({ children
 
   const getSavedRoute = useCallback(async (id: string): Promise<SavedRouteDetail | null> => {
     try {
-      const res = await apiClient(ENDPOINTS.savedRoute(id));
-      if (!res.ok) return null;
-      const data = await res.json();
-      return data.success ? (data.data as SavedRouteDetail) : null;
+      return await savedRouteApi.getById(id);
     } catch (e) {
       console.error('getSavedRoute error:', e);
       return null;
@@ -107,7 +80,7 @@ export const SavedRouteProvider: React.FC<{ children: ReactNode }> = ({ children
 
   const deleteSavedRoute = useCallback(async (id: string) => {
     try {
-      await apiClient(ENDPOINTS.savedRoute(id), { method: 'DELETE' });
+      await savedRouteApi.remove(id);
       setSavedRoutes(prev => prev.filter(r => r.id !== id));
     } catch (e) {
       console.error('deleteSavedRoute error:', e);
@@ -116,10 +89,7 @@ export const SavedRouteProvider: React.FC<{ children: ReactNode }> = ({ children
 
   const rateSavedRoute = useCallback(async (id: string, rating: number, comment?: string) => {
     try {
-      await apiClient(ENDPOINTS.savedRouteRate(id), {
-        method: 'POST',
-        body: { rating, comment },
-      });
+      await savedRouteApi.rate(id, { rating, comment });
       setSavedRoutes(prev => prev.map(r =>
         r.id === id ? { ...r, rating, ratingComment: comment ?? null } : r
       ));

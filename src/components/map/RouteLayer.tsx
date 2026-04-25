@@ -56,7 +56,43 @@ export default function RouteLayer() {
 
     const bounds = new google.maps.LatLngBounds();
     path.forEach(p => bounds.extend(p));
-    map.fitBounds(bounds, { top: 80, bottom: 80, left: 80, right: 500 });
+
+    // Sol panel (özet + sidebar) yaklaşık 880px kaplıyor; rotayı görünür alanın
+    // ortasına oturtmak için sol padding'i buna göre veriyoruz.
+    const padding = { top: 100, bottom: 100, left: 880, right: 80 };
+
+    // Hedef zoom'u hesapla. Eğer kullanıcı zaten yakındaysa zoom-out etmiyoruz,
+    // sadece pan + fit yapıyoruz; uzaktaysa fitBounds zaten yakınlaştırır.
+    const projection = map.getProjection();
+    const currentZoom = map.getZoom() ?? 6;
+    let targetZoom = currentZoom;
+
+    if (projection) {
+      const ne = projection.fromLatLngToPoint(bounds.getNorthEast())!;
+      const sw = projection.fromLatLngToPoint(bounds.getSouthWest())!;
+      const div = map.getDiv() as HTMLElement;
+      const mapW = div.offsetWidth;
+      const mapH = div.offsetHeight;
+      const availW = Math.max(50, mapW - padding.left - padding.right);
+      const availH = Math.max(50, mapH - padding.top - padding.bottom);
+      const worldW = Math.abs(ne.x - sw.x);
+      const worldH = Math.abs(ne.y - sw.y);
+      const zoomX = Math.log2(availW / 256 / worldW);
+      const zoomY = Math.log2(availH / 256 / worldH);
+      targetZoom = Math.floor(Math.min(zoomX, zoomY));
+    }
+
+    // Kullanıcı rotaya zaten yakınsa olduğu yerde kalsın (zoom-out yapma).
+    const finalZoom = currentZoom >= targetZoom ? currentZoom : targetZoom;
+
+    map.panTo(bounds.getCenter());
+    setTimeout(() => {
+      if (finalZoom === currentZoom) {
+        map.panToBounds(bounds, padding);
+      } else {
+        map.fitBounds(bounds, padding);
+      }
+    }, 350);
 
     const firstLeg = legs[0];
     const lastLeg = legs[legs.length - 1];

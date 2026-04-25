@@ -1,7 +1,23 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect, type ReactNode } from 'react';
 import { useVehicle } from './VehicleContext';
-import { apiClient } from '../lib/apiClient';
-import { ENDPOINTS } from '../lib/endpoints';
+import { routeApi } from '../api/routeApi';
+import { ApiError } from '../lib/apiClient';
+import type {
+  RouteResultDto,
+  RouteLegDto,
+  ChargingStopDto,
+  ConnectorInfoDto,
+  StationAmenityDto,
+  WeatherInfoDto,
+  RouteInsightDto,
+} from '../types/api/route';
+
+// Re-export DTO types so existing consumers don't break
+export type { RouteResultDto, RouteLegDto, ChargingStopDto, ConnectorInfoDto, StationAmenityDto, RouteInsightDto };
+export type WeatherInfo = WeatherInfoDto;
+export type ConnectorInfo = ConnectorInfoDto;
+export type StationAmenity = StationAmenityDto;
+export type RouteInsight = RouteInsightDto;
 
 const ROUTE_SETTINGS_STORAGE_KEY = 'iyontree_route_settings';
 
@@ -16,112 +32,10 @@ export interface RouteSettings {
   toggleOtoyollar: boolean;
 }
 
-// ============================================================
-// FastAPI MultiStopRouteResponse ↔ .NET RouteResultDto aynası
-// ============================================================
-
-export interface WeatherInfo {
-  temp_c: number;
-  condition: string;
-  wind_speed_mps: number;
-  wind_direction_deg: number;
-  precipitation_prob: number;
-}
-
-export interface RouteInsight {
-  type: string;         // warning | info | tip | saving
-  title: string;
-  message: string;
-  icon: string;
-  relevance_score: number;
-}
-
-export interface ConnectorInfo {
-  plug_type: string;
-  charger_type: string; // AC | DC | HPC
-  power_kw: number;
-  status: string;       // Available | Occupied | Unknown | OutOfOrder
-  price_per_kwh?: number | null;
-  currency: string;
-  count: number;
-}
-
-export interface StationAmenity {
-  has_toilet: boolean;
-  has_food: boolean;
-  has_wifi: boolean;
-  has_shopping: boolean;
-  has_parking: boolean;
-  is_24_7: boolean;
-}
-
-export interface RouteLegDto {
-  from_location?: string | null;
-  to_location?: string | null;
-  from_lat?: number | null;
-  from_lon?: number | null;
-  to_lat?: number | null;
-  to_lon?: number | null;
-  distance_km: number;
-  duration_min: number;
-  avg_speed_kmh: number;
-  consumption_kwh: number;
-  elevation_gain_m: number;
-  elevation_loss_m: number;
-  start_soc: number;
-  end_soc: number;
-  polyline?: string | null;
-}
-
-export interface ChargingStopDto {
-  station_id?: string | null;
-  station_name: string;
-  operator?: string | null;
-  lat: number;
-  lon: number;
-  address?: string | null;
-  rating: number;
-  charge_time_min: number;
-  arrival_soc: number;
-  departure_soc: number;
-  energy_added_kwh: number;
-  price_per_kwh?: number | null;
-  estimated_cost?: number | null;
-  currency: string;
-  distance_from_route_km: number;
-  is_open_now?: boolean | null;
-  data_source?: string | null;
-  connectors: ConnectorInfo[];
-  amenities?: StationAmenity | null;
-  weather?: WeatherInfo | null;
-}
-
-export interface RouteResultDto {
-  status: 'success' | 'partial' | 'failed' | 'error' | string;
-  message?: string | null;
-  total_distance_km: number;
-  total_duration_min: number;
-  duration_without_traffic_min?: number | null;
-  traffic_ratio?: number | null;
-  consumption_kwh: number;
-  total_charging_cost: number;
-  total_regen_recovered_kwh: number;
-  total_co2_savings_kg: number;
-  route_strategy?: string | null;
-  charge_stops_count: number;
-  legs: RouteLegDto[];
-  charging_stops: ChargingStopDto[];
-  overview_polyline?: string | null;
-  start_weather?: WeatherInfo | null;
-  end_weather?: WeatherInfo | null;
-  insights: RouteInsight[];
-  warning_messages: string[];
-}
-
 export interface Location {
   id: string;
   type: string;
-  value: string; // Adress string
+  value: string;
   coords?: { lat: number; lng: number };
 }
 
@@ -159,9 +73,7 @@ function loadPersistedSettings(): RouteSettings {
   try {
     const raw = localStorage.getItem(ROUTE_SETTINGS_STORAGE_KEY);
     if (!raw) return defaultSettings;
-    const parsed = JSON.parse(raw);
-    // Şema eklemeleri için default'larla birleştir; eski/kısmi kayıtları bozmayız.
-    return { ...defaultSettings, ...parsed };
+    return { ...defaultSettings, ...JSON.parse(raw) };
   } catch {
     return defaultSettings;
   }
@@ -174,15 +86,14 @@ export const RouteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [pendingSettings, setPendingSettings] = useState<RouteSettings>(initialSettings);
   const [committedSettings, setCommittedSettings] = useState<RouteSettings>(initialSettings);
 
-  // Committed ayarlar = kullanıcının onayladığı (planRoute'a gönderilecek) ayarlar.
-  // Kullanıcı manuel güncellemeden plan başına sıfırlanmamalı.
   useEffect(() => {
     try {
       localStorage.setItem(ROUTE_SETTINGS_STORAGE_KEY, JSON.stringify(committedSettings));
     } catch {
-      // quota dolu veya private mode — sessizce yut, in-memory state yeterli
+      // quota / private mode
     }
   }, [committedSettings]);
+
   const [routeResult, setRouteResult] = useState<RouteResultDto | null>(null);
   const [routeLocations, setRouteLocations] = useState<Location[]>([]);
   const [isPlanning, setIsPlanning] = useState(false);
@@ -212,7 +123,7 @@ export const RouteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       if (validLocations.length < 2) {
         throw new Error('Geçerli bir başlangıç ve varış noktası seçmelisiniz.');
       }
-      
+
       setRouteLocations(validLocations);
 
       const startLoc = validLocations[0];
@@ -236,14 +147,12 @@ export const RouteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         vehicleModel: selectedVehicle.model,
         vehicleVariant: selectedVehicle.variant ?? '',
         currentSoc: selectedVehicle.soc ?? 80,
-
         passengers: selectedVehicle.passengers ?? 1,
         extraWeight: selectedVehicle.extraWeight ?? 0,
         climateControl: selectedVehicle.climateControl ?? true,
         drivingStyle: selectedVehicle.drivingStyle ?? 'normal',
         maxSpeed: selectedVehicle.maxSpeed ?? 130,
         refConsumption: selectedVehicle.refConsumption ?? 16.5,
-
         sarjSikligi: committedSettings.chargingFrequency,
         varisSarj: committedSettings.arrivalSoc,
         istasyonVarisSarj: committedSettings.stationArrivalSoc,
@@ -256,33 +165,13 @@ export const RouteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
       console.log('🚀 [RouteContext] Rota planlanıyor...', { payload });
 
-      const res = await apiClient(ENDPOINTS.ROUTE_PLAN, {
-        method: 'POST',
-        body: payload,
-        signal: abortControllerRef.current.signal,
-      });
-
-      console.log('📡 [RouteContext] HTTP yanıtı:', { status: res.status, ok: res.ok });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        console.error('❌ [RouteContext] API hata yanıtı:', data);
-        const errorMsg = data.title || data.message || data.error || (data.errors ? JSON.stringify(data.errors) : `Sunucu hatası: HTTP ${res.status}`);
-        throw new Error(errorMsg);
-      }
-
-      const data: RouteResultDto = await res.json();
+      const data = await routeApi.plan(payload);
 
       console.log('📊 [RouteContext] Analiz:', {
         status: data.status,
         total_distance_km: data.total_distance_km,
-        total_duration_min: data.total_duration_min,
-        consumption_kwh: data.consumption_kwh,
-        total_charging_cost: data.total_charging_cost,
         legs_count: data.legs?.length ?? 0,
-        legs_with_polyline: data.legs?.filter(l => l.polyline && l.polyline.length > 0).length ?? 0,
         charging_stops_count: data.charging_stops?.length ?? 0,
-        insights_count: data.insights?.length ?? 0,
         overview_polyline: data.overview_polyline ? `${data.overview_polyline.length} chars` : 'YOK',
       });
 
@@ -292,19 +181,17 @@ export const RouteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           to: leg.to_location,
           polyline: leg.polyline ? `${leg.polyline.length} chars` : 'YOK ⚠️',
           distance: leg.distance_km,
-          consumption: leg.consumption_kwh,
-          soc: `${leg.start_soc}% → ${leg.end_soc}%`
+          soc: `${leg.start_soc}% → ${leg.end_soc}%`,
         });
       });
 
       data.charging_stops?.forEach((stop, i) => {
         console.log(`  ⚡ Stop[${i}]:`, {
           name: stop.station_name,
-          operator: stop.operator,
           coords: `${stop.lat}, ${stop.lon}`,
           soc: `${stop.arrival_soc}% → ${stop.departure_soc}%`,
           energy: stop.energy_added_kwh,
-          cost: stop.estimated_cost
+          cost: stop.estimated_cost,
         });
       });
 
@@ -313,7 +200,11 @@ export const RouteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     } catch (e: unknown) {
       if (e instanceof DOMException && e.name === 'AbortError') return;
       console.error('💥 [RouteContext] Hata:', e);
-      setError(e instanceof Error ? e.message : 'Rota hesaplanamadı.');
+      if (e instanceof ApiError) {
+        setError(e.message);
+      } else {
+        setError(e instanceof Error ? e.message : 'Rota hesaplanamadı.');
+      }
     } finally {
       setIsPlanning(false);
     }
@@ -344,7 +235,7 @@ export const RouteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       error,
       planRoute,
       cancelRoute,
-      clearRoute
+      clearRoute,
     }}>
       {children}
     </RouteContext.Provider>

@@ -3,23 +3,14 @@ import { useState } from "react";
 import type { Vehicle } from "../../types/vehicle";
 import { translations } from "../../lib/translations";
 
-interface BrandModel {
-  model: string;
-  variant: string;
-  year: number;
-  batteryCapacityKwh: number;
-}
-
-interface Brand {
-  id: string;
-  name: string;
-  models: BrandModel[];
-}
+// Local alias for readability
+type Brand = CatalogBrand;
 
 import { useSettings } from "../../contexts/SettingsContext";
 import { useVehicle } from "../../contexts/VehicleContext";
-import { ENDPOINTS } from "../../lib/endpoints";
-import { useEffect, useState as useReactState } from "react";
+import { vehicleApi } from "../../api/vehicleApi";
+import type { CatalogBrand, CatalogModel } from "../../types/api/vehicle";
+import { useEffect } from "react";
 
 export default function AddVehicleView({ 
   onBack, 
@@ -37,17 +28,10 @@ export default function AddVehicleView({
   const t = translations[language];
 
   useEffect(() => {
-    import("../../lib/apiClient").then(({ apiClient }) => {
-      apiClient(ENDPOINTS.EV_CATALOG_BRANDS)
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          setBrands(data.data);
-        }
-      })
+    vehicleApi.getBrands()
+      .then(data => setBrands(data))
       .catch(console.error)
       .finally(() => setBrandsLoading(false));
-    });
   }, []);
 
   const filteredBrands = brands.filter(b => 
@@ -66,7 +50,7 @@ export default function AddVehicleView({
       )
     : [];
 
-  const handleModelSelect = async (brand: Brand, m: BrandModel) => {
+  const handleModelSelect = async (brand: Brand, m: CatalogModel) => {
     const newVehicle: Vehicle = {
       id: crypto.randomUUID(),
       brand: brand.name,
@@ -81,8 +65,8 @@ export default function AddVehicleView({
     try {
       await addVehicle(newVehicle);
       onVehicleAdded();
-    } catch (err: any) {
-      alert(err.message || "Araç eklenirken bir hata oluştu.");
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Araç eklenirken bir hata oluştu.');
     }
   };
 
@@ -183,7 +167,7 @@ export default function AddVehicleView({
         /* Model List */
         <div className="overflow-y-auto custom-scrollbar flex-1 -mr-2 pr-2">
           <div className="flex flex-col gap-2 pb-4">
-            {selectedBrand.models.map((m: BrandModel, idx: number) => (
+            {selectedBrand.models.map((m: CatalogModel, idx: number) => (
               <button
                 key={`${m.model}-${m.variant}-${idx}`}
                 onClick={() => handleModelSelect(selectedBrand, m)}

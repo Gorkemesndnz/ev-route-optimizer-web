@@ -2,8 +2,9 @@ import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { X, Star, Camera, UploadCloud, CheckCircle2 } from 'lucide-react';
 import type { StationData } from '../../contexts/StationContext';
-import { apiClient } from '../../lib/apiClient';
-import { ENDPOINTS } from '../../lib/endpoints';
+import { ApiError } from '../../lib/apiClient';
+import { reviewApi } from '../../api/reviewApi';
+import type { ReviewResponseDto } from '../../types/api/review';
 
 const AMENITY_TAGS = [
   "💳 ATM", "🚻 Tuvalet", "🛍️ AVM", "☕ Kafe", "🍔 Restoran", "🛒 Market", "📶 Wi-Fi"
@@ -19,7 +20,7 @@ export default function ReviewStationPanel({
   onClose
 }: {
   station: StationData;
-  initialReviewData?: any; // To allow passing the existing review data
+  initialReviewData?: Partial<ReviewResponseDto>;
   onClose: () => void;
 }) {
   const [rating, setRating] = useState<number>(initialReviewData?.rating || 0);
@@ -43,45 +44,29 @@ export default function ReviewStationPanel({
   const handleSubmit = async () => {
     if (rating === 0) return;
     setIsSubmitting(true);
-    setErrorMessage("");
+    setErrorMessage('');
 
     try {
-      const res = await apiClient(ENDPOINTS.REVIEWS, {
-        method: 'POST',
-        body: {
-          stationId: String(station.id),
-          stationTitle: station.title,
-          rating,
-          comment: reviewText.trim() || null,
-          tags: selectedTags.length > 0 ? selectedTags : null,
-          photos: photos.length > 0 ? photos : null
-        }
+      await reviewApi.create({
+        stationId: String(station.id),
+        stationTitle: station.title,
+        rating,
+        comment: reviewText.trim() || undefined,
+        tags: selectedTags.length > 0 ? selectedTags : undefined,
+        photos: photos.length > 0 ? photos : undefined,
       });
-
-      // Handle non-JSON responses (e.g. 401 redirect, 500 HTML error page)
-      const contentType = res.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        if (res.status === 401) {
-          setErrorMessage("Oturumunuz sona ermiş. Lütfen tekrar giriş yapın.");
-        } else {
-          setErrorMessage(`Sunucu hatası (${res.status}). Lütfen tekrar deneyin.`);
-        }
-        return;
-      }
-
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        setIsSuccess(true);
-        setTimeout(() => {
-          onClose();
-        }, 2000);
+      setIsSuccess(true);
+      setTimeout(() => onClose(), 2000);
+    } catch (e: unknown) {
+      console.error('Review submit error', e);
+      if (e instanceof ApiError) {
+        const msg = e.status === 401
+          ? 'Oturumunuz sona ermiş. Lütfen tekrar giriş yapın.'
+          : e.message || `Değerlendirme gönderilemedi (${e.status}).`;
+        setErrorMessage(msg);
       } else {
-        setErrorMessage(data.message || `Değerlendirme gönderilemedi (${res.status}).`);
+        setErrorMessage(e instanceof Error ? e.message : 'Bağlantı hatası. Lütfen tekrar deneyin.');
       }
-    } catch (err: any) {
-      console.error("Review submit error", err);
-      setErrorMessage(err?.message || "Bağlantı hatası. Lütfen tekrar deneyin.");
     } finally {
       setIsSubmitting(false);
     }

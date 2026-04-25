@@ -1,22 +1,34 @@
+import { ENDPOINTS } from './endpoints';
+import type { ApiEnvelope } from '../types/api/common';
+
 const API_BASE_URL = import.meta.env.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL}/api`
   : "http://localhost:5146/api";
 
-import { ENDPOINTS } from './endpoints';
-
 export interface FetchOptions extends Omit<RequestInit, 'body'> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  body?: any;
+  body?: object | FormData | string | null;
+}
+
+export class ApiError extends Error {
+  readonly status: number;
+  readonly data: unknown;
+
+  constructor(message: string, status: number, data?: unknown) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.data = data;
+  }
 }
 
 // Queue for holding requests while refreshing token
 let isRefreshing = false;
 let failedQueue: Array<{
-  resolve: (value?: unknown) => void;
-  reject: (reason?: any) => void;
+  resolve: (value: unknown) => void;
+  reject: (reason: unknown) => void;
 }> = [];
 
-const processQueue = (error: any, token: string | null = null) => {
+const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
@@ -24,116 +36,138 @@ const processQueue = (error: any, token: string | null = null) => {
       prom.resolve(token);
     }
   });
-
   failedQueue = [];
 };
 
+/** Low-level fetch wrapper — returns raw Response with token refresh logic. */
 export const apiClient = async (
   endpoint: string,
   options: FetchOptions = {},
   isRetry = false
 ): Promise<Response> => {
   const url = endpoint.startsWith("http") ? endpoint : `${API_BASE_URL}${endpoint}`;
-  
-  // Prepare headers
+
   const headers = new Headers(options.headers || {});
-  
+
   if (!(options.body instanceof FormData)) {
-      if (!headers.has("Content-Type")) {
-          headers.set("Content-Type", "application/json");
-      }
-      if (options.body && typeof options.body === 'object') {
-          options.body = JSON.stringify(options.body);
-      }
+    if (!headers.has("Content-Type")) {
+      headers.set("Content-Type", "application/json");
+    }
+    if (options.body && typeof options.body === 'object') {
+      options = { ...options, body: JSON.stringify(options.body) };
+    }
   }
 
-  // Inject Access Token
   const token = localStorage.getItem("token");
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const fetchOptions: RequestInit = {
-    ...options,
-    headers,
-  };
+  const fetchOptions: RequestInit = { ...options, headers, body: options.body as BodyInit | null };
 
-  try {
-    const response = await fetch(url, fetchOptions);
+  const response = await fetch(url, fetchOptions);
 
-    // Only intercept 401 if it's not the refresh endpoint itself and not a retry
-    if (response.status === 401 && !url.includes("/refresh-token") && !isRetry) {
-      const refreshToken = localStorage.getItem("refreshToken");
-      
-      if (!refreshToken) {
-        // No refresh token, force logout
-        localStorage.removeItem("token");
-        window.dispatchEvent(new Event("auth:logout"));
-        return response;
-      }
+  if (response.status === 401 && !url.includes("/refresh-token") && !isRetry) {
+    const refreshToken = localStorage.getItem("refreshToken");
 
-      if (isRefreshing) {
-        // If already refreshing, queue the request until refresh finishes
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((newToken) => {
-            // New token arrived, retry original request
+    if (!refreshToken) {
+      localStorage.removeItem("token");
+      window.dispatchEvent(new Event("auth:logout"));
+      return response;
+    }
+
+    if (isRefreshing) {
+      return new Promise<Response>((resolve, reject) => {
+        failedQueue.push({
+          resolve: (newToken) => {
             headers.set("Authorization", `Bearer ${newToken}`);
-            return fetch(url, { ...fetchOptions, headers });
-          })
-          .catch((err) => {
-            return Promise.reject(err);
-          });
-      }
-
-      isRefreshing = true;
-
-      try {
-        // Attempt to refresh token
-        const refreshRes = await fetch(`${API_BASE_URL}${ENDPOINTS.AUTH_REFRESH_TOKEN}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ refreshToken }),
+            resolve(fetch(url, { ...fetchOptions, headers }));
+          },
+          reject,
         });
+      });
+    }
 
-        const refreshData = await refreshRes.json();
+    isRefreshing = true;
 
-        if (refreshRes.ok && refreshData.success) {
-          const newAccessToken = refreshData.data.token;
-          const newRefreshToken = refreshData.data.refreshToken;
-          
-          localStorage.setItem("token", newAccessToken);
-          if (newRefreshToken) {
-             localStorage.setItem("refreshToken", newRefreshToken);
-          }
+    try {
+      const refreshRes = await fetch(`${API_BASE_URL}${ENDPOINTS.AUTH_REFRESH_TOKEN}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshToken }),
+      });
 
-          processQueue(null, newAccessToken);
-          
-          // Retry original request
-          headers.set("Authorization", `Bearer ${newAccessToken}`);
-          return fetch(url, { ...fetchOptions, headers });
-        } else {
-          // Refresh failed (expired or invalid), force logout
-          processQueue(new Error("Refresh failed"));
-          localStorage.removeItem("token");
-          localStorage.removeItem("refreshToken");
-          window.dispatchEvent(new Event("auth:logout"));
-          return response;
+      const refreshData = await refreshRes.json();
+
+      if (refreshRes.ok && refreshData.success) {
+        const newAccessToken: string = refreshData.data.token;
+        const newRefreshToken: string | undefined = refreshData.data.refreshToken;
+
+        localStorage.setItem("token", newAccessToken);
+        if (newRefreshToken) {
+          localStorage.setItem("refreshToken", newRefreshToken);
         }
-      } catch (err) {
-        processQueue(err);
+
+        processQueue(null, newAccessToken);
+        headers.set("Authorization", `Bearer ${newAccessToken}`);
+        return fetch(url, { ...fetchOptions, headers });
+      } else {
+        processQueue(new Error("Refresh failed"));
         localStorage.removeItem("token");
         localStorage.removeItem("refreshToken");
         window.dispatchEvent(new Event("auth:logout"));
         return response;
-      } finally {
-        isRefreshing = false;
       }
+    } catch (err) {
+      processQueue(err);
+      localStorage.removeItem("token");
+      localStorage.removeItem("refreshToken");
+      window.dispatchEvent(new Event("auth:logout"));
+      return response;
+    } finally {
+      isRefreshing = false;
     }
-
-    return response;
-  } catch (error) {
-    throw error;
   }
+
+  return response;
+};
+
+/**
+ * Typed wrapper around apiClient.
+ * Parses the { success, data } envelope and returns data directly.
+ * Throws ApiError for non-2xx or success=false responses.
+ */
+export const apiFetch = async <T>(
+  endpoint: string,
+  options: FetchOptions = {},
+): Promise<T> => {
+  const response = await apiClient(endpoint, options);
+
+  // 204 No Content — body boş, başarı olarak kabul et
+  if (response.status === 204) {
+    if (!response.ok) {
+      throw new ApiError(`Request failed with status ${response.status}`, response.status);
+    }
+    return undefined as T;
+  }
+
+  let envelope: ApiEnvelope<T>;
+  try {
+    envelope = await response.json();
+  } catch {
+    throw new ApiError(
+      `Sunucudan geçersiz yanıt (status ${response.status})`,
+      response.status,
+    );
+  }
+
+  if (!response.ok || !envelope.success) {
+    const message =
+      envelope.error?.message ??
+      envelope.message ??
+      `Request failed with status ${response.status}`;
+    throw new ApiError(message, response.status, envelope);
+  }
+
+  return envelope.data;
 };

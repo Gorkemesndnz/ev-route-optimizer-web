@@ -1,3 +1,4 @@
+// Fields from VehicleResponse (backend source of truth)
 export interface Vehicle {
   id: string;
   brand: string;
@@ -11,8 +12,7 @@ export interface Vehicle {
   maxChargingPowerKw?: number;
   rangeWLTP?: number;
   realRangeKm?: number;
-  plugType?: string;
-  // Persistent Settings
+  // Driver settings — not stored in backend; merged from localStorage overlay by VehicleContext
   passengers?: number;
   extraWeight?: number;
   climateControl?: boolean;

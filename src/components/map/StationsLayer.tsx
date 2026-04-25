@@ -1,35 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMap } from '@vis.gl/react-google-maps';
 import Supercluster from 'supercluster';
-import { apiClient } from '../../lib/apiClient';
-import { ENDPOINTS } from '../../lib/endpoints';
+import { stationApi } from '../../api/stationApi';
+import type { BaseStationDto, ChargingStationDto } from '../../types/api/station';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useStation } from '../../contexts/StationContext';
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
 
-interface OcmStation {
-  id: string;
-  latitude: number;
-  longitude: number;
-  title?: string;
-  usageTypeTitle?: string;
-}
-
-interface GoogleStation {
-  id: string | number;
-  latitude: number;
-  longitude: number;
-  title?: string;
-  connections?: Array<{
-    connectionType?: string;
-    currentType?: string;
-    powerKw?: number;
-  }>;
-  statusType?: string;
-  usageType?: string;
-  [key: string]: any;
-}
+type OcmStation = BaseStationDto;
+type GoogleStation = ChargingStationDto;
 
 interface ClusterHitArea {
   x: number;
@@ -482,31 +462,28 @@ export default function StationsLayer() {
           const padSw = { lat: sw.lat() - latPad, lng: sw.lng() - lngPad };
           const padNe = { lat: ne.lat() + latPad, lng: ne.lng() + lngPad };
 
-          const url = `${ENDPOINTS.STATIONS_BASE}?swLat=${padSw.lat}&swLng=${padSw.lng}&neLat=${padNe.lat}&neLng=${padNe.lng}&zoom=${zoom}`;
-          const res = await apiClient(url, { signal: controller.signal });
+          const stations = await stationApi.getBase({
+            swLat: padSw.lat, swLng: padSw.lng,
+            neLat: padNe.lat, neLng: padNe.lng,
+            zoom,
+          });
           if (controller.signal.aborted) return;
-          const data = await res.json();
-
-          if (data.success && data.data) {
-            lastFetchedBoundsRef.current = { sw: padSw, ne: padNe, zoom: Math.floor(zoom) };
-            setOcmStations(data.data);
-            if (sourceChanged) setGoogleStations([]);
-          }
+          lastFetchedBoundsRef.current = { sw: padSw, ne: padNe, zoom: Math.floor(zoom) };
+          setOcmStations(stations);
+          if (sourceChanged) setGoogleStations([]);
         } else {
           // ── Google: Normal viewport fetch ──
-          const url = `${ENDPOINTS.STATIONS_GOOGLE}?swLat=${sw.lat()}&swLng=${sw.lng()}&neLat=${ne.lat()}&neLng=${ne.lng()}`;
-          const res = await apiClient(url, { signal: controller.signal });
+          const stations = await stationApi.getGoogle({
+            swLat: sw.lat(), swLng: sw.lng(),
+            neLat: ne.lat(), neLng: ne.lng(),
+          });
           if (controller.signal.aborted) return;
-          const data = await res.json();
-
-          if (data.success && data.data) {
-            lastFetchedBoundsRef.current = null; // Google için bounds cache yok
-            setGoogleStations(data.data);
-            if (sourceChanged) setOcmStations([]);
-          }
+          lastFetchedBoundsRef.current = null;
+          setGoogleStations(stations);
+          if (sourceChanged) setOcmStations([]);
         }
-      } catch (err: any) {
-        if (err?.name === 'AbortError') return;
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name === 'AbortError') return;
         console.error('Failed to load stations', err);
       }
     };

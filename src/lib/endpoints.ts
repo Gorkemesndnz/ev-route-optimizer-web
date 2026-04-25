@@ -20,11 +20,11 @@ export const ENDPOINTS = {
   AUTH_PROFILE_VERIFY_CODE: '/auth/profile/verify-code',
 
   // ── Vehicles ───────────────────────────────────────────
-  USER_VEHICLES: '/UserVehicles',
-  EV_CATALOG_BRANDS: '/EvCatalog/brands',
+  USER_VEHICLES: '/user-vehicles',
+  EV_CATALOG_BRANDS: '/ev-catalog/brands',
 
   // ── Route ──────────────────────────────────────────────
-  ROUTE_PLAN: '/Route/plan',
+  ROUTE_PLAN: '/route/plan',
   SAVED_ROUTES: '/saved-routes',
   savedRoute: (id: string) => `/saved-routes/${id}` as const,
   savedRouteRate: (id: string) => `/saved-routes/${id}/rate` as const,

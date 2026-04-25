@@ -3,20 +3,10 @@ import { motion } from 'framer-motion';
 import { X, MapPin, Search } from 'lucide-react';
 import { useMap } from '@vis.gl/react-google-maps';
 import type { StationData } from '../../contexts/StationContext';
-import { apiClient } from '../../lib/apiClient';
-import { ENDPOINTS } from '../../lib/endpoints';
+import { stationApi } from '../../api/stationApi';
+import type { TouristAttractionDto } from '../../types/api/station';
 
-interface Attraction {
-  id: string;
-  name: string;
-  rating: number;
-  userRatingCount: number;
-  latitude: number;
-  longitude: number;
-  distanceMeters: number;
-  durationSeconds: number;
-  primaryType?: string;
-}
+type Attraction = TouristAttractionDto;
 
 export default function TouristAttractionsPanel({
   station,
@@ -29,18 +19,18 @@ export default function TouristAttractionsPanel({
 }) {
   const [attractions, setAttractions] = useState<Attraction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const map = useMap();
 
   useEffect(() => {
     setLoading(true);
-    apiClient(`${ENDPOINTS.STATIONS_TOURIST_SPOTS}?lat=${station.latitude}&lng=${station.longitude}`)
-      .then(res => res.json())
-      .then(result => {
-        if (result.success && result.data) {
-          setAttractions(result.data);
-        }
+    setError(false);
+    stationApi.getTouristSpots(station.latitude, station.longitude)
+      .then(data => setAttractions(data))
+      .catch(err => {
+        console.error('Error loading tourist spots:', err);
+        setError(true);
       })
-      .catch(err => console.error("Error loading tourist spots:", err))
       .finally(() => setLoading(false));
   }, [station]);
 
@@ -94,6 +84,10 @@ export default function TouristAttractionsPanel({
           <div className="flex flex-col items-center justify-center h-40 gap-3 text-zinc-400">
             <Search className="animate-pulse" size={24} />
             <span className="text-sm">Turistik yerler aranıyor...</span>
+          </div>
+        ) : error ? (
+          <div className="text-center text-red-400/80 text-sm mt-10">
+            Turistik yerler yüklenemedi. Lütfen tekrar deneyin.
           </div>
         ) : attractions.length === 0 ? (
           <div className="text-center text-zinc-400 text-sm mt-10">

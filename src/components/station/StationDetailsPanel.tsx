@@ -7,8 +7,12 @@ import { ChevronLeft, Heart, Plus, Share2, MapPin, Navigation, Phone, Calendar, 
 import { useStation } from '../../contexts/StationContext';
 import { translations } from '../../lib/translations';
 import { useSettings } from '../../contexts/SettingsContext';
-import { apiClient } from '../../lib/apiClient';
-import { ENDPOINTS } from '../../lib/endpoints';
+import { reviewApi } from '../../api/reviewApi';
+import { stationApi } from '../../api/stationApi';
+import { weatherApi } from '../../api/weatherApi';
+import type { ReviewResponseDto, StationRatingSummaryDto } from '../../types/api/review';
+import type { ConnectionDto } from '../../types/api/station';
+import type { WeatherResponseDto } from '../../types/api/weather';
 import { useAuth } from '../../contexts/AuthContext';
 
 const MOCK_COVER = "https://images.unsplash.com/photo-1620060935399-6e3e1ffb1046?q=80&w=600&auto=format&fit=crop";
@@ -42,24 +46,8 @@ function formatDistance(km: number): string {
    return `${Math.round(km)}km`;
 }
 
-// Review response interface
-interface ReviewData {
-   id: string;
-   userId: string;
-   userFullName: string;
-   userInitials: string;
-   rating: number;
-   comment?: string;
-   tags: string[];
-   photos?: string[];
-   createdAt: string;
-}
-
-interface RatingSummary {
-   averageRating: number;
-   totalReviews: number;
-   reviews: ReviewData[];
-}
+type ReviewData = ReviewResponseDto;
+type RatingSummary = StationRatingSummaryDto;
 
 export default function StationDetailsPanel({
    onBack,
@@ -74,7 +62,7 @@ export default function StationDetailsPanel({
    const { currentUser, requireAuth } = useAuth();
 
    // Weather State
-   const [weatherData, setWeatherData] = useState<{ tempCelsius: number, description: string, iconCode: string } | null>(null);
+   const [weatherData, setWeatherData] = useState<WeatherResponseDto | null>(null);
 
    // Address State
    const [isAddressExpanded, setIsAddressExpanded] = useState(false);
@@ -96,24 +84,20 @@ export default function StationDetailsPanel({
    // Reviews State
    const [ratingSummary, setRatingSummary] = useState<RatingSummary | null>(null);
    const [reviewsLoading, setReviewsLoading] = useState(false);
+   const [reviewsError, setReviewsError] = useState(false);
    const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
    const [editingReview, setEditingReview] = useState<ReviewData | null>(null);
-   const [enrichedConnections, setEnrichedConnections] = useState<any[] | null>(null);
+   const [enrichedConnections, setEnrichedConnections] = useState<ConnectionDto[] | null>(null);
    const [isEnriching, setIsEnriching] = useState(false);
 
    const handleDeleteReview = async (reviewId: string) => {
-      if (!window.confirm("Değerlendirmeyi silmek istediğinize emin misiniz?")) return;
+      if (!window.confirm('Değerlendirmeyi silmek istediğinize emin misiniz?')) return;
       try {
-         const res = await apiClient(ENDPOINTS.reviewDelete(reviewId), { method: 'DELETE' });
-         if (res.ok) {
-            if (selectedStation) fetchReviews(selectedStation.id);
-         } else {
-            const data = await res.json();
-            alert(data.message || "Silme işlemi başarısız oldu.");
-         }
+         await reviewApi.remove(reviewId);
+         if (selectedStation) fetchReviews(selectedStation.id);
       } catch (err) {
          console.error(err);
-         alert("Bağlantı hatası yaşandı.");
+         alert(err instanceof Error ? err.message : 'Bağlantı hatası yaşandı.');
       }
    };
 
@@ -157,17 +141,15 @@ export default function StationDetailsPanel({
       );
    }, []);
 
-   // Reviews fetch fonksiyonu — ReviewStationPanel kapandığında yeniden çekmek için
    const fetchReviews = useCallback((stationId: string) => {
       setReviewsLoading(true);
-      apiClient(ENDPOINTS.reviewsByStation(stationId))
-         .then(res => res.json())
-         .then(result => {
-            if (result.success && result.data) {
-               setRatingSummary(result.data);
-            }
+      setReviewsError(false);
+      reviewApi.getByStation(stationId)
+         .then(result => setRatingSummary(result))
+         .catch(err => {
+            console.error('Reviews API error', err);
+            setReviewsError(true);
          })
-         .catch(err => console.error("Reviews API error", err))
          .finally(() => setReviewsLoading(false));
    }, []);
 
@@ -181,47 +163,37 @@ export default function StationDetailsPanel({
       setEnrichedConnections(null);
       setIsEnriching(true);
 
-      // Enrichment logic: Fetch full station data from specialized service
       const fetchFullDetails = async () => {
          try {
-            // Integer OCM ID → direct detail endpoint
             const numericId = parseInt(selectedStation.id, 10);
             if (!isNaN(numericId) && String(numericId) === selectedStation.id) {
-               const res = await apiClient(ENDPOINTS.stationDetail(numericId));
-               if (res.ok) {
-                  const result = await res.json();
-                  if (result.success && result.data && result.data.connections) {
-                     setEnrichedConnections(result.data.connections);
-                     return;
-                  }
+               const detail = await stationApi.getDetail(numericId);
+               if (detail.connections?.length) {
+                  setEnrichedConnections(detail.connections);
+                  return;
                }
             }
 
-            // Coordinate-based search (Google Place IDs and route stops)
-            // delta=0.003 ≈ 330m her yönde — rota durakları için güvenilir eşleşme sağlar
+            // Coordinate-based fallback (Google Place IDs and route stops)
             const delta = 0.003;
-            const swLat = selectedStation.latitude - delta;
-            const swLng = selectedStation.longitude - delta;
-            const neLat = selectedStation.latitude + delta;
-            const neLng = selectedStation.longitude + delta;
+            const stations = await stationApi.getGoogle({
+               swLat: selectedStation.latitude - delta,
+               swLng: selectedStation.longitude - delta,
+               neLat: selectedStation.latitude + delta,
+               neLng: selectedStation.longitude + delta,
+            });
 
-            const res = await apiClient(`${ENDPOINTS.STATIONS_GOOGLE}?swLat=${swLat}&swLng=${swLng}&neLat=${neLat}&neLng=${neLng}`);
-            const result = await res.json();
-
-            if (result.success && result.data && Array.isArray(result.data)) {
-               const COORD_TOLERANCE = 0.003;
-               const fullStation = result.data.find((s: any) =>
-                  String(s.id) === String(selectedStation.id) ||
-                  (Math.abs(s.latitude - selectedStation.latitude) < COORD_TOLERANCE &&
-                   Math.abs(s.longitude - selectedStation.longitude) < COORD_TOLERANCE)
-               );
-
-               if (fullStation && fullStation.connections && fullStation.connections.length > 0) {
-                  setEnrichedConnections(fullStation.connections);
-               }
+            const COORD_TOLERANCE = 0.003;
+            const fullStation = stations.find(s =>
+               String(s.id) === String(selectedStation.id) ||
+               (Math.abs(s.latitude - selectedStation.latitude) < COORD_TOLERANCE &&
+                Math.abs(s.longitude - selectedStation.longitude) < COORD_TOLERANCE)
+            );
+            if (fullStation?.connections?.length) {
+               setEnrichedConnections(fullStation.connections);
             }
          } catch (err) {
-            console.error("Enrichment fetch failed", err);
+            console.error('Enrichment fetch failed', err);
          } finally {
             setIsEnriching(false);
          }
@@ -234,48 +206,16 @@ export default function StationDetailsPanel({
       if (!selectedStation) return;
       let isCancelled = false;
 
-      const normalizeWeather = (d: any) => ({
-         tempCelsius: d.tempCelsius ?? 0,
-         description: d.description ?? '',
-         iconCode: d.iconCode ?? '01d'
-      });
-
-      // Clear stale data from previous station immediately
       setWeatherData(null);
 
-      apiClient(`${ENDPOINTS.WEATHER}?lat=${selectedStation.latitude}&lng=${selectedStation.longitude}`)
-         .then(res => {
-            if (!res.ok) {
-               console.error("Weather API HTTP error:", res.status, res.statusText);
-               return null;
-            }
-            return res.json();
-         })
-         .then(result => {
-            if (isCancelled || !result) return;
-            if (result.success && result.data) {
-               setWeatherData(normalizeWeather(result.data));
-            } else if (result.tempCelsius !== undefined || result.TempCelsius !== undefined) {
-               setWeatherData(normalizeWeather(result));
-            } else {
-               console.warn("Weather API unexpected response:", result);
-            }
-         })
-         .catch(err => {
-            if (!isCancelled) console.error("Weather API error:", err);
-         });
+      weatherApi.get(selectedStation.latitude, selectedStation.longitude)
+         .then(data => { if (!isCancelled) setWeatherData(data); })
+         .catch(err => { if (!isCancelled) console.error('Weather API error:', err); });
 
-      // Fetch nearby amenities
       setNearbyAmenities([]);
-      apiClient(`${ENDPOINTS.STATIONS_AMENITIES}?lat=${selectedStation.latitude}&lng=${selectedStation.longitude}`)
-         .then(res => res.json())
-         .then(result => {
-            if (isCancelled) return;
-            if (result.success && result.data) {
-               setNearbyAmenities(result.data);
-            }
-         })
-         .catch(err => { if (!isCancelled) console.error("Amenities API error", err); });
+      stationApi.getAmenities(selectedStation.latitude, selectedStation.longitude)
+         .then(data => { if (!isCancelled) setNearbyAmenities(Object.keys(data)); })
+         .catch(err => { if (!isCancelled) console.error('Amenities API error', err); });
 
       // Fetch reviews
       fetchReviews(selectedStation.id);
@@ -662,6 +602,10 @@ export default function StationDetailsPanel({
                      {reviewsLoading ? (
                         <div className="flex items-center justify-center py-6">
                            <Loader2 size={24} className="animate-spin text-blue-400" />
+                        </div>
+                     ) : reviewsError ? (
+                        <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 text-center">
+                           <p className="text-red-400 text-sm">{language === 'tr' ? 'Değerlendirmeler yüklenemedi.' : 'Could not load reviews.'}</p>
                         </div>
                      ) : !ratingSummary || ratingSummary.totalReviews === 0 ? (
                         <div className="bg-white/5 border border-white/10 rounded-2xl p-5 text-center">

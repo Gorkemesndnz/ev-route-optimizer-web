@@ -6,8 +6,8 @@ import {
   ShoppingCart, Coffee, Wifi, SlidersHorizontal, ChevronRight, Star
 } from "lucide-react";
 import { useRouteContext, type ChargingStopDto, type RouteInsight, type WeatherInfo, type RouteResultDto } from "../../contexts/RouteContext";
-import { apiClient } from "../../lib/apiClient";
-import { ENDPOINTS } from "../../lib/endpoints";
+import { reviewApi } from "../../api/reviewApi";
+import type { ConnectorInfoDto } from "../../types/api/route";
 import { useSavedRoute } from "../../contexts/SavedRouteContext";
 import RouteRatingModal from "./RouteRatingModal";
 import { useSettings } from "../../contexts/SettingsContext";
@@ -83,19 +83,18 @@ function StopCard({
   useEffect(() => {
     const id = stop.station_id;
     if (!id) return;
-    apiClient(ENDPOINTS.reviewsByStation(id))
-      .then(r => r.json())
+    reviewApi.getByStation(id)
       .then(result => {
-        if (result.success && result.data?.totalReviews > 0) {
-          setAppRating({ avg: result.data.averageRating, total: result.data.totalReviews });
+        if (result.totalReviews > 0) {
+          setAppRating({ avg: result.averageRating, total: result.totalReviews });
         }
       })
       .catch(() => {});
   }, [stop.station_id]);
 
-  const connectors = ((stop as any).connections || stop.connectors || []) as any[];
+  const connectors: ConnectorInfoDto[] = stop.connectors ?? [];
   const maxPower = connectors.length > 0
-    ? Math.max(...connectors.map((c: any) => c.power_kw || c.powerKw || c.power || 0))
+    ? Math.max(...connectors.map(c => c.power_kw || 0))
     : 0;
 
   return (
@@ -115,14 +114,14 @@ function StopCard({
           latitude: stop.lat,
           longitude: stop.lon,
           formattedAddress: stop.address || '',
-          connections: connectors.map((c: any) => ({
-            connectionType: c.plug_type || c.connectionType || c.type,
-            currentType: c.charger_type || c.currentType || c.category,
-            powerKw: c.power_kw || c.powerKw || c.power,
+          connections: connectors.map(c => ({
+            connectionType: c.plug_type,
+            currentType: c.charger_type,
+            powerKw: c.power_kw,
             status: c.status,
-            count: c.count || c.quantity || 1,
-            availableCount: c.available_count ?? c.availableCount ?? (c.status === 'Available' ? (c.count || 1) : 0),
-            price: c.price_per_kwh || c.price || undefined
+            count: c.count,
+            availableCount: c.status === 'Available' ? c.count : 0,
+            price: c.price_per_kwh ?? undefined,
           })),
         })}
       >
@@ -253,7 +252,21 @@ export default function RouteResultPanel({
   const timelineNodes = useMemo(() => {
     if (!routeResult) return [];
 
-    const nodes: any[] = [];
+    interface TimelineNode {
+    type: string;
+    location?: string;
+    weather?: WeatherInfo | null;
+    soc?: number;
+    time?: Date;
+    arrivalTime?: Date;
+    duration?: number;
+    distance?: number;
+    consumption?: number;
+    stop?: ChargingStopDto;
+    index?: number;
+    coords?: { lat: number; lng: number };
+  }
+  const nodes: TimelineNode[] = [];
     let currentTime = new Date(); // Start from now
 
     // 1. Start Node

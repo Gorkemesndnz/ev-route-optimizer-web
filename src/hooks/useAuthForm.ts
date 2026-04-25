@@ -3,27 +3,26 @@ import { translations } from "../lib/translations";
 import { useSettings } from "../contexts/SettingsContext";
 import { loginSchema, registerSchema, resetPasswordSchema } from "../lib/validation";
 import { z } from "zod";
-import { apiClient } from "../lib/apiClient";
-import { ENDPOINTS } from "../lib/endpoints";
-
-
+import { ApiError } from "../lib/apiClient";
+import { authApi } from "../api/authApi";
+import type { AuthResponseDto } from "../types/api/auth";
 
 export type AuthStep = 'email' | 'password' | 'register' | 'verify_email' | 'reset_password';
 
-const formatError = (error: any, defaultMsg: string): string => {
-  if (!error) return defaultMsg;
-  if (typeof error === 'string') return error;
-  if (typeof error === 'object') {
-    if (error.errors && typeof error.errors === 'object' && !Array.isArray(error.errors)) {
-      const details = Object.values(error.errors).flat().join('\n');
-      if (details) return details;
-    }
-    if (error.message) return typeof error.message === 'string' ? error.message : defaultMsg;
+/** Extracts a human-readable message from an ApiError's envelope body. */
+const extractApiMessage = (e: ApiError, defaultMsg: string): string => {
+  const body = e.data as { error?: unknown; errors?: Record<string, string[]>; message?: unknown } | undefined;
+  if (!body) return e.message || defaultMsg;
+  if (body.errors && typeof body.errors === 'object' && !Array.isArray(body.errors)) {
+    const details = Object.values(body.errors).flat().join('\n');
+    if (details) return details;
   }
-  return defaultMsg;
+  if (typeof body.error === 'string') return body.error;
+  if (typeof body.message === 'string') return body.message;
+  return e.message || defaultMsg;
 };
 
-export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void) {
+export function useAuthForm(onLogin?: (user: AuthResponseDto) => void, onClose?: () => void) {
   const { language } = useSettings();
   const [authStep, setAuthStep] = useState<AuthStep>('email');
   const [email, setEmail] = useState('');
@@ -43,11 +42,7 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
 
   useEffect(() => {
     if (authStep !== 'verify_email' || timeLeft <= 0) return;
-    
-    const timer = setInterval(() => {
-      setTimeLeft(prev => prev - 1);
-    }, 1000);
-
+    const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
     return () => clearInterval(timer);
   }, [authStep, timeLeft]);
 
@@ -69,10 +64,9 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
     if (isLoading || isSubmittingRef.current) return;
     isSubmittingRef.current = true;
     setIsLoading(true);
-
-    setAuthError('');
     setAuthError('');
     setFieldErrors({});
+
     if (!email) {
       isSubmittingRef.current = false;
       setIsLoading(false);
@@ -80,33 +74,24 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
     }
 
     try {
-      z.object({ email: z.string().email() }).parse({ email });    } catch (err) {
+      z.object({ email: z.string().email() }).parse({ email });
+    } catch {
       setAuthError(language === 'tr' ? 'Lütfen geçerli bir e-posta girin format hatası.' : 'Please enter a valid email format.');
       isSubmittingRef.current = false;
       setIsLoading(false);
       return;
     }
-      
-    setIsLoading(true);
-    try {
-      const response = await apiClient(ENDPOINTS.AUTH_CHECK_EMAIL, {
-        method: 'POST',
-        body: { email }
-      });
-      const data = await response.json();
 
-      if (data.success) {
-        if (data.data.exists) {
-          setAuthStep('password');
-        } else {
-          setAuthStep('register');
-        }
+    try {
+      const { exists } = await authApi.checkEmail({ email });
+      if (exists) setAuthStep('password');
+      else setAuthStep('register');
+    } catch (e) {
+      if (e instanceof ApiError) {
+        setAuthError(extractApiMessage(e, language === 'tr' ? 'Lütfen geçerli bir e-posta adresi giriniz.' : 'Please enter a valid email address.'));
       } else {
-        setAuthError(formatError(data.error, language === 'tr' ? 'Lütfen geçerli bir e-posta adresi giriniz.' : 'Please enter a valid email address.'));
+        setAuthError(language === 'tr' ? 'Sunucuya bağlanılamadı.' : 'Cannot connect to server.');
       }
-    } catch (err) {
-      console.error("API Error in check-email:", err);
-      setAuthError(language === 'tr' ? 'Sunucuya bağlanılamadı. Lütfen API nin çalıştığından emin olun.' : 'Cannot connect to server.');
     } finally {
       setIsLoading(false);
       isSubmittingRef.current = false;
@@ -119,7 +104,7 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
     setIsLoading(true);
     setAuthError('');
     setFieldErrors({});
-    
+
     const result = loginSchema.safeParse({ email, password });
     if (!result.success) {
       setAuthError(result.error.issues[0].message);
@@ -129,25 +114,18 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
     }
 
     try {
-      const response = await apiClient(ENDPOINTS.AUTH_LOGIN, {
-        method: 'POST',
-        body: { email, password }
-      });
-      const data = await response.json();
-
-      if (data.success) {
-        localStorage.setItem('token', data.data.token);
-        if (data.data.refreshToken) {
-           localStorage.setItem('refreshToken', data.data.refreshToken);
-        }
-        resetForm();
-        if (onLogin) onLogin(data.data);
-        if (onClose) onClose();
+      const data = await authApi.login({ email, password });
+      localStorage.setItem('token', data.token);
+      if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
+      resetForm();
+      onLogin?.(data);
+      onClose?.();
+    } catch (e) {
+      if (e instanceof ApiError) {
+        setAuthError(extractApiMessage(e, language === 'tr' ? 'Girdiğiniz şifre hatalı.' : 'Incorrect password.'));
       } else {
-        setAuthError(formatError(data.error, language === 'tr' ? "Girdiğiniz şifre hatalı." : "Incorrect password."));
+        setAuthError(language === 'tr' ? 'Sunucuya bağlanılamadı.' : 'Cannot connect to server.');
       }
-    } catch (error) {
-      setAuthError(language === 'tr' ? "Sunucuya bağlanılamadı." : "Cannot connect to server.");
     } finally {
       setIsLoading(false);
       isSubmittingRef.current = false;
@@ -160,11 +138,8 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
     setIsLoading(true);
     setFieldErrors({});
     setAuthError('');
-    
-    const result = registerSchema.safeParse({
-      email, firstName, lastName, phone, password, confirmPassword
-    });
 
+    const result = registerSchema.safeParse({ email, firstName, lastName, phone, password, confirmPassword });
     if (!result.success) {
       const newErrors: { [key: string]: string } = {};
       result.error.issues.forEach(issue => {
@@ -176,25 +151,24 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
       return;
     }
 
-    setIsLoading(true);
     try {
-      const cleanPhone = phone.replace(/\D/g, '');
-      const response = await apiClient(ENDPOINTS.AUTH_REGISTER, {
-        method: 'POST',
-        body: { firstName, lastName, email, phoneNumber: cleanPhone, password }
+      await authApi.register({
+        firstName,
+        lastName,
+        email,
+        phoneNumber: phone.replace(/\D/g, ''),
+        password,
       });
-      const data = await response.json();
-
-      if (data.success) {
-        setVerificationType('register');
-        setAuthStep('verify_email');
-        setTimeLeft(120);
-        setOtp('');
+      setVerificationType('register');
+      setAuthStep('verify_email');
+      setTimeLeft(120);
+      setOtp('');
+    } catch (e) {
+      if (e instanceof ApiError) {
+        setAuthError(extractApiMessage(e, language === 'tr' ? 'Kayıt olurken bir hata oluştu.' : 'Registration error.'));
       } else {
-        setAuthError(formatError(data.error, language === 'tr' ? "Kayıt olurken bir hata oluştu." : "Registration error."));
+        setAuthError(language === 'tr' ? 'Sunucu hatası.' : 'Server error.');
       }
-    } catch (error) {
-      setAuthError(language === 'tr' ? "Sunucu hatası." : "Server error.");
     } finally {
       setIsLoading(false);
       isSubmittingRef.current = false;
@@ -202,8 +176,7 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
   };
 
   const handleOtpChange = (val: string) => {
-    const cleanVal = val.replace(/[^0-9]/g, '').slice(0, 6);
-    setOtp(cleanVal);
+    setOtp(val.replace(/[^0-9]/g, '').slice(0, 6));
     setOtpError('');
   };
 
@@ -211,35 +184,29 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
     if (isLoading || isSubmittingRef.current || otp.length !== 6) return;
     isSubmittingRef.current = true;
     setIsLoading(true);
-    try {
-      const endpoint = verificationType === 'register' ? 'verify-registration' : 'verify-code';
-      const response = await apiClient(`/auth/${endpoint}`, {
-          method: 'POST',
-          body: { email, code: otp }
-      });
-      const data = await response.json();
 
-      if (data.success) {
-        setOtpError('');
-        if (verificationType === 'register') {
-          // Registration complete, log user in
-          localStorage.setItem('token', data.data.token);
-          if (data.data.refreshToken) localStorage.setItem('refreshToken', data.data.refreshToken);
-          const clonedData = { ...data.data };
-          resetForm();
-          if (onLogin) onLogin(clonedData);
-          if (onClose) onClose();
-        } else {
-          setPassword('');
-          setConfirmPassword('');
-          setAuthError('');
-          setAuthStep('reset_password');
-        }
+    try {
+      if (verificationType === 'register') {
+        const data = await authApi.verifyRegistration({ email, code: otp });
+        localStorage.setItem('token', data.token);
+        if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
+        const snapshot = { ...data };
+        resetForm();
+        onLogin?.(snapshot);
+        onClose?.();
       } else {
-        setOtpError(formatError(data.error, language === 'tr' ? 'Hatalı doğrulama kodu.' : 'Invalid verification code.'));
+        await authApi.verifyCode({ email, code: otp });
+        setPassword('');
+        setConfirmPassword('');
+        setAuthError('');
+        setAuthStep('reset_password');
       }
-    } catch (err) {
-      setOtpError(language === 'tr' ? "Sunucuya bağlanılamadı." : "Cannot connect to server.");
+    } catch (e) {
+      if (e instanceof ApiError) {
+        setOtpError(extractApiMessage(e, language === 'tr' ? 'Hatalı doğrulama kodu.' : 'Invalid verification code.'));
+      } else {
+        setOtpError(language === 'tr' ? 'Sunucuya bağlanılamadı.' : 'Cannot connect to server.');
+      }
     } finally {
       setIsLoading(false);
       isSubmittingRef.current = false;
@@ -250,19 +217,19 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
     setOtp('');
     setOtpError('');
     try {
-      const endpoint = verificationType === 'register' ? 'register' : 'forgot-password';
-      
-      let bodyData: any = { email };
       if (verificationType === 'register') {
-        bodyData = { firstName, lastName, email, phoneNumber: phone.replace(/\D/g, ''), password };
+        await authApi.register({
+          firstName,
+          lastName,
+          email,
+          phoneNumber: phone.replace(/\D/g, ''),
+          password,
+        });
+      } else {
+        await authApi.forgotPassword({ email });
       }
-
-      await apiClient(`/auth/${endpoint}`, {
-          method: 'POST',
-          body: bodyData
-      });
-    } catch (err) {
-      console.error("Resend error:", err);
+    } catch (e) {
+      console.error('Resend error:', e);
     } finally {
       setIsLoading(false);
       isSubmittingRef.current = false;
@@ -273,73 +240,59 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
     if (isLoading || isSubmittingRef.current) return;
     isSubmittingRef.current = true;
     setIsLoading(true);
+
     try {
-      const response = await apiClient(ENDPOINTS.AUTH_FORGOT_PASSWORD, {
-          method: 'POST',
-          body: { email }
-      });
-      const data = await response.json();
-      
-      if (data.success) {
-          setVerificationType('reset');
-          setAuthStep('verify_email');
-          setTimeLeft(120);
-          setOtp('');
-          setOtpError('');
+      await authApi.forgotPassword({ email });
+      setVerificationType('reset');
+      setAuthStep('verify_email');
+      setTimeLeft(120);
+      setOtp('');
+      setOtpError('');
+    } catch (e) {
+      if (e instanceof ApiError) {
+        setAuthError(extractApiMessage(e, language === 'tr' ? 'Kullanıcı bulunamadı.' : 'User not found.'));
       } else {
-          setAuthError(formatError(data.error, language === 'tr' ? "Kullanıcı bulunamadı." : "User not found."));
+        setAuthError(language === 'tr' ? 'Sunucu hatası.' : 'Server error.');
       }
-    } catch (err) {
-      setAuthError("Sunucu hatası.");
     } finally {
       setIsLoading(false);
       isSubmittingRef.current = false;
     }
   };
 
-  const handleResetPasswordSubmit = async () => {
-      if (isLoading || isSubmittingRef.current) return false;
-      isSubmittingRef.current = true;
-      setIsLoading(true);
+  const handleResetPasswordSubmit = async (): Promise<boolean> => {
+    if (isLoading || isSubmittingRef.current) return false;
+    isSubmittingRef.current = true;
+    setIsLoading(true);
+    setAuthError('');
+
+    const result = resetPasswordSchema.safeParse({ password, confirmPassword });
+    if (!result.success) {
+      setAuthError(result.error.issues[0].message);
+      setIsLoading(false);
+      isSubmittingRef.current = false;
+      return false;
+    }
+
+    try {
+      await authApi.resetPassword({ email, code: otp, newPassword: password });
       setAuthError('');
-      const result = resetPasswordSchema.safeParse({ password, confirmPassword });
-      
-      if (!result.success) {
-          let errorMsg = result.error.issues[0].message;
-          setAuthError(errorMsg);
-          setIsLoading(false);
-          isSubmittingRef.current = false;
-          return false;
+      alert(language === 'tr' ? 'Şifreniz başarıyla yenilendi!' : 'Password successfully reset!');
+      isSubmittingRef.current = false;
+      setIsLoading(false);
+      await handlePasswordSubmit();
+      return true;
+    } catch (e) {
+      if (e instanceof ApiError) {
+        setAuthError(extractApiMessage(e, language === 'tr' ? 'Sıfırlama başarısız.' : 'Reset failed.'));
+      } else {
+        setAuthError(language === 'tr' ? 'Sunucu hatası' : 'Server error');
       }
-      
-      setIsLoading(true);
-      try {
-          const response = await apiClient(ENDPOINTS.AUTH_RESET_PASSWORD, {
-              method: 'POST',
-              body: { email, code: otp, newPassword: password }
-          });
-          const data = await response.json();
-          
-          if (data.success) {
-              setAuthError('');
-              // Show success message briefly before redirecting or closing
-              alert(language === 'tr' ? "Şifreniz başarıyla yenilendi!" : "Password successfully reset!");
-              
-              isSubmittingRef.current = false;
-              setIsLoading(false);
-              handlePasswordSubmit();
-              return true;
-          } else {
-              setAuthError(formatError(data.error, language === 'tr' ? "Sıfırlama başarısız." : "Reset failed."));
-              return false;
-          }
-      } catch (e) {
-          setAuthError(language === 'tr' ? "Sunucu hatası" : "Server error");
-          return false;
-      } finally {
-          setIsLoading(false);
-          isSubmittingRef.current = false;
-      }
+      return false;
+    } finally {
+      setIsLoading(false);
+      isSubmittingRef.current = false;
+    }
   };
 
   const isPasswordsMatch = password === confirmPassword && password.length >= 8;
@@ -351,6 +304,6 @@ export function useAuthForm(onLogin?: (user: any) => void, onClose?: () => void)
     otp, setOtp, timeLeft, otpError, resetForm, handleEmailSubmit,
     handlePasswordSubmit, handleOtpChange, handleResend, handleGoToVerify,
     isPasswordsMatch, fieldErrors, handleRegisterSubmit, handleResetPasswordSubmit,
-    verificationType, handleVerifySubmit, isLoading
+    verificationType, handleVerifySubmit, isLoading,
   };
 }

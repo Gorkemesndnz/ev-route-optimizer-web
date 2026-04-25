@@ -4,8 +4,8 @@ import { Clock, Search, MapPin, X, Loader2, Target } from "lucide-react";
 import { useSettings } from "../../contexts/SettingsContext";
 import { translations } from "../../lib/translations";
 import { useDebounce } from "../../hooks/useDebounce";
-import { apiClient } from "../../lib/apiClient";
-import { ENDPOINTS } from "../../lib/endpoints";
+import { mapsApi } from "../../api/mapsApi";
+import type { AutocompletePredictionDto } from "../../types/api/maps";
 
 export function LocationSearchModal({ 
   isOpen, 
@@ -15,7 +15,7 @@ export function LocationSearchModal({
 }: {
   isOpen: boolean;
   onClose: () => void;
-  item: any;
+  item: { id: string; value?: string; currentIndex?: number; totalCount?: number } | null;
   onSelectLocation: (id: string, address: string, coords: { lat: number, lng: number }) => void;
 }) {
   const { language } = useSettings();
@@ -23,10 +23,10 @@ export function LocationSearchModal({
 
   const [searchValue, setSearchValue] = useState("");
   const debouncedSearchValue = useDebounce(searchValue, 300);
-  const [predictions, setPredictions] = useState<any[]>([]);
+  const [predictions, setPredictions] = useState<AutocompletePredictionDto[]>([]);
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState("");
-  const [recentSearches, setRecentSearches] = useState<any[]>([]);
+  const [recentSearches, setRecentSearches] = useState<{ name: string; lat: number; lng: number }[]>([]);
   
   // Session token for Google Maps billing optimization
   const [sessionToken, setSessionToken] = useState("");
@@ -70,26 +70,14 @@ export function LocationSearchModal({
     }
   }, [isOpen, item]);
 
-  // Autocomplete call via .NET Proxy
   useEffect(() => {
     if (debouncedSearchValue.length > 2) {
-      const fetchPredictions = async () => {
-        try {
-          // Send request to proxy
-          const res = await apiClient(`${ENDPOINTS.MAPS_AUTOCOMPLETE}?input=${encodeURIComponent(debouncedSearchValue)}&sessionToken=${sessionToken}&language=${language}`);
-          const data = await res.json();
-          if (data.success && data.data && data.data.predictions) {
-            setPredictions(data.data.predictions);
-          } else {
-            setPredictions([]);
-          }
-        } catch (error) {
-          console.error("Autocomplete failed:", error);
+      mapsApi.autocomplete(debouncedSearchValue, sessionToken, language)
+        .then(data => setPredictions(data.predictions))
+        .catch(err => {
+          console.error('Autocomplete failed:', err);
           setPredictions([]);
-        }
-      };
-      
-      fetchPredictions();
+        });
     } else {
       setPredictions([]);
     }
@@ -99,38 +87,26 @@ export function LocationSearchModal({
     setSearchValue(e.target.value);
   };
 
-  // Get place details via .NET Proxy
   const handleSelectPrediction = async (placeId: string) => {
+    if (!item) return;
     try {
-      const res = await apiClient(`${ENDPOINTS.mapsPlaceDetails(placeId)}?sessionToken=${sessionToken}`);
-      const data = await res.json();
-      
-      if (data.success && data.data) {
-        const place = data.data;
-        const lat = place.latitude;
-        const lng = place.longitude;
-        const address = place.formattedAddress;
-        
-        if (lat != null && lng != null && address) {
-          onSelectLocation(item.id, address, { lat, lng });
-          saveRecentSearch(address, lat, lng);
-          setSearchValue("");
-          onClose();
-        } else {
-          console.error("Place details missing coordinates or address", place);
-        }
+      const place = await mapsApi.placeDetails(placeId, sessionToken);
+      if (place.latitude != null && place.longitude != null && place.formattedAddress) {
+        onSelectLocation(item.id, place.formattedAddress, { lat: place.latitude, lng: place.longitude });
+        saveRecentSearch(place.formattedAddress, place.latitude, place.longitude);
+        setSearchValue('');
+        onClose();
       } else {
-        console.error("Place details API returned unsuccessful", data);
+        console.error('Place details missing coordinates or address', place);
       }
     } catch (error) {
-      console.error("Place Details failed:", error);
+      console.error('Place Details failed:', error);
     }
   };
 
-  // Reverse Geocode (Get address from current location) via .NET Proxy
   const handleLocateClick = async () => {
-    setLocationError("");
-    if (!navigator.geolocation) {
+    setLocationError('');
+    if (!item || !navigator.geolocation) {
       setLocationError(t.searchModal.locationNotSupported);
       return;
     }
@@ -140,20 +116,14 @@ export function LocationSearchModal({
       async (position) => {
         const { latitude, longitude } = position.coords;
         try {
-          const res = await apiClient(`${ENDPOINTS.MAPS_REVERSE_GEOCODE}?lat=${latitude}&lng=${longitude}`);
-          const data = await res.json();
+          await mapsApi.reverseGeocode(latitude, longitude);
           setIsLocating(false);
-
-          if (data.success && data.data) {
-             const address = "Konumum";
-             onSelectLocation(item.id, address, { lat: latitude, lng: longitude });
-             saveRecentSearch(address, latitude, longitude);
-             setSearchValue("");
-             onClose();
-          } else {
-             setLocationError(t.searchModal.addressNotFound);
-          }
-        } catch (error) {
+          const address = 'Konumum';
+          onSelectLocation(item.id, address, { lat: latitude, lng: longitude });
+          saveRecentSearch(address, latitude, longitude);
+          setSearchValue('');
+          onClose();
+        } catch {
           setIsLocating(false);
           setLocationError(t.searchModal.addressNotFound);
         }
@@ -241,17 +211,17 @@ export function LocationSearchModal({
               <div className="flex flex-col gap-1">
                  <h4 className="text-white/20 text-xs font-bold uppercase tracking-widest mb-3 px-2">{t.searchModal.searchResults}</h4>
                  {predictions.map(pred => (
-                   <button 
-                     key={pred.placeId || pred.place_id} 
-                     onClick={() => handleSelectPrediction(pred.placeId || pred.place_id)}
+                   <button
+                     key={pred.place_id}
+                     onClick={() => handleSelectPrediction(pred.place_id)}
                      className="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-white/5 text-left transition-all group overflow-hidden"
-                    >
+                   >
                      <div className="w-11 h-11 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors shrink-0">
                        <MapPin size={22} className="text-white/30 group-hover:text-blue-400 transition-colors" />
                      </div>
                      <div className="flex flex-col min-w-0 flex-1">
-                       <span className="block truncate text-white/90 font-semibold text-[15px]">{pred.structuredFormatting?.mainText || pred.structured_formatting?.main_text || pred.description}</span>
-                       <span className="block truncate text-white/40 text-[13px] font-normal">{pred.structuredFormatting?.secondaryText || pred.structured_formatting?.secondary_text || 'Türkiye'}</span>
+                       <span className="block truncate text-white/90 font-semibold text-[15px]">{pred.structured_formatting?.main_text || pred.description}</span>
+                       <span className="block truncate text-white/40 text-[13px] font-normal">{pred.structured_formatting?.secondary_text || 'Türkiye'}</span>
                      </div>
                    </button>
                  ))}

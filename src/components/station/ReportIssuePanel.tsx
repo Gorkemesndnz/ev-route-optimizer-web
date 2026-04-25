@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, CheckCircle2, AlertTriangle, Send } from 'lucide-react';
 import type { StationData } from '../../contexts/StationContext';
-import { apiClient } from '../../lib/apiClient';
-import { ENDPOINTS } from '../../lib/endpoints';
+import { reportApi } from '../../api/reportApi';
 
 const ISSUE_TYPES = [
   "Güç çok düşük / Dalgalanıyor",
@@ -34,24 +33,16 @@ export default function ReportIssuePanel({
     
     setIsSubmitting(true);
     try {
-      const res = await apiClient(ENDPOINTS.REPORTS, {
-        method: 'POST',
-        body: {
-          stationId: station.id,
-          issueType: selectedIssue,
-          customDescription: selectedIssue === "Diğer" ? customIssueText.trim() : null
-        }
+      await reportApi.create({
+        stationId: String(station.id),
+        issueType: selectedIssue,
+        customDescription: selectedIssue === 'Diğer' ? customIssueText.trim() : undefined,
       });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setIsSuccess(true);
-        setTimeout(() => { onClose(); }, 2000);
-      } else {
-        alert(data.message || "Sorun bildirimi gönderilemedi.");
-      }
+      setIsSuccess(true);
+      setTimeout(() => { onClose(); }, 2000);
     } catch (err) {
-      console.error("Report submit error:", err);
-      alert("Bağlantı hatası yaşandı.");
+      console.error('Report submit error:', err);
+      alert(err instanceof Error ? err.message : 'Bağlantı hatası yaşandı.');
     } finally {
       setIsSubmitting(false);
     }

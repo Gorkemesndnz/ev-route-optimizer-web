@@ -4,8 +4,8 @@ import { cn } from "../../lib/utils";
 import { useAuth } from "../../contexts/AuthContext";
 import { translations } from "../../lib/translations";
 import { Edit2, Check, X, Loader2 } from "lucide-react";
-import { apiClient } from "../../lib/apiClient";
-import { ENDPOINTS } from "../../lib/endpoints";
+import { ApiError } from "../../lib/apiClient";
+import { authApi } from "../../api/authApi";
 import { useSettings } from "../../contexts/SettingsContext";
 
 type TranslationType = typeof translations.tr;
@@ -38,27 +38,17 @@ export default function AccountProfileTab({ t, user }: AccountProfileTabProps) {
 
   const handleSaveChanges = async () => {
     if (isVerifyingEmail) return;
-    
     setIsLoading(true);
     try {
-      const response = await apiClient(ENDPOINTS.AUTH_PROFILE, {
-        method: 'PUT',
-        body: { firstName, lastName, email, phoneNumber: phone }
-      });
-      const data = await response.json();
-
-      if (data.success) {
-        setCurrentUser(data.data);
-        localStorage.setItem('iyontree_user', JSON.stringify(data.data));
-        setIsEmailEditable(false);
-        setIsPhoneEditable(false);
-        setIsEmailVerifiedLocally(false);
-        alert(t.profileUpdated);
-      } else {
-        alert(data.error || "Güncelleme sırasında bir hata oluştu.");
-      }
-    } catch (error) {
-      alert("Sunucu hatası.");
+      const data = await authApi.updateProfile({ firstName, lastName, email, phoneNumber: phone });
+      setCurrentUser(data);
+      localStorage.setItem('iyontree_user', JSON.stringify(data));
+      setIsEmailEditable(false);
+      setIsPhoneEditable(false);
+      setIsEmailVerifiedLocally(false);
+      alert(t.profileUpdated);
+    } catch (e) {
+      alert(e instanceof ApiError ? e.message : 'Sunucu hatası.');
     } finally {
       setIsLoading(false);
     }
@@ -69,23 +59,12 @@ export default function AccountProfileTab({ t, user }: AccountProfileTabProps) {
       setIsEmailEditable(false);
       return;
     }
-
     setIsSendingOtp(true);
     try {
-      const response = await apiClient(ENDPOINTS.AUTH_PROFILE_SEND_CODE, {
-        method: 'POST',
-        body: { newEmail }
-      });
-      const data = await response.json();
-      if (data.success) {
-        setIsVerifyingEmail(true);
-      } else {
-        alert(data.error);
-        setEmail(user.email);
-        setIsEmailEditable(false);
-      }
-    } catch (error) {
-      alert("Kod gönderilemedi.");
+      await authApi.sendEmailCode({ newEmail });
+      setIsVerifyingEmail(true);
+    } catch (e) {
+      alert(e instanceof ApiError ? e.message : 'Kod gönderilemedi.');
       setEmail(user.email);
       setIsEmailEditable(false);
     } finally {
@@ -97,22 +76,14 @@ export default function AccountProfileTab({ t, user }: AccountProfileTabProps) {
     if (emailOtp.length !== 6) return;
     setIsLoading(true);
     try {
-      const response = await apiClient(ENDPOINTS.AUTH_PROFILE_VERIFY_CODE, {
-        method: 'POST',
-        body: { newEmail: email, code: emailOtp }
-      });
-      const data = await response.json();
-      if (data.success) {
-        setIsVerifyingEmail(false);
-        setIsEmailEditable(false);
-        setIsEmailVerifiedLocally(true);
-        setEmailOtp("");
-        setOtpError("");
-      } else {
-        setOtpError(data.error || "Hatalı kod.");
-      }
-    } catch (error) {
-      setOtpError("Doğrulama hatası.");
+      await authApi.verifyEmailCode({ newEmail: email, code: emailOtp });
+      setIsVerifyingEmail(false);
+      setIsEmailEditable(false);
+      setIsEmailVerifiedLocally(true);
+      setEmailOtp('');
+      setOtpError('');
+    } catch (e) {
+      setOtpError(e instanceof ApiError ? e.message : 'Doğrulama hatası.');
     } finally {
       setIsLoading(false);
     }
