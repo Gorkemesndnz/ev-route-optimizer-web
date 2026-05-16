@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useRef, useEff
 import { useVehicle } from './VehicleContext';
 import { routeApi } from '../api/routeApi';
 import { ApiError } from '../lib/apiClient';
+import { isValidLatLng } from '../lib/coordinates';
 import type {
   RouteResultDto,
   RouteLegDto,
@@ -21,15 +22,32 @@ export type RouteInsight = RouteInsightDto;
 
 const ROUTE_SETTINGS_STORAGE_KEY = 'iyontree_route_settings';
 
+export type OptimizationMode = 'balanced' | 'time_priority' | 'cost_priority' | 'battery_care';
+
 export interface RouteSettings {
+  smartPlanner: boolean;            // true = sistem otomatik + kullanıcı override edebilir; false = sistem klasik mod, override yok
+  // Pareto solver mode'u — UI'dan seçilir, default 'balanced'.
+  // FAZ 2: .NET DTO OptimizationMode bekliyor; payload'a doğrudan iletiliyor.
+  optimizationMode: OptimizationMode;
   chargingFrequency: 'optimal' | 'az' | 'sik';
-  arrivalSoc: number;
-  stationArrivalSoc: number;
-  stationDepartureSoc: number;
+  // null = sistem otomatik hesaplasın (override yok). Sayı = kullanıcı override değeri.
+  // Smart Planner ON iken görünen 3 manuel slider; Smart OFF iken her zaman null.
+  arrivalSoc: number | null;
+  stationArrivalSoc: number | null;
+  stationDepartureSoc: number | null;
   chargerSpeedPref: 'HPC' | 'DC' | 'AC' | 'any';
+  stationBrands: string[];          // boş array = marka filtresi yok
+  locationPrefs: string[];          // İstasyon lokasyon tercihleri (AVM, Kafe vb.)
+  departureDate: string;            // YYYY-MM-DD
+  departureTime: string;            // HH:mm (24-saat)
   toggleFeribot: boolean;
   toggleUcretliOtoyollar: boolean;
   toggleOtoyollar: boolean;
+  // Sprint 3: Köprü ve özel sektör (BOT) otoyolları için ayrı toggle'lar.
+  // Default true = "kullan". UI'dan off edilirse backend payload'da
+  // avoid_bridges/avoid_private_highways true gönderir.
+  toggleKopruler: boolean;
+  toggleOzelOtoyollar: boolean;
 }
 
 export interface Location {
@@ -57,15 +75,29 @@ export interface RouteContextValue {
   clearRoute: () => void;
 }
 
+const todayIso = (() => {
+  try { return new Date().toISOString().split('T')[0]; } catch { return ''; }
+})();
+
 const defaultSettings: RouteSettings = {
+  smartPlanner: true,             // varsayılan: akıllı planlayıcı açık
+  optimizationMode: 'balanced',   // varsayılan Pareto modu
   chargingFrequency: 'optimal',
-  arrivalSoc: 20,
-  stationArrivalSoc: 10,
-  stationDepartureSoc: 80,
+  // null = "sistem otomatik hesaplasın". Hardcoded default verilmez —
+  // kullanıcı override etmedikçe backend Pareto/Greedy ile kendisi karar verir.
+  arrivalSoc: null,
+  stationArrivalSoc: null,
+  stationDepartureSoc: null,
   chargerSpeedPref: 'any',
+  stationBrands: [],
+  locationPrefs: [],
+  departureDate: todayIso,
+  departureTime: '10:00',
   toggleFeribot: true,
   toggleUcretliOtoyollar: true,
   toggleOtoyollar: true,
+  toggleKopruler: true,         // Sprint 3: varsayılan köprülere izin ver
+  toggleOzelOtoyollar: true,    // Sprint 3: varsayılan BOT otoyollarına izin ver
 };
 
 function loadPersistedSettings(): RouteSettings {
@@ -80,6 +112,26 @@ function loadPersistedSettings(): RouteSettings {
 }
 
 const RouteContext = createContext<RouteContextValue | undefined>(undefined);
+
+function getRouteResultContractError(data: RouteResultDto | null | undefined): string | null {
+  if (!data || typeof data !== 'object') {
+    return 'Rota servisi gecersiz yanit dondu.';
+  }
+
+  if (data.status !== 'success') {
+    return data.message || 'Rota hesaplanamadi.';
+  }
+
+  if (!Array.isArray((data as { legs?: unknown }).legs) || data.legs.length === 0) {
+    return 'Rota sonucu eksik dondu. Lutfen tekrar deneyin.';
+  }
+
+  if (!Array.isArray((data as { charging_stops?: unknown }).charging_stops)) {
+    return 'Rota sarj duragi bilgisi eksik dondu. Lutfen tekrar deneyin.';
+  }
+
+  return null;
+}
 
 export const RouteProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const initialSettings = loadPersistedSettings();
@@ -119,7 +171,14 @@ export const RouteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         throw new Error('Lütfen rota planlamadan önce bir araç seçin.');
       }
 
-      const validLocations = locations.filter(l => l.coords);
+      const hasInvalidCoords = locations.some(l => l.coords && !isValidLatLng(l.coords));
+      if (hasInvalidCoords) {
+        throw new Error('Gecersiz konum koordinati. Lutfen konumu yeniden secin.');
+      }
+
+      const validLocations = locations.filter((l): l is Location & { coords: { lat: number; lng: number } } =>
+        isValidLatLng(l.coords)
+      );
       if (validLocations.length < 2) {
         throw new Error('Geçerli bir başlangıç ve varış noktası seçmelisiniz.');
       }
@@ -152,20 +211,47 @@ export const RouteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         climateControl: selectedVehicle.climateControl ?? true,
         drivingStyle: selectedVehicle.drivingStyle ?? 'normal',
         maxSpeed: selectedVehicle.maxSpeed ?? 130,
-        refConsumption: selectedVehicle.refConsumption ?? 16.5,
+        // null/undefined ise gönderme — backend WLTP/spec'ten kendisi hesaplar.
+        // Kullanıcı VehicleSettingsView'de explicit değer girmişse bu değer iletilir.
+        refConsumption: selectedVehicle.refConsumption,
+        smartPlanner: committedSettings.smartPlanner,
+        // FAZ 2: .NET DTO smartPlanEnabled bekliyor (camelCase). smartPlanner eski alias — geriye uyumluluk için her ikisini de gönder.
+        smartPlanEnabled: committedSettings.smartPlanner,
+        // optimizationMode RouteSettings'ten okunur — UI Settings ekranından gelir.
+        // Geriye uyumluluk: persisted state'te alan yoksa loadPersistedSettings
+        // defaultSettings ile merge ettiği için 'balanced' düşer.
+        optimizationMode: committedSettings.optimizationMode,
         sarjSikligi: committedSettings.chargingFrequency,
-        varisSarj: committedSettings.arrivalSoc,
-        istasyonVarisSarj: committedSettings.stationArrivalSoc,
-        istasyonAyrisSarj: committedSettings.stationDepartureSoc,
+        // Smart mode aktifken persisted manual SOC değerleri payload'a SIZDIRILMAZ.
+        // Kullanıcı önceden manual mode'da slider taşımış olabilir; smart'a geçince
+        // backend Pareto solver kendi karar versin diye 3 alanı da null gönderiyoruz.
+        // Manual mode (smartPlanner=false) → kullanıcının override değerleri respect edilir.
+        varisSarj: committedSettings.smartPlanner ? null : committedSettings.arrivalSoc,
+        istasyonVarisSarj: committedSettings.smartPlanner ? null : committedSettings.stationArrivalSoc,
+        istasyonAyrisSarj: committedSettings.smartPlanner ? null : committedSettings.stationDepartureSoc,
         sarjTercipi: committedSettings.chargerSpeedPref,
+        stationBrands: committedSettings.stationBrands,
+        locationPrefs: committedSettings.locationPrefs,
+        departureDate: committedSettings.departureDate,
+        departureTime: committedSettings.departureTime,
         toggleFeribot: committedSettings.toggleFeribot,
         toggleUcretliOtoyollar: committedSettings.toggleUcretliOtoyollar,
         toggleOtoyollar: committedSettings.toggleOtoyollar,
+        // Sprint 3: Köprü + özel sektör otoyol toggle'ları payload'a iletilir.
+        // .NET RouteRequestDto'da ToggleKopruler/ToggleOzelOtoyollar alanları
+        // tanımlı; PythonRouteService bunları !X şeklinde avoid_bridges/
+        // avoid_private_highways'e çevirip FastAPI'ye gönderir.
+        toggleKopruler: committedSettings.toggleKopruler,
+        toggleOzelOtoyollar: committedSettings.toggleOzelOtoyollar,
       };
 
       console.log('🚀 [RouteContext] Rota planlanıyor...', { payload });
 
       const data = await routeApi.plan(payload);
+      const contractError = getRouteResultContractError(data);
+      if (contractError) {
+        throw new Error(contractError);
+      }
 
       console.log('📊 [RouteContext] Analiz:', {
         status: data.status,

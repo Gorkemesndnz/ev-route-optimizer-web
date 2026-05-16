@@ -40,7 +40,7 @@ export default function VehicleSettingsView({
   const [climateControl, setClimateControl] = useState(selectedVehicle?.climateControl ?? true);
   const [plugTypes, setPlugTypes] = useState<string[]>(selectedVehicle?.preferredPlugTypes ?? ['ccs']);
   const [maxSpeed, setMaxSpeed] = useState(selectedVehicle?.maxSpeed ?? 130);
-  const [refConsumption, setRefConsumption] = useState(selectedVehicle?.refConsumption ?? 16.5);
+  const [refConsumption, setRefConsumption] = useState<number | null>(selectedVehicle?.refConsumption ?? null);
   const [drivingStyle, setDrivingStyle] = useState(selectedVehicle?.drivingStyle ?? 'normal');
 
   const handleApplySettings = async () => {
@@ -222,18 +222,30 @@ export default function VehicleSettingsView({
               <div className="flex items-center justify-between gap-2">
                 <div className="flex flex-col">
                   <span className="text-white/80 font-medium text-[15px] flex items-center gap-2"><Zap size={16} className="text-cyan-400"/> {t.refConsumption}</span>
-                  <span className="text-[11px] text-white/40">{t.refConsumptionDesc} <span className="text-cyan-400/80">(kWh/100km)</span></span>
+                  <span className="text-[11px] text-white/40">
+                    {refConsumption === null
+                      ? (language === 'tr' ? 'Boş bırakılırsa araç verisinden hesaplanır' : 'Leave empty to use vehicle data')
+                      : t.refConsumptionDesc}
+                    <span className="text-cyan-400/80"> (kWh/100km)</span>
+                  </span>
                 </div>
                 <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl p-1">
-                  <button onClick={() => setRefConsumption(Math.max(5, refConsumption - 0.5))} className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 hover:bg-white/20 text-white transition-colors">-</button>
+                  <button onClick={() => setRefConsumption(Math.max(5, (refConsumption ?? 16.5) - 0.5))} className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 hover:bg-white/20 text-white transition-colors">-</button>
                   <input 
                     type="number" 
                     step="0.5"
-                    value={refConsumption} 
-                    onChange={(e) => setRefConsumption(Math.max(5, parseFloat(e.target.value) || 5))}
+                    placeholder="Auto"
+                    value={refConsumption ?? ''}
+                    onChange={(e) => {
+                      if (e.target.value.trim() === '') {
+                        setRefConsumption(null);
+                        return;
+                      }
+                      setRefConsumption(Math.max(5, parseFloat(e.target.value) || 5));
+                    }}
                     className="w-12 bg-transparent text-center text-white font-bold text-lg focus:outline-none border-b border-white/10 focus:border-cyan-400 transition-colors"
                   />
-                  <button onClick={() => setRefConsumption(refConsumption + 0.5)} className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 hover:bg-white/20 text-white transition-colors">+</button>
+                  <button onClick={() => setRefConsumption((refConsumption ?? 16.5) + 0.5)} className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 hover:bg-white/20 text-white transition-colors">+</button>
                 </div>
               </div>
 

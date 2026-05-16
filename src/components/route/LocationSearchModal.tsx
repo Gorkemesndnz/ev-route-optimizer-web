@@ -6,6 +6,7 @@ import { translations } from "../../lib/translations";
 import { useDebounce } from "../../hooks/useDebounce";
 import { mapsApi } from "../../api/mapsApi";
 import type { AutocompletePredictionDto } from "../../types/api/maps";
+import { isValidLatLng } from "../../lib/coordinates";
 
 export function LocationSearchModal({ 
   isOpen, 
@@ -91,13 +92,15 @@ export function LocationSearchModal({
     if (!item) return;
     try {
       const place = await mapsApi.placeDetails(placeId, sessionToken);
-      if (place.latitude != null && place.longitude != null && place.formattedAddress) {
-        onSelectLocation(item.id, place.formattedAddress, { lat: place.latitude, lng: place.longitude });
-        saveRecentSearch(place.formattedAddress, place.latitude, place.longitude);
+      const coords = { lat: place.latitude, lng: place.longitude };
+      if (place.formattedAddress && isValidLatLng(coords)) {
+        onSelectLocation(item.id, place.formattedAddress, coords);
+        saveRecentSearch(place.formattedAddress, coords.lat, coords.lng);
         setSearchValue('');
         onClose();
       } else {
         console.error('Place details missing coordinates or address', place);
+        setLocationError(t.searchModal.addressNotFound);
       }
     } catch (error) {
       console.error('Place Details failed:', error);
@@ -115,11 +118,17 @@ export function LocationSearchModal({
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
+        const coords = { lat: latitude, lng: longitude };
+        if (!isValidLatLng(coords)) {
+          setIsLocating(false);
+          setLocationError(t.searchModal.addressNotFound);
+          return;
+        }
         try {
           await mapsApi.reverseGeocode(latitude, longitude);
           setIsLocating(false);
           const address = 'Konumum';
-          onSelectLocation(item.id, address, { lat: latitude, lng: longitude });
+          onSelectLocation(item.id, address, coords);
           saveRecentSearch(address, latitude, longitude);
           setSearchValue('');
           onClose();
@@ -240,7 +249,12 @@ export function LocationSearchModal({
                      <button 
                        key={idx}
                        onClick={() => {
-                         onSelectLocation(item.id, search.name, { lat: search.lat, lng: search.lng });
+                         const coords = { lat: search.lat, lng: search.lng };
+                         if (!item || !isValidLatLng(coords)) {
+                           setLocationError(t.searchModal.addressNotFound);
+                           return;
+                         }
+                         onSelectLocation(item.id, search.name, coords);
                          saveRecentSearch(search.name, search.lat, search.lng);
                          setSearchValue("");
                          onClose();

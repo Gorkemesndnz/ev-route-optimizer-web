@@ -21,6 +21,9 @@ export const stationApi = {
   getTouristSpots: (lat: number, lng: number) =>
     apiFetch<TouristAttractionDto[]>(`${ENDPOINTS.STATIONS_TOURIST_SPOTS}?lat=${lat}&lng=${lng}`),
 
+  // B4 fix: Backend GetNearbyAmenitiesAsync List<string> dönüyor (örn. ["Yeme & İçme", "ATM"]).
+  // Eski tip Record<string, boolean> idi → Object.keys ile çağrıldığında array indekslerini ("0","1")
+  // amenity ismi olarak gösteriyordu. Doğru tip: string[].
   getAmenities: (lat: number, lng: number) =>
-    apiFetch<Record<string, boolean>>(`${ENDPOINTS.STATIONS_AMENITIES}?lat=${lat}&lng=${lng}`),
+    apiFetch<string[]>(`${ENDPOINTS.STATIONS_AMENITIES}?lat=${lat}&lng=${lng}`),
 };

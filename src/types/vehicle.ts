@@ -18,6 +18,6 @@ export interface Vehicle {
   climateControl?: boolean;
   drivingStyle?: 'eco' | 'normal' | 'sport';
   maxSpeed?: number;
-  refConsumption?: number;
+  refConsumption?: number | null;
   preferredPlugTypes?: string[];
 }

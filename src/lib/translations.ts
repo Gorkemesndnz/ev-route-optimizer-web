@@ -189,6 +189,9 @@ export const translations = {
     minStations: "Minimum Şarj İstasyonu",
     departureSoC: "Başlangıç Şarjı",
     arrivalSoC: "Varış Şarjı Hedefi",
+    smartPlannerTitle: "Akıllı Rota Planlayıcı",
+    smartPlannerDesc: "Sistem sizin için varış şarj hedefini, şarj sıklığını, şarj limitlerini, şarj tercihlerini ve lokasyon tercihlerini en uygun şekilde belirler. Kapatırsanız bu değerleri elle ayarlayabilirsiniz.",
+    smartActiveBadge: "Akıllı planlayıcı aktif — bu ayarları sistem yönetir",
     
     // Garage/Add Vehicle
     myVehicles: "Araçlarım",
@@ -485,6 +488,9 @@ export const translations = {
     minStations: "Minimum Charge Stations",
     departureSoC: "Departure SoC",
     arrivalSoC: "Arrival SoC Target",
+    smartPlannerTitle: "Smart Route Planner",
+    smartPlannerDesc: "The system automatically picks the best arrival SoC target, charging frequency, charge limits, charger type, and location preferences for you. Turn it off to set these values manually.",
+    smartActiveBadge: "Smart planner is active — these settings are managed for you",
     
     // Garage/Add Vehicle
     myVehicles: "My Vehicles",

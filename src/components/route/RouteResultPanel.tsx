@@ -114,15 +114,28 @@ function StopCard({
           latitude: stop.lat,
           longitude: stop.lon,
           formattedAddress: stop.address || '',
-          connections: connectors.map(c => ({
-            connectionType: c.plug_type,
-            currentType: c.charger_type,
-            powerKw: c.power_kw,
-            status: c.status,
-            count: c.count,
-            availableCount: c.status === 'Available' ? c.count : 0,
-            price: c.price_per_kwh ?? undefined,
-          })),
+          connections: connectors.map(c => {
+            // B2 fix: FastAPI status'u "Unknown" döndüğünde availableCount=0 göndererek
+            // tüm soketleri "dolu" gibi göstermek yanlış. status sadece "Available" / "Occupied"
+            // ise sayısal değer üret; aksi halde undefined → UI "Bilinmiyor" rengini kullanır.
+            let availableCount: number | undefined;
+            if (c.status === 'Available') {
+              availableCount = c.count;
+            } else if (c.status === 'Occupied' || c.status === 'OutOfOrder') {
+              availableCount = 0;
+            } else {
+              availableCount = undefined; // Unknown / null → gerçek bilgi yok, "Bilinmiyor" göster
+            }
+            return {
+              connectionType: c.plug_type,
+              currentType: c.charger_type,
+              powerKw: c.power_kw,
+              status: c.status,
+              count: c.count,
+              availableCount,
+              price: c.price_per_kwh ?? undefined,
+            };
+          }),
         })}
       >
         <div className="flex justify-between items-start">
@@ -233,8 +246,9 @@ export default function RouteResultPanel({
     if (!routeResult || isSaved || isSaving) return;
     setIsSaving(true);
     setSaveError(false);
-    const startLabel = routeLocations[0]?.value || routeResult.legs[0]?.from_location || 'Başlangıç';
-    const endLabel = routeLocations[routeLocations.length - 1]?.value || routeResult.legs[routeResult.legs.length - 1]?.to_location || 'Varış';
+    const legs = Array.isArray((routeResult as { legs?: unknown }).legs) ? routeResult.legs : [];
+    const startLabel = routeLocations[0]?.value || legs[0]?.from_location || 'Başlangıç';
+    const endLabel = routeLocations[routeLocations.length - 1]?.value || legs[legs.length - 1]?.to_location || 'Varış';
     const id = await saveRoute({ result: routeResult, request: { locations: routeLocations }, startLabel, endLabel });
     setIsSaving(false);
     if (id) { setSavedId(id); setIsSaved(true); onSaved?.(id); }
@@ -251,6 +265,10 @@ export default function RouteResultPanel({
 
   const timelineNodes = useMemo(() => {
     if (!routeResult) return [];
+    const routeLegs = Array.isArray((routeResult as { legs?: unknown }).legs) ? routeResult.legs : [];
+    const chargingStops = Array.isArray((routeResult as { charging_stops?: unknown }).charging_stops)
+      ? routeResult.charging_stops
+      : [];
 
     interface TimelineNode {
     type: string;
@@ -272,9 +290,9 @@ export default function RouteResultPanel({
     // 1. Start Node
     nodes.push({
       type: 'start',
-      location: routeLocations[0]?.value || routeResult.legs[0]?.from_location || 'Başlangıç',
+      location: routeLocations[0]?.value || routeLegs[0]?.from_location || 'Başlangıç',
       weather: routeResult.start_weather,
-      soc: routeResult.legs[0]?.start_soc || 100,
+      soc: routeLegs[0]?.start_soc || 100,
       time: new Date(currentTime)
     });
 
@@ -292,7 +310,7 @@ export default function RouteResultPanel({
       });
     });
 
-    routeResult.legs.forEach((leg, i) => {
+    routeLegs.forEach((leg, i) => {
       currentTime = new Date(currentTime.getTime() + leg.duration_min * 60000);
       
       nodes.push({
@@ -302,9 +320,9 @@ export default function RouteResultPanel({
         consumption: leg.consumption_kwh
       });
 
-      const isLastLeg = i === routeResult.legs.length - 1;
+      const isLastLeg = i === routeLegs.length - 1;
       if (!isLastLeg) {
-        const stop = routeResult.charging_stops[i];
+        const stop = chargingStops[i];
         if (stop) {
           nodes.push({
             type: 'stop',
@@ -338,7 +356,36 @@ export default function RouteResultPanel({
 
   if (!routeResult) return null;
 
-  const totalChargeTime = routeResult.charging_stops?.reduce((acc, stop) => acc + stop.charge_time_min, 0) || 0;
+  const routeLegs = Array.isArray((routeResult as { legs?: unknown }).legs) ? routeResult.legs : [];
+  const chargingStops = Array.isArray((routeResult as { charging_stops?: unknown }).charging_stops)
+    ? routeResult.charging_stops
+    : [];
+
+  if (routeLegs.length === 0) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, x: -40 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -40 }}
+        className="glass-panel w-full sm:w-[420px] pointer-events-auto overflow-hidden border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)]"
+      >
+        <div className="flex items-start gap-3 p-5">
+          <AlertTriangle size={20} className="text-amber-400 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <h3 className="text-white font-semibold">Rota sonucu eksik</h3>
+            <p className="text-white/60 text-sm mt-1">
+              Rota hesaplandi fakat surus segmentleri alinamadi. Lutfen tekrar deneyin.
+            </p>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 hover:text-red-400 flex items-center justify-center transition-colors">
+            <X size={16} />
+          </button>
+        </div>
+      </motion.div>
+    );
+  }
+
+  const totalChargeTime = chargingStops.reduce((acc, stop) => acc + stop.charge_time_min, 0);
   const driveTime = routeResult.total_duration_min - totalChargeTime;
   const avgConsumption = routeResult.total_distance_km > 0 ? routeResult.consumption_kwh / routeResult.total_distance_km * 10 : 0;
 
@@ -563,4 +610,3 @@ export default function RouteResultPanel({
   </>
   );
 }
-

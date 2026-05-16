@@ -147,8 +147,17 @@ export default function StationDetailsPanel({
       reviewApi.getByStation(stationId)
          .then(result => setRatingSummary(result))
          .catch(err => {
-            console.error('Reviews API error', err);
-            setReviewsError(true);
+            // B3 fix: 4xx (404 not found, 400 invalid id) → değerlendirme yok demektir, hata gösterme.
+            // Sadece gerçek sunucu hataları (5xx) veya ağ hataları için error UI'ı tetikle.
+            const status = (err as { status?: number })?.status;
+            const isNoReviewsCase = typeof status === 'number' && status >= 400 && status < 500;
+            if (isNoReviewsCase) {
+               // Boş özet ata → "Henüz değerlendirme yok" mesajı görünür
+               setRatingSummary({ averageRating: 0, totalReviews: 0, reviews: [] });
+            } else {
+               console.error('Reviews API error', err);
+               setReviewsError(true);
+            }
          })
          .finally(() => setReviewsLoading(false));
    }, []);
@@ -214,7 +223,11 @@ export default function StationDetailsPanel({
 
       setNearbyAmenities([]);
       stationApi.getAmenities(selectedStation.latitude, selectedStation.longitude)
-         .then(data => { if (!isCancelled) setNearbyAmenities(Object.keys(data)); })
+         .then(data => {
+            // B4 fix: Backend string[] döndürüyor; doğrudan array olarak kullan
+            // (eskiden Object.keys çağrılıyordu — array için "0","1" indekslerini veriyordu).
+            if (!isCancelled && Array.isArray(data)) setNearbyAmenities(data);
+         })
          .catch(err => { if (!isCancelled) console.error('Amenities API error', err); });
 
       // Fetch reviews

@@ -38,7 +38,7 @@ export const ENDPOINTS = {
 
   // ── Reviews & Reports ──────────────────────────────────
   REVIEWS: '/reviews',
-  reviewsByStation: (stationId: string) => `/reviews/${stationId}` as const,
+  reviewsByStation: (stationId: string) => `/reviews/${encodeURIComponent(stationId)}` as const,
   reviewDelete: (reviewId: string) => `/reviews/${reviewId}` as const,
   REPORTS: '/reports',
 
