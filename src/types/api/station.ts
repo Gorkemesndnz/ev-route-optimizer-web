@@ -13,6 +13,10 @@ export interface ConnectionDto {
 
 export interface ChargingStationDto {
   id: number;
+  ocmId?: number | null;
+  placeId?: string | null;
+  sourceProvider?: 'google' | 'ocm' | null;
+  sourceId?: string | null;
   title: string;
   latitude: number;
   longitude: number;
@@ -36,6 +40,9 @@ export interface ChargingStationDetailDto extends ChargingStationDto {
 export interface BaseStationDto {
   id: string;
   ocmId: number;
+  placeId?: string | null;
+  sourceProvider?: 'google' | 'ocm' | null;
+  sourceId?: string | null;
   title: string;
   latitude: number;
   longitude: number;

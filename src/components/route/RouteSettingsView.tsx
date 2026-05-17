@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronLeft, Zap, BatteryMedium, Calendar as CalendarIcon, MapPin, Search, Sparkles, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { translations } from "../../lib/translations";
@@ -49,7 +49,7 @@ const NativeSlider = ({ value, min, max, onChange, disabled = false }: { value: 
 };
 
 import { useSettings } from "../../contexts/SettingsContext";
-import { useRouteContext } from "../../contexts/RouteContext";
+import { useRouteContext, type RouteSettings } from "../../contexts/RouteContext";
 
 /**
  * Override slider — manuel/otomatik mod arasında geçiş yapar.
@@ -67,6 +67,7 @@ const OverrideSlider = ({
   max,
   onChange,
   language,
+  disabled = false,
 }: {
   label: string,
   value: number | null,
@@ -75,15 +76,16 @@ const OverrideSlider = ({
   max: number,
   onChange: (v: number | null) => void,
   language: 'tr' | 'en',
+  disabled?: boolean,
 }) => {
   const isAuto = value === null;
   const displayValue = value ?? defaultDisplay;
   return (
-    <div className="flex flex-col gap-3">
+    <div className={cn("flex flex-col gap-3", disabled && "opacity-60")}>
       <div className="flex items-center justify-between">
         <span className="text-white/70 text-sm font-medium">{label}</span>
         <div className="flex items-center gap-2">
-          {isAuto ? (
+          {isAuto || disabled ? (
             <span className="text-[10px] font-semibold tracking-wider uppercase text-white/40 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
               {language === 'tr' ? 'Otomatik' : 'Auto'}
             </span>
@@ -105,7 +107,7 @@ const OverrideSlider = ({
         </div>
       </div>
       <div className={cn("transition-opacity", isAuto && "opacity-50")}>
-        <NativeSlider value={displayValue} min={min} max={max} onChange={(v) => onChange(v)} />
+        <NativeSlider value={displayValue} min={min} max={max} onChange={(v) => onChange(v)} disabled={disabled} />
       </div>
     </div>
   );
@@ -118,61 +120,74 @@ export default function RouteSettingsView({
 }) {
   const { language } = useSettings();
   const t = translations[language];
-  const { pendingSettings, setPendingSettings, commitSettings } = useRouteContext();
-
-  // ---- Akıllı planlayıcı ----
-  const [smartPlanner, setSmartPlanner] = useState<boolean>(pendingSettings.smartPlanner ?? true);
-
-  // ---- Genel Rota Ayarları ----
-  const [date, setDate] = useState(pendingSettings.departureDate || new Date().toISOString().split('T')[0]);
-  const [yolaCikisSaati, setYolaCikisSaati] = useState(pendingSettings.departureTime || "10:00");
-
-  const [toggles, setToggles] = useState({
-    devletOtoyollari: pendingSettings.toggleOtoyollar,
-    feribot: pendingSettings.toggleFeribot,
-    // Sprint 3: kopru ve ozelOtoyollar persisted state'ten gelir.
-    ozelOtoyollar: pendingSettings.toggleOzelOtoyollar,
-    ucretliOtoyollar: pendingSettings.toggleUcretliOtoyollar,
-    kopru: pendingSettings.toggleKopruler
-  });
-
-  const [stationBrands, setStationBrands] = useState<string[]>(pendingSettings.stationBrands ?? []);
+  const { pendingSettings, commitSettings } = useRouteContext();
+  const [draftSettings, setDraftSettings] = useState<RouteSettings>(pendingSettings);
   const [brandQuery, setBrandQuery] = useState("");
 
-  // ---- İstasyon Ayarları (smart kapalıysa düzenlenebilir) ----
-  const [sarjSikligi, setSarjSikligi] = useState<"optimal" | "az" | "sik">(pendingSettings.chargingFrequency);
+  useEffect(() => {
+    setDraftSettings(pendingSettings);
+  }, [pendingSettings]);
 
-  // ---- Manuel Override (smart kapalıyken altta gösterilir) ----
-  // null = otomatik (backend hesaplar). Sayı = kullanıcı override etti.
-  const [varisSarj, setVarisSarj] = useState<number | null>(pendingSettings.arrivalSoc);
-  const [istasyonVarisSarj, setIstasyonVarisSarj] = useState<number | null>(pendingSettings.stationArrivalSoc);
-  const [istasyonAyrisSarj, setIstasyonAyrisSarj] = useState<number | null>(pendingSettings.stationDepartureSoc);
+  const updateDraft = (patch: Partial<RouteSettings>) => {
+    setDraftSettings(prev => ({ ...prev, ...patch }));
+  };
 
-  const chargerPref = pendingSettings.chargerSpeedPref;
-  const [sarjTercipi, setSarjTercipi] = useState<"HPC" | "DC" | "AC" | null>(
-    chargerPref === 'any' ? null : chargerPref
-  );
-  const [selectedLokasyonlar, setSelectedLokasyonlar] = useState<string[]>(pendingSettings.locationPrefs ?? []);
+  const toggles = {
+    devletOtoyollari: draftSettings.toggleOtoyollar,
+    feribot: draftSettings.toggleFeribot,
+    ozelOtoyollar: draftSettings.toggleOzelOtoyollar,
+    ucretliOtoyollar: draftSettings.toggleUcretliOtoyollar,
+    kopru: draftSettings.toggleKopruler,
+  };
+
+  const stationBrands = draftSettings.stationBrands ?? [];
+  const selectedLokasyonlar = draftSettings.locationPrefs ?? [];
+  const sarjTercipi = draftSettings.chargerSpeedPref === 'any' ? null : draftSettings.chargerSpeedPref;
 
   const toggleOption = (key: keyof typeof toggles) => {
-    setToggles(prev => ({ ...prev, [key]: !prev[key] }));
+    switch (key) {
+      case 'devletOtoyollari':
+        updateDraft({ toggleOtoyollar: !draftSettings.toggleOtoyollar });
+        break;
+      case 'feribot':
+        updateDraft({ toggleFeribot: !draftSettings.toggleFeribot });
+        break;
+      case 'ozelOtoyollar':
+        updateDraft({ toggleOzelOtoyollar: !draftSettings.toggleOzelOtoyollar });
+        break;
+      case 'ucretliOtoyollar':
+        updateDraft({ toggleUcretliOtoyollar: !draftSettings.toggleUcretliOtoyollar });
+        break;
+      case 'kopru':
+        updateDraft({ toggleKopruler: !draftSettings.toggleKopruler });
+        break;
+    }
   };
 
   const toggleLokasyon = (isim: string) => {
-    if (smartPlanner) return;
-    setSelectedLokasyonlar(prev =>
-      prev.includes(isim) ? prev.filter(l => l !== isim) : [...prev, isim]
-    );
+    if (draftSettings.smartPlanner) return;
+    const nextPrefs = selectedLokasyonlar.includes(isim)
+      ? selectedLokasyonlar.filter(l => l !== isim)
+      : [...selectedLokasyonlar, isim];
+    updateDraft({ locationPrefs: nextPrefs });
   };
 
   const toggleBrand = (brand: string) => {
-    setStationBrands(prev =>
-      prev.includes(brand) ? prev.filter(b => b !== brand) : [...prev, brand]
-    );
+    const nextBrands = stationBrands.includes(brand)
+      ? stationBrands.filter(b => b !== brand)
+      : [...stationBrands, brand];
+    updateDraft({ stationBrands: nextBrands });
+  };
+
+  const setSmartPlanner = (smartPlanner: boolean) => {
+    updateDraft({
+      smartPlanner,
+      arrivalSoc: smartPlanner ? draftSettings.arrivalSoc : (draftSettings.arrivalSoc ?? 20),
+    });
   };
 
   // istasyon ayarları smart açıkken devre dışı
-  const stationDisabled = smartPlanner;
+  const stationDisabled = draftSettings.smartPlanner;
 
   return (
     <div className="glass-panel w-full sm:w-[420px] h-full sm:h-auto sm:max-h-[90vh] flex flex-col pointer-events-auto">
@@ -231,14 +246,14 @@ export default function RouteSettingsView({
             <div className="grid grid-cols-2 gap-3">
               <input
                 type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
+                value={draftSettings.departureDate}
+                onChange={(e) => updateDraft({ departureDate: e.target.value })}
                 className="w-full bg-white/5 backdrop-blur-sm rounded-xl px-4 py-3.5 text-white/70 text-sm border border-white/10 focus:outline-none focus:border-cyan-400/50 transition-all [color-scheme:dark]"
               />
               <input
                 type="time"
-                value={yolaCikisSaati}
-                onChange={(e) => setYolaCikisSaati(e.target.value)}
+                value={draftSettings.departureTime}
+                onChange={(e) => updateDraft({ departureTime: e.target.value })}
                 className="w-full bg-white/5 backdrop-blur-sm rounded-xl px-4 py-3.5 text-white/70 text-sm border border-white/10 focus:outline-none focus:border-cyan-400/50 transition-all [color-scheme:dark]"
               />
             </div>
@@ -285,20 +300,32 @@ export default function RouteSettingsView({
 
           {/* Akıllı Rota Planlayıcı toggle */}
           <div className={cn(
-            "flex flex-col gap-3 rounded-2xl p-5 border transition-all",
-            smartPlanner
+            "flex flex-col gap-5 rounded-2xl p-5 border transition-all",
+            draftSettings.smartPlanner
               ? "bg-cyan-400/10 border-cyan-400/40 shadow-[0_0_15px_rgba(34,211,238,0.15)]"
               : "bg-white/5 border-white/10"
           )}>
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-3 flex-1">
-                <Sparkles size={18} className={cn("mt-0.5 shrink-0", smartPlanner ? "text-cyan-300" : "text-white/60")} />
+                <Sparkles size={18} className={cn("mt-0.5 shrink-0", draftSettings.smartPlanner ? "text-cyan-300" : "text-white/60")} />
                 <div className="flex flex-col gap-1">
                   <span className="text-white font-semibold text-[15px]">{t.smartPlannerTitle}</span>
                   <span className="text-white/60 text-[12px] leading-snug">{t.smartPlannerDesc}</span>
                 </div>
               </div>
-              <CustomSwitch checked={smartPlanner} onChange={setSmartPlanner} />
+              <CustomSwitch checked={draftSettings.smartPlanner} onChange={setSmartPlanner} />
+            </div>
+            <div className="pt-4 border-t border-white/10">
+              <OverrideSlider
+                label={t.arrivalSoC}
+                value={draftSettings.smartPlanner ? null : draftSettings.arrivalSoc}
+                defaultDisplay={20}
+                min={5}
+                max={50}
+                onChange={(arrivalSoc) => updateDraft({ arrivalSoc })}
+                language={language}
+                disabled={draftSettings.smartPlanner}
+              />
             </div>
           </div>
         </div>
@@ -329,11 +356,11 @@ export default function RouteSettingsView({
               {(language === 'tr' ? ["Optimal", "Az", "Sık"] : ["Optimal", "Few", "Many"]).map((label, idx) => {
                 const values = ["optimal", "az", "sik"] as const;
                 const val = values[idx];
-                const isActive = sarjSikligi === val;
+                const isActive = draftSettings.chargingFrequency === val;
                 return (
                   <button
                     key={val}
-                    onClick={() => !stationDisabled && setSarjSikligi(val)}
+                    onClick={() => !stationDisabled && updateDraft({ chargingFrequency: val })}
                     disabled={stationDisabled}
                     className={cn(
                       "flex-1 py-2.5 text-center text-sm font-medium rounded-xl transition-all duration-300",
@@ -354,7 +381,7 @@ export default function RouteSettingsView({
               {(['HPC', 'DC', 'AC'] as const).map(tip => (
                 <button
                   key={tip}
-                  onClick={() => !stationDisabled && setSarjTercipi(tip)}
+                  onClick={() => !stationDisabled && updateDraft({ chargerSpeedPref: tip })}
                   disabled={stationDisabled}
                   className={cn(
                     "flex-1 py-3 rounded-xl text-sm font-semibold border transition-all duration-300",
@@ -406,10 +433,10 @@ export default function RouteSettingsView({
 
         {/* ============================== */}
         {/* MANUEL ÜZERINE YAZMA — sadece Smart Planner OFF iken görünür */}
-        {/* Sliderlar dokunulmadıkça null kalır → backend kendisi hesaplar.    */}
-        {/* Kullanıcı dokununca değer set olur → backend o değere uyar.        */}
+        {/* Varış SOC Smart Planner kartında durur; burada istasyon SOC değerleri kalır. */}
+        {/* Sliderlar dokunulmadıkça null kalır → backend kendisi hesaplar. */}
         {/* ============================== */}
-        {!smartPlanner && (
+        {!draftSettings.smartPlanner && (
           <>
             <div className="h-px bg-gradient-to-r from-transparent via-white/20 to-transparent w-full my-1"></div>
             <div className="flex flex-col gap-5">
@@ -421,36 +448,27 @@ export default function RouteSettingsView({
               </div>
               <p className="text-white/50 text-[12px] leading-snug -mt-2">
                 {language === 'tr'
-                  ? 'Manuel modda bu değerleri siz belirlersiniz. Boş bırakırsanız backend otomatik hesaplar.'
+                  ? 'Manuel modda istasyon SOC değerlerini siz belirlersiniz. Boş bırakırsanız backend otomatik hesaplar.'
                   : 'In manual mode you can set these values. Leave them empty to let the backend calculate.'}
               </p>
 
               <div className="flex flex-col gap-5 bg-white/5 border border-white/10 rounded-2xl p-5 shadow-inner">
                 <OverrideSlider
-                  label={t.arrivalSoC}
-                  value={varisSarj}
-                  defaultDisplay={20}
-                  min={0}
-                  max={100}
-                  onChange={setVarisSarj}
-                  language={language}
-                />
-                <OverrideSlider
                   label={language === 'tr' ? 'İstasyona Varış (Min)' : 'Station Arrival (Min)'}
-                  value={istasyonVarisSarj}
+                  value={draftSettings.stationArrivalSoc}
                   defaultDisplay={10}
                   min={0}
                   max={100}
-                  onChange={setIstasyonVarisSarj}
+                  onChange={(stationArrivalSoc) => updateDraft({ stationArrivalSoc })}
                   language={language}
                 />
                 <OverrideSlider
                   label={language === 'tr' ? 'İstasyondan Ayrılış (Hedef)' : 'Station Departure (Target)'}
-                  value={istasyonAyrisSarj}
+                  value={draftSettings.stationDepartureSoc}
                   defaultDisplay={80}
                   min={0}
                   max={100}
-                  onChange={setIstasyonAyrisSarj}
+                  onChange={(stationDepartureSoc) => updateDraft({ stationDepartureSoc })}
                   language={language}
                 />
               </div>
@@ -463,29 +481,15 @@ export default function RouteSettingsView({
       <div className="px-6 py-5 shrink-0 bg-transparent border-t border-white/10 z-50">
         <button
           onClick={() => {
-            setPendingSettings({
-              smartPlanner,
-              // optimizationMode için bu ekranda UI henüz yok; mevcut değeri olduğu gibi koru.
-              // İleride bir sprint'te dropdown eklenince local state'e bağlanacak.
-              optimizationMode: pendingSettings.optimizationMode,
-              chargingFrequency: sarjSikligi,
-              // Smart ON iken override'lar her zaman null; manuel modda kullanıcı değerleri iletilir.
-              arrivalSoc: smartPlanner ? null : varisSarj,
-              stationArrivalSoc: smartPlanner ? null : istasyonVarisSarj,
-              stationDepartureSoc: smartPlanner ? null : istasyonAyrisSarj,
-              chargerSpeedPref: sarjTercipi ?? 'any',
-              stationBrands,
-              locationPrefs: selectedLokasyonlar,
-              departureDate: date,
-              departureTime: yolaCikisSaati,
-              toggleFeribot: toggles.feribot,
-              toggleUcretliOtoyollar: toggles.ucretliOtoyollar,
-              toggleOtoyollar: toggles.devletOtoyollari,
-              // Sprint 3: Köprü + özel sektör otoyol toggle'ları persiste olur.
-              toggleKopruler: toggles.kopru,
-              toggleOzelOtoyollar: toggles.ozelOtoyollar,
-            });
-            commitSettings();
+            const nextSettings: RouteSettings = {
+              ...draftSettings,
+              arrivalSoc: draftSettings.smartPlanner ? null : draftSettings.arrivalSoc,
+              stationArrivalSoc: draftSettings.smartPlanner ? null : draftSettings.stationArrivalSoc,
+              stationDepartureSoc: draftSettings.smartPlanner ? null : draftSettings.stationDepartureSoc,
+              stationBrands: [...stationBrands],
+              locationPrefs: [...selectedLokasyonlar],
+            };
+            commitSettings(nextSettings);
             onBack();
           }}
           className="w-full bg-cyan-400 hover:bg-cyan-300 text-black font-bold py-4 rounded-2xl transition-all duration-200 active:scale-[0.98] shadow-[0_0_15px_rgba(34,211,238,0.3)]"

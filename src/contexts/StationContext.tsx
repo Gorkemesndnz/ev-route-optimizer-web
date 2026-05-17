@@ -4,6 +4,10 @@ import type { ReactNode } from 'react';
 // Basic Station Interface as returned by our API
 export interface StationData {
   id: string;
+  ocmId?: number | null;
+  placeId?: string | null;
+  sourceProvider?: 'google' | 'ocm' | null;
+  sourceId?: string | null;
   title: string;
   latitude: number;
   longitude: number;

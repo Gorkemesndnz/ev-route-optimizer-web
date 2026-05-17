@@ -132,6 +132,7 @@ const ROUTE_SETTINGS_STORAGE_KEY = 'iyontree_route_settings';
 
 interface PlanInvoker {
   invoke: (locations: Location[]) => Promise<void>;
+  commit: (settings: RouteSettings) => void;
   snapshot: () => RouteContextValue;
 }
 
@@ -144,6 +145,9 @@ const Invoker: React.FC<{ controlRef: { current: PlanInvoker | null } }> = ({ co
     controlRef.current = {
       invoke: async (locations) => {
         await ctxRef.current.planRoute(locations);
+      },
+      commit: (settings) => {
+        ctxRef.current.commitSettings(settings);
       },
       snapshot: () => ctxRef.current,
     };
@@ -179,6 +183,11 @@ async function renderProvider(seedSettings?: Partial<RouteSettings>) {
   });
 
   return {
+    commit: async (settings: RouteSettings) => {
+      await act(async () => {
+        controlRef.current!.commit(settings);
+      });
+    },
     invoke: async (locations: Location[]) => {
       await act(async () => {
         await controlRef.current!.invoke(locations);
@@ -299,6 +308,55 @@ describe('RouteContext.planRoute payload contract', () => {
       expect(payload.varisSarj).toBe(20);
       expect(payload.istasyonVarisSarj).toBe(15);
       expect(payload.istasyonAyrisSarj).toBe(80);
+    } finally { r.cleanup(); }
+  });
+
+  it('R4b - commitSettings(nextSettings) sonrasi ilk rota istegi yeni ayarlari kullanir', async () => {
+    const r = await renderProvider({
+      smartPlanner: true,
+      arrivalSoc: null,
+      stationArrivalSoc: null,
+      stationDepartureSoc: null,
+      toggleFeribot: true,
+      toggleUcretliOtoyollar: true,
+      toggleOtoyollar: true,
+    });
+
+    try {
+      const nextSettings: RouteSettings = {
+        ...r.snapshot().committedSettings,
+        smartPlanner: false,
+        arrivalSoc: 35,
+        stationArrivalSoc: 18,
+        stationDepartureSoc: 72,
+        chargingFrequency: 'sik',
+        chargerSpeedPref: 'HPC',
+        stationBrands: ['ZES', 'Trugo'],
+        locationPrefs: ['AVM'],
+        toggleFeribot: false,
+        toggleUcretliOtoyollar: false,
+        toggleOtoyollar: false,
+        toggleKopruler: false,
+        toggleOzelOtoyollar: false,
+      };
+
+      await r.commit(nextSettings);
+      await r.invoke([ISTANBUL, ANKARA]);
+
+      const payload = lastPayload();
+      expect(payload.smartPlanEnabled).toBe(false);
+      expect(payload.varisSarj).toBe(35);
+      expect(payload.istasyonVarisSarj).toBe(18);
+      expect(payload.istasyonAyrisSarj).toBe(72);
+      expect(payload.sarjSikligi).toBe('sik');
+      expect(payload.sarjTercipi).toBe('HPC');
+      expect(payload.stationBrands).toEqual(['ZES', 'Trugo']);
+      expect(payload.locationPrefs).toEqual(['AVM']);
+      expect(payload.toggleFeribot).toBe(false);
+      expect(payload.toggleUcretliOtoyollar).toBe(false);
+      expect(payload.toggleOtoyollar).toBe(false);
+      expect(payload.toggleKopruler).toBe(false);
+      expect(payload.toggleOzelOtoyollar).toBe(false);
     } finally { r.cleanup(); }
   });
 

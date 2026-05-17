@@ -122,6 +122,8 @@ export default function RouteLayer() {
           title={stop.station_name}
           onClick={() => setSelectedStation({
             id: stop.station_id || `stop-${idx}`,
+            sourceProvider: stop.source_provider ?? null,
+            sourceId: stop.source_id ?? null,
             title: stop.station_name || stop.operator || 'Şarj İstasyonu',
             latitude: stop.lat,
             longitude: stop.lon,

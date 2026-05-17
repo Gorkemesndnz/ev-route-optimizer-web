@@ -59,10 +59,9 @@ export interface Location {
 
 export interface RouteContextValue {
   pendingSettings: RouteSettings;
-  setPendingSettings: React.Dispatch<React.SetStateAction<RouteSettings>>;
 
   committedSettings: RouteSettings;
-  commitSettings: () => void;
+  commitSettings: (nextSettings: RouteSettings) => void;
 
   routeResult: RouteResultDto | null;
   setRouteResult: React.Dispatch<React.SetStateAction<RouteResultDto | null>>;
@@ -155,9 +154,10 @@ export const RouteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const { selectedVehicle } = useVehicle();
 
-  const commitSettings = useCallback(() => {
-    setCommittedSettings(pendingSettings);
-  }, [pendingSettings]);
+  const commitSettings = useCallback((nextSettings: RouteSettings) => {
+    setPendingSettings(nextSettings);
+    setCommittedSettings(nextSettings);
+  }, []);
 
   const planRoute = useCallback(async (locations: Location[]) => {
     abortControllerRef.current?.abort();
@@ -311,7 +311,6 @@ export const RouteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   return (
     <RouteContext.Provider value={{
       pendingSettings,
-      setPendingSettings,
       committedSettings,
       commitSettings,
       routeResult,
