@@ -67,6 +67,7 @@ export interface RouteContextValue {
   routeResult: RouteResultDto | null;
   setRouteResult: React.Dispatch<React.SetStateAction<RouteResultDto | null>>;
   routeLocations: Location[];
+  setRouteLocations: React.Dispatch<React.SetStateAction<Location[]>>;
   isPlanning: boolean;
   error: string | null;
 
@@ -136,6 +137,12 @@ function getRouteResultContractError(data: RouteResultDto | null | undefined): s
   }
 
   return null;
+}
+
+function getApiErrorCode(error: ApiError): string | null {
+  const data = error.data as { error?: { code?: unknown } } | undefined;
+  const code = data?.error?.code;
+  return typeof code === 'string' ? code : null;
 }
 
 export const RouteProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -294,7 +301,11 @@ export const RouteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       if (e instanceof DOMException && e.name === 'AbortError') return;
       console.error('💥 [RouteContext] Hata:', e);
       if (e instanceof ApiError) {
-        setError(e.message);
+        if (getApiErrorCode(e) === 'TOO_MANY_WAYPOINTS') {
+          setError('Cok fazla ara durak eklendi. Lutfen durak sayisini azaltip tekrar deneyin.');
+        } else {
+          setError(e.message);
+        }
       } else {
         setError(e instanceof Error ? e.message : 'Rota hesaplanamadı.');
       }
@@ -323,6 +334,7 @@ export const RouteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       routeResult,
       setRouteResult,
       routeLocations,
+      setRouteLocations,
       isPlanning,
       error,
       planRoute,

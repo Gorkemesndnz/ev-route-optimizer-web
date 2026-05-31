@@ -204,7 +204,7 @@ export default function RouteResultPanel({
   savedRouteId?: string;
   onSaved?: (id: string) => void;
 }) {
-  const { routeResult: liveResult, routeLocations, setRouteResult } = useRouteContext();
+  const { routeResult: liveResult, routeLocations, setRouteResult, setRouteLocations } = useRouteContext();
   const { language } = useSettings();
   const { selectedVehicle } = useVehicle();
   const { setSelectedStation } = useStation();
@@ -232,12 +232,46 @@ export default function RouteResultPanel({
         setReadonlyResult(parsed);
         setRouteResult(parsed); // haritada polyline çizilsin
       } catch { /* json parse hatası */ }
+      try {
+        const request = JSON.parse(detail.routeRequestJson) as { locations?: unknown };
+        if (Array.isArray(request.locations)) {
+          const locations = request.locations.filter((loc): loc is {
+            id: string;
+            type: string;
+            value: string;
+            coords: { lat: number; lng: number };
+          } => {
+            if (!loc || typeof loc !== 'object') return false;
+            const candidate = loc as {
+              id?: unknown;
+              type?: unknown;
+              value?: unknown;
+              coords?: { lat?: unknown; lng?: unknown };
+            };
+            return (
+              typeof candidate.id === 'string' &&
+              typeof candidate.type === 'string' &&
+              typeof candidate.value === 'string' &&
+              typeof candidate.coords?.lat === 'number' &&
+              Number.isFinite(candidate.coords.lat) &&
+              typeof candidate.coords?.lng === 'number' &&
+              Number.isFinite(candidate.coords.lng)
+            );
+          });
+          if (locations.length >= 2) {
+            setRouteLocations(locations);
+          }
+        }
+      } catch { /* eski/bozuk saved route request'i waypoint restore etmez */ }
       setSavedRating(detail.rating);
       setSavedComment(detail.ratingComment);
     }).finally(() => setReadonlyLoading(false));
 
-    return () => { setRouteResult(null); }; // panel kapanınca haritayı temizle
-  }, [mode, savedRouteId]);
+    return () => {
+      setRouteResult(null);
+      setRouteLocations([]);
+    }; // panel kapanınca haritayı temizle
+  }, [mode, savedRouteId, getSavedRoute, setRouteResult, setRouteLocations]);
 
   const routeResult = mode === 'readonly' ? readonlyResult : liveResult;
 

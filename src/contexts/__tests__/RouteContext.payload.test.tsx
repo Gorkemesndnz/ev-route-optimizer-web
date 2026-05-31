@@ -24,6 +24,7 @@ import * as React from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react';
 import type { Vehicle } from '../../types/vehicle';
+import { ApiError } from '../../lib/apiClient';
 
 // React 18+ act() ortam flag'i (vitest + happy-dom için gerekli)
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -109,6 +110,10 @@ const ISTANBUL: Location = {
 const DUZCE: Location = {
   id: 'waypoint-1', type: 'waypoint', value: 'Duzce',
   coords: { lat: 40.8438, lng: 31.1565 },
+};
+const BOLU: Location = {
+  id: 'waypoint-2', type: 'waypoint', value: 'Bolu',
+  coords: { lat: 40.7350, lng: 31.6061 },
 };
 const ANKARA: Location = {
   id: 'end', type: 'destination', value: 'Ankara',
@@ -480,6 +485,27 @@ describe('RouteContext.planRoute payload contract', () => {
     } finally { r.cleanup(); }
   });
 
+  it('R8b — coklu ara durak sirasini korur ve start/end waypoints listesine girmez', async () => {
+    const r = await renderProvider();
+    try {
+      await r.invoke([ISTANBUL, DUZCE, BOLU, ANKARA]);
+      const payload = lastPayload();
+
+      expect(payload.startLat).toBe(ISTANBUL.coords!.lat);
+      expect(payload.endLat).toBe(ANKARA.coords!.lat);
+      expect(payload.waypoints).toEqual([
+        { lat: DUZCE.coords!.lat, lng: DUZCE.coords!.lng, address: DUZCE.value },
+        { lat: BOLU.coords!.lat, lng: BOLU.coords!.lng, address: BOLU.value },
+      ]);
+      expect(r.snapshot().routeLocations.map(l => l.value)).toEqual([
+        ISTANBUL.value,
+        DUZCE.value,
+        BOLU.value,
+        ANKARA.value,
+      ]);
+    } finally { r.cleanup(); }
+  });
+
   it('R9 — gecersiz koordinat payload\'a girmeden rota istegi durdurulur', async () => {
     const invalidWaypoint: Location = {
       ...DUZCE,
@@ -545,6 +571,20 @@ describe('RouteContext.planRoute payload contract', () => {
       expect(planMock).toHaveBeenCalledTimes(1);
       expect(r.snapshot().routeResult).toBeNull();
       expect(r.snapshot().error).toContain('Rota cizgisi eksik');
+    } finally { r.cleanup(); }
+  });
+
+  it('R13 - TOO_MANY_WAYPOINTS hata kodu kullanici dostu mesaja cevrilir', async () => {
+    planMock.mockRejectedValueOnce(new ApiError(
+      'Dış API hatası (GoogleDirections): raw provider detail',
+      502,
+      { success: false, error: { code: 'TOO_MANY_WAYPOINTS', message: 'raw provider detail' } },
+    ));
+    const r = await renderProvider();
+    try {
+      await r.invoke([ISTANBUL, DUZCE, BOLU, ANKARA]);
+      expect(r.snapshot().routeResult).toBeNull();
+      expect(r.snapshot().error).toBe('Cok fazla ara durak eklendi. Lutfen durak sayisini azaltip tekrar deneyin.');
     } finally { r.cleanup(); }
   });
 });

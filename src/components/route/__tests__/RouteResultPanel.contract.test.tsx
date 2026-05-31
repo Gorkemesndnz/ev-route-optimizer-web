@@ -10,6 +10,8 @@ const mocks = vi.hoisted(() => ({
   routeResult: null as any,
   routeLocations: [] as any[],
   setRouteResult: vi.fn(),
+  setRouteLocations: vi.fn(),
+  getSavedRoute: vi.fn(),
   onClose: vi.fn(),
 }));
 
@@ -18,6 +20,7 @@ vi.mock('../../../contexts/RouteContext', () => ({
     routeResult: mocks.routeResult,
     routeLocations: mocks.routeLocations,
     setRouteResult: mocks.setRouteResult,
+    setRouteLocations: mocks.setRouteLocations,
   }),
 }));
 
@@ -36,7 +39,7 @@ vi.mock('../../../contexts/StationContext', () => ({
 vi.mock('../../../contexts/SavedRouteContext', () => ({
   useSavedRoute: () => ({
     saveRoute: vi.fn(),
-    getSavedRoute: vi.fn(),
+    getSavedRoute: mocks.getSavedRoute,
     rateSavedRoute: vi.fn(),
   }),
 }));
@@ -54,13 +57,13 @@ vi.mock('../../../api/reviewApi', () => ({
   },
 }));
 
-function renderPanel() {
+function renderPanel(props: Partial<React.ComponentProps<typeof RouteResultPanel>> = {}) {
   const container = document.createElement('div');
   document.body.appendChild(container);
   const root: Root = createRoot(container);
 
   act(() => {
-    root.render(React.createElement(RouteResultPanel, { onClose: mocks.onClose }));
+    root.render(React.createElement(RouteResultPanel, { onClose: mocks.onClose, ...props }));
   });
 
   return {
@@ -76,6 +79,8 @@ describe('RouteResultPanel route result contract', () => {
   beforeEach(() => {
     mocks.routeLocations = [];
     mocks.setRouteResult.mockClear();
+    mocks.setRouteLocations.mockClear();
+    mocks.getSavedRoute.mockReset();
     mocks.onClose.mockClear();
   });
 
@@ -103,5 +108,102 @@ describe('RouteResultPanel route result contract', () => {
     } finally {
       rendered.cleanup();
     }
+  });
+
+  it('restores saved route locations in readonly mode and clears them on unmount', async () => {
+    const savedLocations = [
+      { id: 'start', type: 'start', value: 'Istanbul', coords: { lat: 41.0082, lng: 28.9784 } },
+      { id: 'wp-1', type: 'waypoint', value: 'Duzce', coords: { lat: 40.8438, lng: 31.1565 } },
+      { id: 'wp-2', type: 'waypoint', value: 'Bolu', coords: { lat: 40.7350, lng: 31.6061 } },
+      { id: 'end', type: 'destination', value: 'Ankara', coords: { lat: 39.9208, lng: 32.8541 } },
+    ];
+    mocks.getSavedRoute.mockResolvedValue({
+      id: 'saved-1',
+      startLabel: 'Istanbul',
+      endLabel: 'Ankara',
+      totalDistanceKm: 450,
+      totalDurationMin: 300,
+      consumptionKwh: 60,
+      totalChargingCost: 0,
+      rating: null,
+      ratingComment: null,
+      createdAt: '2026-05-31T00:00:00Z',
+      routeResultJson: JSON.stringify({
+        status: 'success',
+        message: null,
+        total_distance_km: 450,
+        total_duration_min: 300,
+        consumption_kwh: 60,
+        total_charging_cost: 0,
+        total_co2_savings_kg: 0,
+        charge_stops: 0,
+        overview_polyline: '_p~iF~ps|U_ulLnnqC',
+        legs: [{ type: 'drive', from_location: 'Istanbul', to_location: 'Ankara', duration_min: 300, distance_km: 450, consumption_kwh: 60, end_soc: 30 }],
+        charging_stops: [],
+        start_weather: null,
+        end_weather: null,
+        insights: [],
+        warning_messages: [],
+      }),
+      routeRequestJson: JSON.stringify({ locations: savedLocations }),
+    });
+
+    const rendered = renderPanel({ mode: 'readonly', savedRouteId: 'saved-1' });
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(mocks.setRouteLocations).toHaveBeenCalledWith(savedLocations);
+
+    rendered.cleanup();
+    expect(mocks.setRouteResult).toHaveBeenLastCalledWith(null);
+    expect(mocks.setRouteLocations).toHaveBeenLastCalledWith([]);
+  });
+
+  it('ignores malformed saved route request JSON without clearing the rendered result', async () => {
+    mocks.getSavedRoute.mockResolvedValue({
+      id: 'saved-1',
+      startLabel: 'Istanbul',
+      endLabel: 'Ankara',
+      totalDistanceKm: 450,
+      totalDurationMin: 300,
+      consumptionKwh: 60,
+      totalChargingCost: 0,
+      rating: null,
+      ratingComment: null,
+      createdAt: '2026-05-31T00:00:00Z',
+      routeResultJson: JSON.stringify({
+        status: 'success',
+        message: null,
+        total_distance_km: 450,
+        total_duration_min: 300,
+        consumption_kwh: 60,
+        total_charging_cost: 0,
+        total_co2_savings_kg: 0,
+        charge_stops: 0,
+        overview_polyline: '_p~iF~ps|U_ulLnnqC',
+        legs: [{ type: 'drive', from_location: 'Istanbul', to_location: 'Ankara', duration_min: 300, distance_km: 450, consumption_kwh: 60, end_soc: 30 }],
+        charging_stops: [],
+        start_weather: null,
+        end_weather: null,
+        insights: [],
+        warning_messages: [],
+      }),
+      routeRequestJson: '{not-json',
+    });
+
+    const rendered = renderPanel({ mode: 'readonly', savedRouteId: 'saved-1' });
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(mocks.setRouteResult).toHaveBeenCalledWith(expect.objectContaining({ status: 'success' }));
+    expect(mocks.setRouteLocations).not.toHaveBeenCalledWith(expect.arrayContaining([
+      expect.objectContaining({ type: 'waypoint' }),
+    ]));
+
+    rendered.cleanup();
   });
 });
