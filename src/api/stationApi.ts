@@ -1,17 +1,24 @@
-import { apiFetch } from '../lib/apiClient';
+import { apiFetch, type FetchOptions } from '../lib/apiClient';
 import { ENDPOINTS } from '../lib/endpoints';
 import type { BaseStationDto, ChargingStationDto, ChargingStationDetailDto, TouristAttractionDto } from '../types/api/station';
 
 export const stationApi = {
-  getBase: (params: { swLat: number; swLng: number; neLat: number; neLng: number; zoom: number }) => {
+  getBase: (
+    params: { swLat: number; swLng: number; neLat: number; neLng: number; zoom: number },
+    options: Pick<FetchOptions, 'signal'> = {},
+  ) => {
     const q = new URLSearchParams(params as unknown as Record<string, string>).toString();
-    return apiFetch<BaseStationDto[]>(`${ENDPOINTS.STATIONS_BASE}?${q}`);
+    return apiFetch<BaseStationDto[]>(`${ENDPOINTS.STATIONS_BASE}?${q}`, options);
   },
 
-  getGoogle: (params: { swLat: number; swLng: number; neLat: number; neLng: number }) => {
+  getGoogle: (
+    params: { swLat: number; swLng: number; neLat: number; neLng: number },
+    options: Pick<FetchOptions, 'signal'> = {},
+  ) => {
     const { swLat, swLng, neLat, neLng } = params;
     return apiFetch<ChargingStationDto[]>(
-      `${ENDPOINTS.STATIONS_GOOGLE}?swLat=${swLat}&swLng=${swLng}&neLat=${neLat}&neLng=${neLng}`
+      `${ENDPOINTS.STATIONS_GOOGLE}?swLat=${swLat}&swLng=${swLng}&neLat=${neLat}&neLng=${neLng}`,
+      options,
     );
   },
 

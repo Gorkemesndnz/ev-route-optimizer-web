@@ -16,6 +16,8 @@ interface SettingsContextType {
   handleSaveCookies: (prefs: any) => void;
   stationFilters: string[];
   setStationFilters: (filters: string[]) => void;
+  showAllStationsInRouteMode: boolean;
+  setShowAllStationsInRouteMode: (show: boolean) => void;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -49,6 +51,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   
   // Varsayılan olarak hiçbir şey seçili değilse TÜMÜ gösterilir
   const [stationFilters, setStationFilters] = useState<string[]>([]);
+  const [showAllStationsInRouteMode, setShowAllStationsInRouteMode] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('iyontree_language', language);
@@ -87,7 +90,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       showCookieBanner, setShowCookieBanner,
       showCookieModal, setShowCookieModal,
       handleSaveCookies,
-      stationFilters, setStationFilters
+      stationFilters, setStationFilters,
+      showAllStationsInRouteMode, setShowAllStationsInRouteMode
     }}>
       {children}
     </SettingsContext.Provider>

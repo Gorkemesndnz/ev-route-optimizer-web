@@ -3,6 +3,7 @@ import { useVehicle } from './VehicleContext';
 import { routeApi } from '../api/routeApi';
 import { ApiError } from '../lib/apiClient';
 import { isValidLatLng } from '../lib/coordinates';
+import { normalizeRouteSettingsSoc } from '../lib/routeSocSettings';
 import type {
   RouteResultDto,
   RouteLegDto,
@@ -104,7 +105,7 @@ function loadPersistedSettings(): RouteSettings {
   try {
     const raw = localStorage.getItem(ROUTE_SETTINGS_STORAGE_KEY);
     if (!raw) return defaultSettings;
-    return { ...defaultSettings, ...JSON.parse(raw) };
+    return normalizeRouteSettingsSoc({ ...defaultSettings, ...JSON.parse(raw) });
   } catch {
     return defaultSettings;
   }
@@ -155,8 +156,9 @@ export const RouteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const { selectedVehicle } = useVehicle();
 
   const commitSettings = useCallback((nextSettings: RouteSettings) => {
-    setPendingSettings(nextSettings);
-    setCommittedSettings(nextSettings);
+    const normalizedSettings = normalizeRouteSettingsSoc(nextSettings);
+    setPendingSettings(normalizedSettings);
+    setCommittedSettings(normalizedSettings);
   }, []);
 
   const planRoute = useCallback(async (locations: Location[]) => {

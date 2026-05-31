@@ -1,5 +1,5 @@
 import { Map, Marker, useMap } from '@vis.gl/react-google-maps';
-import { useEffect, useRef, memo } from 'react';
+import { useCallback, useEffect, useRef, useState, memo } from 'react';
 import StationsLayer from './StationsLayer';
 import RouteLayer from './RouteLayer';
 import { useSettings } from '../../contexts/SettingsContext';
@@ -17,9 +17,14 @@ const BackgroundMap = memo(({
   showTraffic?: boolean
 }) => {
   const map = useMap();
-  const { mapStyleKey } = useSettings();
+  const { mapStyleKey, showAllStationsInRouteMode } = useSettings();
   const { routeResult } = useRouteContext();
   const trafficLayerRef = useRef<google.maps.TrafficLayer | null>(null);
+  const [stationLayerError, setStationLayerError] = useState<string | null>(null);
+
+  const handleStationProviderError = useCallback((message: string | null) => {
+    setStationLayerError(message);
+  }, []);
 
   useEffect(() => {
     if (map) {
@@ -27,6 +32,12 @@ const BackgroundMap = memo(({
       map.setMapTypeId(mapStyleKey === 'satellite' ? 'hybrid' : 'roadmap');
     }
   }, [map, mapStyle, mapStyleKey]);
+
+  useEffect(() => {
+    if (routeResult && !showAllStationsInRouteMode) {
+      setStationLayerError(null);
+    }
+  }, [routeResult, showAllStationsInRouteMode]);
 
   useEffect(() => {
     if (!map) return;
@@ -75,9 +86,19 @@ const BackgroundMap = memo(({
              }}
           />
         )}
-        {!routeResult && <StationsLayer />}
+        {(!routeResult || showAllStationsInRouteMode) && (
+          <StationsLayer onProviderError={handleStationProviderError} />
+        )}
         <RouteLayer />
       </Map>
+      {stationLayerError && (
+        <div
+          role="status"
+          className="absolute left-4 bottom-6 z-40 max-w-[260px] rounded-lg border border-red-400/30 bg-black/70 px-3 py-2 text-xs font-medium text-red-100 shadow-xl backdrop-blur-md"
+        >
+          {stationLayerError}
+        </div>
+      )}
     </div>
   );
 });

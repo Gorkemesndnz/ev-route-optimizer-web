@@ -289,6 +289,26 @@ describe('RouteContext.planRoute payload contract', () => {
     } finally { r.cleanup(); }
   });
 
+  it('R3c — persisted SOC değerleri mount sırasında backend sınırlarına normalize edilir', async () => {
+    const r = await renderProvider({
+      smartPlanner: false,
+      arrivalSoc: 100,
+      stationArrivalSoc: 45,
+      stationDepartureSoc: 50,
+    });
+    try {
+      expect(r.snapshot().committedSettings.arrivalSoc).toBe(50);
+      expect(r.snapshot().committedSettings.stationArrivalSoc).toBe(30);
+      expect(r.snapshot().committedSettings.stationDepartureSoc).toBe(50);
+
+      await r.invoke([ISTANBUL, ANKARA]);
+      const payload = lastPayload();
+      expect(payload.varisSarj).toBe(50);
+      expect(payload.istasyonVarisSarj).toBe(30);
+      expect(payload.istasyonAyrisSarj).toBe(50);
+    } finally { r.cleanup(); }
+  });
+
   // ===========================================================================
   // R4 — Provider persisted manuel mod state'i payload'a girer
   // ===========================================================================

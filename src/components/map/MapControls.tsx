@@ -1,10 +1,11 @@
-import { Minus, Plus, LocateFixed, Car, Zap, Check, Layers } from "lucide-react";
+import { Minus, Plus, LocateFixed, Car, Zap, Check, Layers, MapPinned } from "lucide-react";
 import { useMap } from "@vis.gl/react-google-maps";
 import { cn } from "@/lib/utils";
 import { translations } from "../../lib/translations";
 import { memo, useState, useRef, useEffect } from "react";
 
 import { useSettings } from "../../contexts/SettingsContext";
+import { useRouteContext } from "../../contexts/RouteContext";
 
 const MapControls = memo(({ 
   onLocateUser, 
@@ -18,8 +19,11 @@ const MapControls = memo(({
     showTraffic,
     setShowTraffic,
     stationFilters,
-    setStationFilters
+    setStationFilters,
+    showAllStationsInRouteMode,
+    setShowAllStationsInRouteMode
   } = useSettings();
+  const { routeResult } = useRouteContext();
   const map = useMap();
   const t = translations[language];
 
@@ -144,6 +148,23 @@ const MapControls = memo(({
         </button>
 
         <div className="w-px h-4 bg-white/20 mx-0.5" />
+
+        {routeResult && (
+          <>
+            <button
+              onClick={() => setShowAllStationsInRouteMode(!showAllStationsInRouteMode)}
+              className={cn(
+                "h-8 px-2 rounded-lg transition-all cursor-pointer flex items-center justify-center min-w-[38px]",
+                showAllStationsInRouteMode ? "text-cyan-400 bg-cyan-400/10" : "text-white/80 hover:text-white hover:bg-white/10"
+              )}
+              title={language === 'tr' ? 'Tum istasyonlari goster' : 'Show all stations'}
+            >
+              <MapPinned size={18} />
+            </button>
+
+            <div className="w-px h-4 bg-white/20 mx-0.5" />
+          </>
+        )}
 
         <div ref={filterMenuRef} className="relative flex items-center justify-center">
           {(() => {

@@ -170,20 +170,18 @@ export default function StationDetailsPanel({
 
       // Reset enriched data when station changes
       setEnrichedConnections(null);
+
+      if (selectedStation.connections?.length) {
+         setEnrichedConnections(selectedStation.connections as ConnectionDto[]);
+         setIsEnriching(false);
+         return;
+      }
+
       setIsEnriching(true);
+      let isCancelled = false;
 
       const fetchFullDetails = async () => {
-         try {
-            const numericId = parseInt(selectedStation.id, 10);
-            if (!isNaN(numericId) && String(numericId) === selectedStation.id) {
-               const detail = await stationApi.getDetail(numericId);
-               if (detail.connections?.length) {
-                  setEnrichedConnections(detail.connections);
-                  return;
-               }
-            }
-
-            // Coordinate-based fallback (Google Place IDs and route stops)
+         const fetchGoogleNearbyDetails = async () => {
             const delta = 0.003;
             const stations = await stationApi.getGoogle({
                swLat: selectedStation.latitude - delta,
@@ -192,24 +190,70 @@ export default function StationDetailsPanel({
                neLng: selectedStation.longitude + delta,
             });
 
+            const providerId = selectedStation.placeId || selectedStation.sourceId;
             const COORD_TOLERANCE = 0.003;
             const fullStation = stations.find(s =>
+               (providerId && (s.placeId === providerId || s.sourceId === providerId)) ||
                String(s.id) === String(selectedStation.id) ||
                (Math.abs(s.latitude - selectedStation.latitude) < COORD_TOLERANCE &&
                 Math.abs(s.longitude - selectedStation.longitude) < COORD_TOLERANCE)
             );
             if (fullStation?.connections?.length) {
-               setEnrichedConnections(fullStation.connections);
+               if (!isCancelled) {
+                  setEnrichedConnections(fullStation.connections);
+               }
+               return true;
             }
+            return false;
+         };
+
+         try {
+            const hasGoogleIdentity = Boolean(
+               selectedStation.placeId ||
+               (selectedStation.sourceProvider === 'google' && selectedStation.sourceId)
+            );
+            if (hasGoogleIdentity && await fetchGoogleNearbyDetails()) {
+               return;
+            }
+
+            const numericId = parseInt(selectedStation.id, 10);
+            if (!isNaN(numericId) && String(numericId) === selectedStation.id) {
+               try {
+                  const detail = await stationApi.getDetail(numericId);
+                  if (detail.connections?.length) {
+                     if (!isCancelled) {
+                        setEnrichedConnections(detail.connections);
+                     }
+                     return;
+                  }
+               } catch (err) {
+                  console.warn('Legacy station detail enrichment failed, trying Google fallback', err);
+               }
+            }
+
+            await fetchGoogleNearbyDetails();
          } catch (err) {
             console.error('Enrichment fetch failed', err);
          } finally {
-            setIsEnriching(false);
+            if (!isCancelled) {
+               setIsEnriching(false);
+            }
          }
       };
 
       fetchFullDetails();
-   }, [selectedStation?.id]);
+      return () => {
+         isCancelled = true;
+      };
+   }, [
+      selectedStation?.id,
+      selectedStation?.placeId,
+      selectedStation?.sourceProvider,
+      selectedStation?.sourceId,
+      selectedStation?.latitude,
+      selectedStation?.longitude,
+      selectedStation?.connections,
+   ]);
 
    useEffect(() => {
       if (!selectedStation) return;
@@ -755,4 +799,3 @@ export default function StationDetailsPanel({
       </div>
    );
 }
-

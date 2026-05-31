@@ -1,7 +1,32 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useMap, useMapsLibrary, Marker } from '@vis.gl/react-google-maps';
 import { useRouteContext } from '../../contexts/RouteContext';
-import { useStation } from '../../contexts/StationContext';
+import { useStation, type StationData } from '../../contexts/StationContext';
+import type { ChargingStopDto } from '../../types/api/route';
+
+export function routeStopToStationData(stop: ChargingStopDto, idx: number): StationData {
+  const sourceProvider = stop.source_provider ?? null;
+  const sourceId = stop.source_id ?? null;
+  const stationId = stop.station_id || `stop-${idx}`;
+
+  return {
+    id: stationId,
+    placeId: sourceProvider === 'google' ? (sourceId ?? stationId) : null,
+    sourceProvider,
+    sourceId,
+    title: stop.station_name || stop.operator || 'Şarj İstasyonu',
+    latitude: stop.lat,
+    longitude: stop.lon,
+    formattedAddress: stop.address || '',
+    connections: stop.connectors?.map(c => ({
+      connectionType: c.plug_type,
+      currentType: c.charger_type,
+      powerKw: c.power_kw,
+      status: c.status,
+      count: c.count,
+    })) || [],
+  };
+}
 
 export default function RouteLayer() {
   const map = useMap();
@@ -120,22 +145,7 @@ export default function RouteLayer() {
           key={`stop-${idx}`}
           position={{ lat: stop.lat, lng: stop.lon }}
           title={stop.station_name}
-          onClick={() => setSelectedStation({
-            id: stop.station_id || `stop-${idx}`,
-            sourceProvider: stop.source_provider ?? null,
-            sourceId: stop.source_id ?? null,
-            title: stop.station_name || stop.operator || 'Şarj İstasyonu',
-            latitude: stop.lat,
-            longitude: stop.lon,
-            formattedAddress: stop.address || '',
-            connections: stop.connectors?.map(c => ({
-              connectionType: c.plug_type,
-              currentType: c.charger_type,
-              powerKw: c.power_kw,
-              status: c.status,
-              count: c.count,
-            })) || [],
-          })}
+          onClick={() => setSelectedStation(routeStopToStationData(stop, idx))}
           label={{
             text: `${stop.station_name} ↓%${Math.round(stop.arrival_soc)} ↑%${Math.round(stop.departure_soc)}`,
             color: '#ffffff',

@@ -121,6 +121,10 @@ describe('RouteSettingsView apply mapping', () => {
       expect(sliders).toHaveLength(3);
       expect(sliders[0].min).toBe('5');
       expect(sliders[0].max).toBe('50');
+      expect(sliders[1].min).toBe('5');
+      expect(sliders[1].max).toBe('40');
+      expect(sliders[2].min).toBe('50');
+      expect(sliders[2].max).toBe('100');
       setRangeValue(sliders[0], 35);
       setRangeValue(sliders[1], 18);
       setRangeValue(sliders[2], 72);
@@ -199,6 +203,55 @@ describe('RouteSettingsView apply mapping', () => {
       expect(mocks.commitSettings).toHaveBeenCalledWith(expect.objectContaining({
         smartPlanner: false,
         arrivalSoc: 40,
+      }));
+    } finally {
+      rendered.cleanup();
+    }
+  });
+
+  it('keeps untouched manual SOC fields null when planner is turned off', () => {
+    mocks.pendingSettings = baseSettings({
+      smartPlanner: true,
+      arrivalSoc: null,
+      stationArrivalSoc: null,
+      stationDepartureSoc: null,
+    });
+
+    const rendered = renderView();
+    try {
+      const switches = Array.from(rendered.container.querySelectorAll('.w-12.h-7')) as HTMLElement[];
+      click(switches[5]);
+
+      click(findButton(rendered.container, 'Uygula'));
+
+      expect(mocks.commitSettings).toHaveBeenCalledWith(expect.objectContaining({
+        smartPlanner: false,
+        arrivalSoc: null,
+        stationArrivalSoc: null,
+        stationDepartureSoc: null,
+      }));
+    } finally {
+      rendered.cleanup();
+    }
+  });
+
+  it('normalizes station SOC spread before commit', () => {
+    mocks.pendingSettings = baseSettings({
+      smartPlanner: false,
+    });
+
+    const rendered = renderView();
+    try {
+      const sliders = Array.from(rendered.container.querySelectorAll('input[type="range"]')) as HTMLInputElement[];
+      setRangeValue(sliders[1], 35);
+      setRangeValue(sliders[2], 50);
+
+      click(findButton(rendered.container, 'Uygula'));
+
+      expect(mocks.commitSettings).toHaveBeenCalledWith(expect.objectContaining({
+        smartPlanner: false,
+        stationArrivalSoc: 30,
+        stationDepartureSoc: 50,
       }));
     } finally {
       rendered.cleanup();

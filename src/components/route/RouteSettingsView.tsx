@@ -2,6 +2,11 @@ import { useEffect, useState } from "react";
 import { ChevronLeft, Zap, BatteryMedium, Calendar as CalendarIcon, MapPin, Search, Sparkles, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { translations } from "../../lib/translations";
+import {
+  normalizeRouteSettingsSoc,
+  normalizeStationSocPair,
+  ROUTE_SOC_BOUNDS,
+} from "../../lib/routeSocSettings";
 
 const CustomSwitch = ({ checked, onChange, disabled = false }: { checked: boolean, onChange: (val: boolean) => void, disabled?: boolean }) => {
   return (
@@ -121,11 +126,11 @@ export default function RouteSettingsView({
   const { language } = useSettings();
   const t = translations[language];
   const { pendingSettings, commitSettings } = useRouteContext();
-  const [draftSettings, setDraftSettings] = useState<RouteSettings>(pendingSettings);
+  const [draftSettings, setDraftSettings] = useState<RouteSettings>(() => normalizeRouteSettingsSoc(pendingSettings));
   const [brandQuery, setBrandQuery] = useState("");
 
   useEffect(() => {
-    setDraftSettings(pendingSettings);
+    setDraftSettings(normalizeRouteSettingsSoc(pendingSettings));
   }, [pendingSettings]);
 
   const updateDraft = (patch: Partial<RouteSettings>) => {
@@ -182,8 +187,18 @@ export default function RouteSettingsView({
   const setSmartPlanner = (smartPlanner: boolean) => {
     updateDraft({
       smartPlanner,
-      arrivalSoc: smartPlanner ? draftSettings.arrivalSoc : (draftSettings.arrivalSoc ?? 20),
+      arrivalSoc: smartPlanner ? null : draftSettings.arrivalSoc,
+      stationArrivalSoc: smartPlanner ? null : draftSettings.stationArrivalSoc,
+      stationDepartureSoc: smartPlanner ? null : draftSettings.stationDepartureSoc,
     });
+  };
+
+  const setStationArrivalSoc = (stationArrivalSoc: number | null) => {
+    updateDraft(normalizeStationSocPair(stationArrivalSoc, draftSettings.stationDepartureSoc));
+  };
+
+  const setStationDepartureSoc = (stationDepartureSoc: number | null) => {
+    updateDraft(normalizeStationSocPair(draftSettings.stationArrivalSoc, stationDepartureSoc));
   };
 
   // istasyon ayarları smart açıkken devre dışı
@@ -320,8 +335,8 @@ export default function RouteSettingsView({
                 label={t.arrivalSoC}
                 value={draftSettings.smartPlanner ? null : draftSettings.arrivalSoc}
                 defaultDisplay={20}
-                min={5}
-                max={50}
+                min={ROUTE_SOC_BOUNDS.arrivalSoc.min}
+                max={ROUTE_SOC_BOUNDS.arrivalSoc.max}
                 onChange={(arrivalSoc) => updateDraft({ arrivalSoc })}
                 language={language}
                 disabled={draftSettings.smartPlanner}
@@ -457,18 +472,18 @@ export default function RouteSettingsView({
                   label={language === 'tr' ? 'İstasyona Varış (Min)' : 'Station Arrival (Min)'}
                   value={draftSettings.stationArrivalSoc}
                   defaultDisplay={10}
-                  min={0}
-                  max={100}
-                  onChange={(stationArrivalSoc) => updateDraft({ stationArrivalSoc })}
+                  min={ROUTE_SOC_BOUNDS.stationArrivalSoc.min}
+                  max={ROUTE_SOC_BOUNDS.stationArrivalSoc.max}
+                  onChange={setStationArrivalSoc}
                   language={language}
                 />
                 <OverrideSlider
                   label={language === 'tr' ? 'İstasyondan Ayrılış (Hedef)' : 'Station Departure (Target)'}
                   value={draftSettings.stationDepartureSoc}
                   defaultDisplay={80}
-                  min={0}
-                  max={100}
-                  onChange={(stationDepartureSoc) => updateDraft({ stationDepartureSoc })}
+                  min={ROUTE_SOC_BOUNDS.stationDepartureSoc.min}
+                  max={ROUTE_SOC_BOUNDS.stationDepartureSoc.max}
+                  onChange={setStationDepartureSoc}
                   language={language}
                 />
               </div>
@@ -481,14 +496,14 @@ export default function RouteSettingsView({
       <div className="px-6 py-5 shrink-0 bg-transparent border-t border-white/10 z-50">
         <button
           onClick={() => {
-            const nextSettings: RouteSettings = {
+            const nextSettings: RouteSettings = normalizeRouteSettingsSoc({
               ...draftSettings,
               arrivalSoc: draftSettings.smartPlanner ? null : draftSettings.arrivalSoc,
               stationArrivalSoc: draftSettings.smartPlanner ? null : draftSettings.stationArrivalSoc,
               stationDepartureSoc: draftSettings.smartPlanner ? null : draftSettings.stationDepartureSoc,
               stationBrands: [...stationBrands],
               locationPrefs: [...selectedLokasyonlar],
-            };
+            });
             commitSettings(nextSettings);
             onBack();
           }}

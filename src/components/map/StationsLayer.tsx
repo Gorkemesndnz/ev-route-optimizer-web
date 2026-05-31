@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useMap } from '@vis.gl/react-google-maps';
 import Supercluster from 'supercluster';
 import { stationApi } from '../../api/stationApi';
+import { ApiError } from '../../lib/apiClient';
 import type { BaseStationDto, ChargingStationDto } from '../../types/api/station';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useStation } from '../../contexts/StationContext';
@@ -187,6 +188,20 @@ function extractTypes(connections?: GoogleStation['connections']): string[] {
   });
 
   return Array.from(types).sort();
+}
+
+function getProviderErrorMessage(err: unknown): string {
+  if (err instanceof ApiError) {
+    if (err.status === 429) {
+      return 'Istasyon servisi kota sinirina takildi';
+    }
+
+    if (err.status === 502 || err.status === 503) {
+      return 'Istasyon servisi gecici olarak kullanilamiyor';
+    }
+  }
+
+  return 'Istasyonlar yuklenemedi';
 }
 
 // ─── Canvas Cluster Overlay ─────────────────────────────────────────────────────
@@ -386,7 +401,11 @@ function createClusterCanvasOverlay(
 
 // ─── Component ──────────────────────────────────────────────────────────────────
 
-export default function StationsLayer() {
+export default function StationsLayer({
+  onProviderError,
+}: {
+  onProviderError?: (message: string | null) => void;
+}) {
   const map = useMap();
   const { stationFilters } = useSettings();
   const { setSelectedStation } = useStation();
@@ -466,8 +485,11 @@ export default function StationsLayer() {
             swLat: padSw.lat, swLng: padSw.lng,
             neLat: padNe.lat, neLng: padNe.lng,
             zoom,
+          }, {
+            signal: controller.signal,
           });
           if (controller.signal.aborted) return;
+          onProviderError?.(null);
           lastFetchedBoundsRef.current = { sw: padSw, ne: padNe, zoom: Math.floor(zoom) };
           setOcmStations(stations);
           if (sourceChanged) setGoogleStations([]);
@@ -476,8 +498,11 @@ export default function StationsLayer() {
           const stations = await stationApi.getGoogle({
             swLat: sw.lat(), swLng: sw.lng(),
             neLat: ne.lat(), neLng: ne.lng(),
+          }, {
+            signal: controller.signal,
           });
           if (controller.signal.aborted) return;
+          onProviderError?.(null);
           lastFetchedBoundsRef.current = null;
           setGoogleStations(stations);
           if (sourceChanged) setOcmStations([]);
@@ -485,6 +510,7 @@ export default function StationsLayer() {
       } catch (err: unknown) {
         if (err instanceof Error && err.name === 'AbortError') return;
         console.error('Failed to load stations', err);
+        onProviderError?.(getProviderErrorMessage(err));
       }
     };
 
@@ -500,7 +526,7 @@ export default function StationsLayer() {
       clearTimeout(timeoutId);
       abortRef.current?.abort();
     };
-  }, [map]);
+  }, [map, onProviderError]);
 
   // ─── Canvas Overlay: OCM clusters ─────────────────────────────────────────────
 
