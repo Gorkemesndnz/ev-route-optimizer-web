@@ -62,10 +62,6 @@ export default function RouteLayer() {
     const path: google.maps.LatLng[] = [];
     if (routeResult.overview_polyline) {
       path.push(...geometryLib.encoding.decodePath(routeResult.overview_polyline));
-    } else {
-      for (const leg of legs) {
-        if (leg.polyline) path.push(...geometryLib.encoding.decodePath(leg.polyline));
-      }
     }
 
     if (path.length === 0) return;

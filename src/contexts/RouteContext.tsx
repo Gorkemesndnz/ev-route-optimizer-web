@@ -126,6 +126,11 @@ function getRouteResultContractError(data: RouteResultDto | null | undefined): s
     return 'Rota sonucu eksik dondu. Lutfen tekrar deneyin.';
   }
 
+  if (typeof (data as { overview_polyline?: unknown }).overview_polyline !== 'string'
+      || data.overview_polyline.trim().length === 0) {
+    return 'Rota cizgisi eksik dondu. Lutfen tekrar deneyin.';
+  }
+
   if (!Array.isArray((data as { charging_stops?: unknown }).charging_stops)) {
     return 'Rota sarj duragi bilgisi eksik dondu. Lutfen tekrar deneyin.';
   }

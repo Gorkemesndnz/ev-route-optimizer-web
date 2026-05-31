@@ -44,7 +44,7 @@ const DEFAULT_ROUTE_RESULT = {
   total_co2_savings_kg: 0,
   route_strategy: null,
   charge_stops_count: 0,
-  overview_polyline: null,
+  overview_polyline: '_p~iF~ps|U_ulLnnqC',
   start_weather: null,
   end_weather: null,
   insights: [],
@@ -64,7 +64,7 @@ const DEFAULT_ROUTE_RESULT = {
     elevation_loss_m: 0,
     start_soc: 80,
     end_soc: 20,
-    polyline: null,
+    polyline: '_p~iF~ps|U_ulLnnqC',
   }],
   charging_stops: [],
 };
@@ -533,5 +533,18 @@ describe('RouteContext.planRoute payload contract', () => {
       expect(r2.snapshot().routeResult).toBeNull();
       expect(r2.snapshot().error).toContain('Rota sonucu eksik');
     } finally { r2.cleanup(); }
+  });
+  it('R12 - overview_polyline bos donerse rota sonucu state\'e alinmaz', async () => {
+    planMock.mockResolvedValueOnce({
+      ...DEFAULT_ROUTE_RESULT,
+      overview_polyline: null,
+    });
+    const r = await renderProvider();
+    try {
+      await r.invoke([ISTANBUL, ANKARA]);
+      expect(planMock).toHaveBeenCalledTimes(1);
+      expect(r.snapshot().routeResult).toBeNull();
+      expect(r.snapshot().error).toContain('Rota cizgisi eksik');
+    } finally { r.cleanup(); }
   });
 });
