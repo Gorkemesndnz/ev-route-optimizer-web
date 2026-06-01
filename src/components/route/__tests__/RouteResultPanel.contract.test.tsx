@@ -110,6 +110,45 @@ describe('RouteResultPanel route result contract', () => {
     }
   });
 
+  it('renders route summary when drive leg polyline is empty but overview polyline exists', () => {
+    mocks.routeResult = {
+      status: 'success',
+      message: null,
+      total_distance_km: 450,
+      total_duration_min: 300,
+      consumption_kwh: 60,
+      total_charging_cost: 0,
+      total_co2_savings_kg: 20,
+      overview_polyline: '_p~iF~ps|U_ulLnnqC',
+      legs: [
+        {
+          type: 'drive',
+          from_location: 'Istanbul',
+          to_location: 'Ankara',
+          duration_min: 300,
+          distance_km: 450,
+          consumption_kwh: 60,
+          end_soc: 30,
+          polyline: '',
+        },
+      ],
+      charging_stops: [],
+      start_weather: null,
+      end_weather: null,
+      insights: [],
+      warning_messages: [],
+    };
+
+    const rendered = renderPanel();
+    try {
+      expect(rendered.container.textContent).not.toContain('Rota sonucu eksik');
+      expect(rendered.container.textContent).toContain('(450 km)');
+      expect(rendered.container.textContent).toContain('60.0 kWh');
+    } finally {
+      rendered.cleanup();
+    }
+  });
+
   it('restores saved route locations in readonly mode and clears them on unmount', async () => {
     const savedLocations = [
       { id: 'start', type: 'start', value: 'Istanbul', coords: { lat: 41.0082, lng: 28.9784 } },

@@ -587,4 +587,18 @@ describe('RouteContext.planRoute payload contract', () => {
       expect(r.snapshot().error).toBe('Cok fazla ara durak eklendi. Lutfen durak sayisini azaltip tekrar deneyin.');
     } finally { r.cleanup(); }
   });
+
+  it('R14 - NO_ROUTE_WITH_CONSTRAINTS hata kodu yol tercihi mesajina cevrilir', async () => {
+    planMock.mockRejectedValueOnce(new ApiError(
+      'Yol/kopru tercihlerine uyan rota bulunamadi.',
+      502,
+      { success: false, error: { code: 'NO_ROUTE_WITH_CONSTRAINTS', message: 'raw constraints detail' } },
+    ));
+    const r = await renderProvider();
+    try {
+      await r.invoke([ISTANBUL, ANKARA]);
+      expect(r.snapshot().routeResult).toBeNull();
+      expect(r.snapshot().error).toBe('Bu yol tercihleriyle rota bulunamadi. Kopru, otoban veya ucretli yol ayarlarini gevsetip tekrar deneyin.');
+    } finally { r.cleanup(); }
+  });
 });

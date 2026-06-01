@@ -301,8 +301,11 @@ export const RouteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       if (e instanceof DOMException && e.name === 'AbortError') return;
       console.error('💥 [RouteContext] Hata:', e);
       if (e instanceof ApiError) {
-        if (getApiErrorCode(e) === 'TOO_MANY_WAYPOINTS') {
+        const apiErrorCode = getApiErrorCode(e);
+        if (apiErrorCode === 'TOO_MANY_WAYPOINTS') {
           setError('Cok fazla ara durak eklendi. Lutfen durak sayisini azaltip tekrar deneyin.');
+        } else if (apiErrorCode === 'NO_ROUTE_WITH_CONSTRAINTS') {
+          setError('Bu yol tercihleriyle rota bulunamadi. Kopru, otoban veya ucretli yol ayarlarini gevsetip tekrar deneyin.');
         } else {
           setError(e.message);
         }
