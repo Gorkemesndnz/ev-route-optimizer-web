@@ -409,14 +409,29 @@ describe('RouteContext.planRoute payload contract', () => {
     const r = await renderProvider({
       toggleFeribot: false,
       toggleOtoyollar: true,
-      toggleUcretliOtoyollar: false,
+      toggleUcretliOtoyollar: true,
     });
     try {
       await r.invoke([ISTANBUL, ANKARA]);
       const payload = lastPayload();
       expect(payload.toggleFeribot).toBe(false);
       expect(payload.toggleOtoyollar).toBe(true);
+      expect(payload.toggleUcretliOtoyollar).toBe(true);
+    } finally { r.cleanup(); }
+  });
+
+  it('R6b — Ücretli Yollar kapalı state\'i otoyol alt toggle\'larını da kapalı gönderir', async () => {
+    const r = await renderProvider({
+      toggleUcretliOtoyollar: false,
+      toggleOtoyollar: true,
+      toggleOzelOtoyollar: true,
+    });
+    try {
+      await r.invoke([ISTANBUL, ANKARA]);
+      const payload = lastPayload();
       expect(payload.toggleUcretliOtoyollar).toBe(false);
+      expect(payload.toggleOtoyollar).toBe(false);
+      expect(payload.toggleOzelOtoyollar).toBe(false);
     } finally { r.cleanup(); }
   });
 

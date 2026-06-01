@@ -101,12 +101,28 @@ const defaultSettings: RouteSettings = {
   toggleOzelOtoyollar: true,    // Sprint 3: varsayılan BOT otoyollarına izin ver
 };
 
+function normalizeRoadPreferenceSettings(settings: RouteSettings): RouteSettings {
+  if (settings.toggleUcretliOtoyollar) {
+    return settings;
+  }
+
+  return {
+    ...settings,
+    toggleOtoyollar: false,
+    toggleOzelOtoyollar: false,
+  };
+}
+
+function normalizeRouteSettings(settings: RouteSettings): RouteSettings {
+  return normalizeRoadPreferenceSettings(normalizeRouteSettingsSoc(settings));
+}
+
 function loadPersistedSettings(): RouteSettings {
   if (typeof window === 'undefined') return defaultSettings;
   try {
     const raw = localStorage.getItem(ROUTE_SETTINGS_STORAGE_KEY);
     if (!raw) return defaultSettings;
-    return normalizeRouteSettingsSoc({ ...defaultSettings, ...JSON.parse(raw) });
+    return normalizeRouteSettings({ ...defaultSettings, ...JSON.parse(raw) });
   } catch {
     return defaultSettings;
   }
@@ -168,7 +184,7 @@ export const RouteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const { selectedVehicle } = useVehicle();
 
   const commitSettings = useCallback((nextSettings: RouteSettings) => {
-    const normalizedSettings = normalizeRouteSettingsSoc(nextSettings);
+    const normalizedSettings = normalizeRouteSettings(nextSettings);
     setPendingSettings(normalizedSettings);
     setCommittedSettings(normalizedSettings);
   }, []);

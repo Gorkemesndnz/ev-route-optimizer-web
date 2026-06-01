@@ -8,9 +8,23 @@ import {
   ROUTE_SOC_BOUNDS,
 } from "../../lib/routeSocSettings";
 
-const CustomSwitch = ({ checked, onChange, disabled = false }: { checked: boolean, onChange: (val: boolean) => void, disabled?: boolean }) => {
+const CustomSwitch = ({
+  checked,
+  onChange,
+  disabled = false,
+  ariaLabel,
+}: {
+  checked: boolean,
+  onChange: (val: boolean) => void,
+  disabled?: boolean,
+  ariaLabel?: string,
+}) => {
   return (
     <div
+      role="switch"
+      aria-label={ariaLabel}
+      aria-checked={checked}
+      aria-disabled={disabled || undefined}
       onClick={() => { if (!disabled) onChange(!checked); }}
       className={cn(
         "w-12 h-7 rounded-full relative transition-colors duration-300 flex items-center px-1 shadow-inner",
@@ -137,11 +151,12 @@ export default function RouteSettingsView({
     setDraftSettings(prev => ({ ...prev, ...patch }));
   };
 
+  const paidRoadsEnabled = draftSettings.toggleUcretliOtoyollar;
   const toggles = {
-    devletOtoyollari: draftSettings.toggleOtoyollar,
+    devletOtoyollari: paidRoadsEnabled && draftSettings.toggleOtoyollar,
     feribot: draftSettings.toggleFeribot,
-    ozelOtoyollar: draftSettings.toggleOzelOtoyollar,
-    ucretliOtoyollar: draftSettings.toggleUcretliOtoyollar,
+    ozelOtoyollar: paidRoadsEnabled && draftSettings.toggleOzelOtoyollar,
+    ucretliOtoyollar: paidRoadsEnabled,
     kopru: draftSettings.toggleKopruler,
   };
 
@@ -152,16 +167,22 @@ export default function RouteSettingsView({
   const toggleOption = (key: keyof typeof toggles) => {
     switch (key) {
       case 'devletOtoyollari':
+        if (!paidRoadsEnabled) return;
         updateDraft({ toggleOtoyollar: !draftSettings.toggleOtoyollar });
         break;
       case 'feribot':
         updateDraft({ toggleFeribot: !draftSettings.toggleFeribot });
         break;
       case 'ozelOtoyollar':
+        if (!paidRoadsEnabled) return;
         updateDraft({ toggleOzelOtoyollar: !draftSettings.toggleOzelOtoyollar });
         break;
       case 'ucretliOtoyollar':
-        updateDraft({ toggleUcretliOtoyollar: !draftSettings.toggleUcretliOtoyollar });
+        updateDraft({
+          toggleUcretliOtoyollar: !paidRoadsEnabled,
+          toggleOtoyollar: !paidRoadsEnabled,
+          toggleOzelOtoyollar: !paidRoadsEnabled,
+        });
         break;
       case 'kopru':
         updateDraft({ toggleKopruler: !draftSettings.toggleKopruler });
@@ -231,24 +252,34 @@ export default function RouteSettingsView({
               <span className="text-white font-semibold text-[15px]">{language === 'tr' ? 'Yol Tercihleri' : 'Road Preferences'}</span>
             </div>
             <div className="flex justify-between items-center">
+              <span className="text-white/80 font-medium text-[15px]">{t.avoidTolls}</span>
+              <CustomSwitch ariaLabel={t.avoidTolls} checked={toggles.ucretliOtoyollar} onChange={() => toggleOption('ucretliOtoyollar')} />
+            </div>
+            <div className={cn("flex justify-between items-center", !paidRoadsEnabled && "opacity-50")}>
               <span className="text-white/80 font-medium text-[15px]">{language === 'tr' ? 'Devlet Otoyolları' : 'State Highways'}</span>
-              <CustomSwitch checked={toggles.devletOtoyollari} onChange={() => toggleOption('devletOtoyollari')} />
+              <CustomSwitch
+                ariaLabel={language === 'tr' ? 'Devlet Otoyolları' : 'State Highways'}
+                checked={toggles.devletOtoyollari}
+                disabled={!paidRoadsEnabled}
+                onChange={() => toggleOption('devletOtoyollari')}
+              />
+            </div>
+            <div className={cn("flex justify-between items-center", !paidRoadsEnabled && "opacity-50")}>
+              <span className="text-white/80 font-medium text-[15px]">{language === 'tr' ? 'Özel Otoyollar' : 'Private Highways'}</span>
+              <CustomSwitch
+                ariaLabel={language === 'tr' ? 'Özel Otoyollar' : 'Private Highways'}
+                checked={toggles.ozelOtoyollar}
+                disabled={!paidRoadsEnabled}
+                onChange={() => toggleOption('ozelOtoyollar')}
+              />
             </div>
             <div className="flex justify-between items-center">
               <span className="text-white/80 font-medium text-[15px]">{language === 'tr' ? 'Feribot' : 'Ferries'}</span>
-              <CustomSwitch checked={toggles.feribot} onChange={() => toggleOption('feribot')} />
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-white/80 font-medium text-[15px]">{language === 'tr' ? 'Özel Otoyollar' : 'Private Highways'}</span>
-              <CustomSwitch checked={toggles.ozelOtoyollar} onChange={() => toggleOption('ozelOtoyollar')} />
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-white/80 font-medium text-[15px]">{t.avoidTolls}</span>
-              <CustomSwitch checked={toggles.ucretliOtoyollar} onChange={() => toggleOption('ucretliOtoyollar')} />
+              <CustomSwitch ariaLabel={language === 'tr' ? 'Feribot' : 'Ferries'} checked={toggles.feribot} onChange={() => toggleOption('feribot')} />
             </div>
             <div className="flex justify-between items-center">
               <span className="text-white/80 font-medium text-[15px]">{language === 'tr' ? 'Köprü' : 'Bridges'}</span>
-              <CustomSwitch checked={toggles.kopru} onChange={() => toggleOption('kopru')} />
+              <CustomSwitch ariaLabel={language === 'tr' ? 'Köprü' : 'Bridges'} checked={toggles.kopru} onChange={() => toggleOption('kopru')} />
             </div>
           </div>
 
@@ -328,7 +359,7 @@ export default function RouteSettingsView({
                   <span className="text-white/60 text-[12px] leading-snug">{t.smartPlannerDesc}</span>
                 </div>
               </div>
-              <CustomSwitch checked={draftSettings.smartPlanner} onChange={setSmartPlanner} />
+              <CustomSwitch ariaLabel={t.smartPlannerTitle} checked={draftSettings.smartPlanner} onChange={setSmartPlanner} />
             </div>
             <div className="pt-4 border-t border-white/10">
               <OverrideSlider
@@ -496,8 +527,15 @@ export default function RouteSettingsView({
       <div className="px-6 py-5 shrink-0 bg-transparent border-t border-white/10 z-50">
         <button
           onClick={() => {
+            const roadNormalizedDraft = draftSettings.toggleUcretliOtoyollar
+              ? draftSettings
+              : {
+                ...draftSettings,
+                toggleOtoyollar: false,
+                toggleOzelOtoyollar: false,
+              };
             const nextSettings: RouteSettings = normalizeRouteSettingsSoc({
-              ...draftSettings,
+              ...roadNormalizedDraft,
               arrivalSoc: draftSettings.smartPlanner ? null : draftSettings.arrivalSoc,
               stationArrivalSoc: draftSettings.smartPlanner ? null : draftSettings.stationArrivalSoc,
               stationDepartureSoc: draftSettings.smartPlanner ? null : draftSettings.stationDepartureSoc,

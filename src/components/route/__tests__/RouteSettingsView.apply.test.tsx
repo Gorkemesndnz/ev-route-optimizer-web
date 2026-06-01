@@ -85,6 +85,24 @@ function click(element: Element) {
   });
 }
 
+function findSwitch(container: HTMLElement, label: string): HTMLElement {
+  const selector = `[role="switch"][aria-label="${label}"]`;
+  const switchEl = container.querySelector(selector);
+  if (!switchEl) {
+    throw new Error(`Switch not found: ${label}`);
+  }
+  return switchEl as HTMLElement;
+}
+
+function expectSwitchState(switchEl: HTMLElement, checked: boolean, disabled = false) {
+  expect(switchEl.getAttribute('aria-checked')).toBe(String(checked));
+  if (disabled) {
+    expect(switchEl.getAttribute('aria-disabled')).toBe('true');
+  } else {
+    expect(switchEl.hasAttribute('aria-disabled')).toBe(false);
+  }
+}
+
 function setRangeValue(input: HTMLInputElement, value: number) {
   const valueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
   act(() => {
@@ -99,6 +117,98 @@ describe('RouteSettingsView apply mapping', () => {
     mocks.pendingSettings = baseSettings();
     mocks.commitSettings.mockClear();
     mocks.onBack.mockClear();
+  });
+
+  it('defaults road preference switches to allowed', () => {
+    mocks.pendingSettings = baseSettings();
+
+    const rendered = renderView();
+    try {
+      for (const label of ['Ücretli Yollar', 'Devlet Otoyolları', 'Özel Otoyollar', 'Feribot', 'Köprü']) {
+        expectSwitchState(findSwitch(rendered.container, label), true);
+      }
+    } finally {
+      rendered.cleanup();
+    }
+  });
+
+  it('turning toll roads off also disables state and private highways', () => {
+    mocks.pendingSettings = baseSettings();
+
+    const rendered = renderView();
+    try {
+      click(findSwitch(rendered.container, 'Ücretli Yollar'));
+
+      expectSwitchState(findSwitch(rendered.container, 'Ücretli Yollar'), false);
+      expectSwitchState(findSwitch(rendered.container, 'Devlet Otoyolları'), false, true);
+      expectSwitchState(findSwitch(rendered.container, 'Özel Otoyollar'), false, true);
+
+      click(findSwitch(rendered.container, 'Devlet Otoyolları'));
+      click(findSwitch(rendered.container, 'Özel Otoyollar'));
+      expectSwitchState(findSwitch(rendered.container, 'Devlet Otoyolları'), false, true);
+      expectSwitchState(findSwitch(rendered.container, 'Özel Otoyollar'), false, true);
+
+      click(findButton(rendered.container, 'Ayarları Uygula'));
+
+      expect(mocks.commitSettings).toHaveBeenCalledWith(expect.objectContaining({
+        toggleUcretliOtoyollar: false,
+        toggleOtoyollar: false,
+        toggleOzelOtoyollar: false,
+      }));
+    } finally {
+      rendered.cleanup();
+    }
+  });
+
+  it('turning toll roads back on restores state and private highway toggles', () => {
+    mocks.pendingSettings = baseSettings({
+      toggleUcretliOtoyollar: false,
+      toggleOtoyollar: false,
+      toggleOzelOtoyollar: false,
+    });
+
+    const rendered = renderView();
+    try {
+      click(findSwitch(rendered.container, 'Ücretli Yollar'));
+
+      expectSwitchState(findSwitch(rendered.container, 'Ücretli Yollar'), true);
+      expectSwitchState(findSwitch(rendered.container, 'Devlet Otoyolları'), true);
+      expectSwitchState(findSwitch(rendered.container, 'Özel Otoyollar'), true);
+
+      click(findButton(rendered.container, 'Ayarları Uygula'));
+
+      expect(mocks.commitSettings).toHaveBeenCalledWith(expect.objectContaining({
+        toggleUcretliOtoyollar: true,
+        toggleOtoyollar: true,
+        toggleOzelOtoyollar: true,
+      }));
+    } finally {
+      rendered.cleanup();
+    }
+  });
+
+  it('allows state and private highways to be configured independently when toll roads are enabled', () => {
+    mocks.pendingSettings = baseSettings();
+
+    const rendered = renderView();
+    try {
+      click(findSwitch(rendered.container, 'Devlet Otoyolları'));
+      click(findSwitch(rendered.container, 'Özel Otoyollar'));
+
+      expectSwitchState(findSwitch(rendered.container, 'Ücretli Yollar'), true);
+      expectSwitchState(findSwitch(rendered.container, 'Devlet Otoyolları'), false);
+      expectSwitchState(findSwitch(rendered.container, 'Özel Otoyollar'), false);
+
+      click(findButton(rendered.container, 'Ayarları Uygula'));
+
+      expect(mocks.commitSettings).toHaveBeenCalledWith(expect.objectContaining({
+        toggleUcretliOtoyollar: true,
+        toggleOtoyollar: false,
+        toggleOzelOtoyollar: false,
+      }));
+    } finally {
+      rendered.cleanup();
+    }
   });
 
   it('commits manual UI draft as one RouteSettings object', () => {
