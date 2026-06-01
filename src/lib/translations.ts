@@ -184,7 +184,7 @@ export const translations = {
     
     // Route Settings
     routeSettingsTitle: "Rota Ayarları",
-    avoidTolls: "Ücretli Yollardan Kaçın",
+    avoidTolls: "Ücretli Yollar",
     avoidHighways: "Otobanlardan Kaçın",
     minStations: "Minimum Şarj İstasyonu",
     departureSoC: "Başlangıç Şarjı",
@@ -483,7 +483,7 @@ export const translations = {
     
     // Route Settings
     routeSettingsTitle: "Route Settings",
-    avoidTolls: "Avoid Tolls",
+    avoidTolls: "Toll Roads",
     avoidHighways: "Avoid Highways",
     minStations: "Minimum Charge Stations",
     departureSoC: "Departure SoC",
