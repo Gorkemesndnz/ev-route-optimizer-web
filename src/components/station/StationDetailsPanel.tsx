@@ -216,6 +216,8 @@ export default function StationDetailsPanel({
                return;
             }
 
+            // Legacy numeric lookup is kept only for older station records. Google
+            // place/source identity above remains the primary detail enrichment path.
             const numericId = parseInt(selectedStation.id, 10);
             if (!isNaN(numericId) && String(numericId) === selectedStation.id) {
                try {

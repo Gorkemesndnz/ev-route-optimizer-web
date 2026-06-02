@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { routeStopToStationData } from '../RouteLayer';
+import { routeStopToStationData } from '../routeLayerModel';
 import type { ChargingStopDto } from '../../../types/api/route';
 
 function stop(overrides: Partial<ChargingStopDto> = {}): ChargingStopDto {
@@ -54,4 +54,3 @@ describe('routeStopToStationData', () => {
     expect(selected.sourceId).toBe('456');
   });
 });
-
