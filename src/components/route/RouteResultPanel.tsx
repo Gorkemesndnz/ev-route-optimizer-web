@@ -307,7 +307,8 @@ export default function RouteResultPanel({
   }
 
   const totalChargeTime = chargingStops.reduce((acc, stop) => acc + stop.charge_time_min, 0);
-  const driveTime = routeResult.total_duration_min - totalChargeTime;
+  const driveTime = routeResult.total_duration_min;
+  const totalTripTime = driveTime + totalChargeTime;
   const avgConsumption = routeResult.total_distance_km > 0 ? routeResult.consumption_kwh / routeResult.total_distance_km * 10 : 0;
 
   return (
@@ -322,7 +323,7 @@ export default function RouteResultPanel({
       <div className="flex flex-col gap-3 pb-4 border-b border-white/10 px-5 pt-5 shrink-0 bg-white/[0.02]">
         <div className="flex items-center gap-2 text-white">
           <Clock size={18} className="text-blue-400 shrink-0" />
-          <span className="font-bold text-xl">{formatDuration(routeResult.total_duration_min)}</span>
+          <span className="font-bold text-xl">{formatDuration(totalTripTime)}</span>
           <span className="text-white/60 font-medium text-lg">({Math.round(routeResult.total_distance_km)} km)</span>
           
           <div className="ml-auto flex items-center gap-1.5">

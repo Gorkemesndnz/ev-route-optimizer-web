@@ -149,6 +149,69 @@ describe('RouteResultPanel route result contract', () => {
     }
   });
 
+  it('shows trip total as drive plus charge without subtracting charge from drive time', () => {
+    mocks.routeResult = {
+      status: 'success',
+      message: null,
+      total_distance_km: 129,
+      total_duration_min: 106,
+      consumption_kwh: 36,
+      total_charging_cost: 240,
+      total_co2_savings_kg: 12,
+      overview_polyline: '_p~iF~ps|U_ulLnnqC',
+      legs: [
+        {
+          type: 'drive',
+          from_location: 'Amasya',
+          to_location: 'Samsun',
+          duration_min: 106,
+          distance_km: 129,
+          consumption_kwh: 36,
+          end_soc: 15,
+          polyline: '',
+        },
+      ],
+      charging_stops: [
+        {
+          station_id: 'station-1',
+          station_name: 'Samsun DC',
+          operator: 'Test',
+          lat: 41,
+          lon: 36,
+          address: 'Samsun',
+          rating: 4.5,
+          charge_time_min: 40,
+          arrival_soc: 10,
+          departure_soc: 95,
+          energy_added_kwh: 20,
+          price_per_kwh: 12,
+          estimated_cost: 240,
+          currency: 'TRY',
+          distance_from_route_km: 0.5,
+          is_open_now: true,
+          data_source: 'google',
+          connectors: [],
+          amenities: null,
+          weather: null,
+        },
+      ],
+      start_weather: null,
+      end_weather: null,
+      insights: [],
+      warning_messages: [],
+    };
+
+    const rendered = renderPanel();
+    try {
+      expect(rendered.container.textContent).toContain('2sa 26dk');
+      expect(rendered.container.textContent).toContain('1sa 46dk');
+      expect(rendered.container.textContent).toContain('40 dk');
+      expect(rendered.container.textContent).not.toContain('1sa 6dk');
+    } finally {
+      rendered.cleanup();
+    }
+  });
+
   it('restores saved route locations in readonly mode and clears them on unmount', async () => {
     const savedLocations = [
       { id: 'start', type: 'start', value: 'Istanbul', coords: { lat: 41.0082, lng: 28.9784 } },
