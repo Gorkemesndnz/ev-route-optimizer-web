@@ -3,7 +3,7 @@
 IYONTREE elektrikli araç rota ve şarj planlama sisteminin web arayüzü.
 Kullanıcı rotayı ve aracı girer; arayüz optimizasyon motorundan dönen şarj duraklarını, SoC profilini ve süre/maliyet tahminlerini harita üzerinde gösterir.
 
-> Sistemin diğer bileşenleri: [Ev-Route-Optimizer-Api](https://github.com/Gorkemesndnz/Ev-Route-Optimizer-Api) (FastAPI optimizasyon motoru) · [ev_route_optimizer_web_backend](https://github.com/Gorkemesndnz/ev_route_optimizer_web_backend) (.NET 8 backend)
+> Sistemin diğer bileşenleri: [ev-route-optimizer-api](https://github.com/Gorkemesndnz/ev-route-optimizer-api) (FastAPI optimizasyon motoru) · [ev-route-optimizer-backend](https://github.com/Gorkemesndnz/ev-route-optimizer-backend) (.NET 8 backend) · [Vehicle_database](https://github.com/Gorkemesndnz/Vehicle_database) (araç veri seti)
 
 ## Özellikler
 
@@ -51,3 +51,7 @@ src/
 ├── App.jsx
 └── main.jsx
 ```
+
+## Lisans
+
+MIT — bkz. [LICENSE](LICENSE)
